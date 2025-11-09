@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:6
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - test-airflow_e5cada_airflow
+
+volumes:
+  mongo_data:
+
+networks:
+  airflow:
+    external: true

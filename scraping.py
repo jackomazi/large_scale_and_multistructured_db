@@ -151,7 +151,14 @@ def save_games_to_db(games: str, formatter: callable) -> None:
 
 
 if __name__ == "__main__":
-    chess_com_users = ["jack_o_mazi", "jeccabahug"]
+    chess_com_users = ["jack_o_mazi",
+                        "jeccabahug", 
+                        "MagnusCarlsen",
+                          "Hikaru",
+                            "GothamChess", 
+                            "FabianoCaruana", 
+                            "GukeshDommaraju", 
+                            "AlirezaFirouzja"]
     lichess_users = ["OjaiJoao"]
     
     now = datetime.now()

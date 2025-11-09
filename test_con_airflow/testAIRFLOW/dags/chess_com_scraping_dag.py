@@ -1,14 +1,15 @@
 from datetime import datetime
 from pymongo import MongoClient
-from airflow.sdk import dag, task
+from airflow.sdk import dag, task, get_current_context
 from airflow.models import Variable
 import requests
+from dateutil.relativedelta import relativedelta
 
 API_BASE = "https://api.chess.com/pub/player"
 
 @dag(
     dag_id="chess_com_scraping_dag",
-    schedule='@weekly',
+    schedule='@monthly',
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=['chess', 'scraping', 'chess.com']
@@ -16,7 +17,14 @@ API_BASE = "https://api.chess.com/pub/player"
 def chess_com_scraping_dag():
 
     @task
-    def fetch_games(username: str, year: int, month: int) -> list:
+    def fetch_games(username: str) -> list:
+        context = get_current_context()
+        execution_date = context['logical_date']
+
+        target_date = execution_date - relativedelta(months=1)
+        year = target_date.year
+        month = target_date.month
+        print(f"Fetching games for user: {username} for {year}-{month:02d}")
         url = f"{API_BASE}/{username}/games/{year}/{month:02d}"
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -79,13 +87,8 @@ def chess_com_scraping_dag():
             raise Exception(f"Failed to connect to MongoDB: {e}")
 
     usernames = ["jack_o_mazi", "jeccabahug"]
-    years = [2024]
-    months = list(range(1, 13))
-    fetch_results = fetch_games.expand(
-        username=usernames,
-        year=years,
-        month=months
-    )
+    
+    fetch_results = fetch_games.expand(username=usernames)
     formatted_results = format_games.expand(games=fetch_results)
     save_to_mongodb.expand(games=formatted_results)
 

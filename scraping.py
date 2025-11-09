@@ -5,6 +5,10 @@ import logging.config
 import sys
 import json
 from time import sleep
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+import calendar
+import time
 
 logging.config.fileConfig('log/logger.config')
 logger = logging.getLogger('scraping')
@@ -59,26 +63,54 @@ def fetch_chess_com_games(username: str, year: int, month: int) -> list:
         logger.info("="*50)
         sys.exit(1)
 
+#def format_lichess_game(game: dict) -> dict:
+#    print(game)
+#    return {
+#        "url": game.get("url"),
+#        "white_player": game.get("players", {}).get("white", {}).get("user", {}).get("name"),
+#        "black_player": game.get("players", {}).get("black", {}).get("user", {}).get("name"),
+#        "white_rating": game.get("players", {}).get("white", {}).get("rating"),
+#        "black_rating": game.get("players", {}).get("black", {}).get("rating"),
+#        "result_white": game.get("players", {}).get("white", {}).get("result"),
+#        "result_black": game.get("players", {}).get("black", {}).get("result"),
+#        "eco_url": game.get("opening", {}).get("eco"),
+#        "opening": game.get("opening", {}).get("name"),
+#        "pgn": game.get("pgn"),
+#        "time_class": game.get("speed"),
+#        "rated": game.get("rated"),
+#        "end_time": game.get("end_time"),
+#    }
 def format_lichess_game(game: dict) -> dict:
+    white = game.get("players", {}).get("white", {})
+    black = game.get("players", {}).get("black", {})
+    winner = game.get("winner")
+    if game.get("speed") == "classical":
+        print(game)
     return {
-        "url": game.get("url"),
-        "white_player": game.get("players", {}).get("white", {}).get("user", {}).get("name"),
-        "black_player": game.get("players", {}).get("black", {}).get("user", {}).get("name"),
-        "white_rating": game.get("players", {}).get("white", {}).get("rating"),
-        "black_rating": game.get("players", {}).get("black", {}).get("rating"),
-        "result_white": game.get("players", {}).get("white", {}).get("result"),
-        "result_black": game.get("players", {}).get("black", {}).get("result"),
+        "url": f"https://lichess.org/{game.get('id')}",
+        "white_player": white.get("user", {}).get("name"),
+        "black_player": black.get("user", {}).get("name"),
+        "white_rating": white.get("rating"),
+        "black_rating": black.get("rating"),
+        "result_white": "win" if winner == "white" else "loss" if winner == "black" else "draw",
+        "result_black": "win" if winner == "black" else "loss" if winner == "white" else "draw",
         "eco_url": game.get("opening", {}).get("eco"),
         "opening": game.get("opening", {}).get("name"),
-        "pgn": game.get("pgn"),
+        "pgn": game.get("moves"),
         "time_class": game.get("speed"),
         "rated": game.get("rated"),
-        "end_time": game.get("end_time"),
+        "end_time": datetime.fromtimestamp(game.get("lastMoveAt")/1000) if game.get("lastMoveAt") else None
     }
 
-
 def fetch_lichess_games(username: str, year: str, month: str) -> list:
-    url = f"https://lichess.org/api/games/user/{username}?since={year}-{month:02d}-01T00:00:00Z&until={year}-{month:02d}-31T23:59:59Z"
+    start_day = datetime(year, month, 1)
+    last_day = calendar.monthrange(year, month)[1]
+    end_date = datetime(year, month, last_day, 23, 59, 59)
+
+    since = int(calendar.timegm(start_day.timetuple()) * 1000)
+    until = int(calendar.timegm(end_date.timetuple()) * 1000)
+
+    url = f"https://lichess.org/api/games/user/{username}?since={since}&until={until}&max=300&format=ndjson&opening=true"
     logger.info(f"Fetching games for {username} for {year}-{month:02d} from {url}")
     headers = {"Accept": "application/x-ndjson"}
     try:
@@ -104,6 +136,9 @@ def fetch_lichess_games(username: str, year: str, month: str) -> list:
         sys.exit(1)
 
 def save_games_to_db(games: str, formatter: callable) -> None:
+    if not games:
+        logger.info("No games to save to the database.")
+        return
     for g in games:
         game_doc = formatter(g)
         collection.update_one(
@@ -111,6 +146,8 @@ def save_games_to_db(games: str, formatter: callable) -> None:
             {"$set": game_doc},
             upsert=True
         )
+    logger.info(f"Saved {len(games)} games to the database.")
+
 
 
 def save_games_to_db_chess_com(games: list) -> None:
@@ -144,27 +181,26 @@ def save_games_to_db_chess_com(games: list) -> None:
 
 if __name__ == "__main__":
     chess_com_users = ["jack_o_mazi", "jeccabahug"]
-    lichess_users = ["MagnusCarlsen"]
+    lichess_users = ["OjaiJoao"]
     
+    now = datetime.now()
+
+    last_month = now - relativedelta(months=1)
+    year = last_month.year
+    month = last_month.month
+
     for username in chess_com_users:
         logger.info("-"*50)
         logger.info(f"Starting to process player: {username}")
-        for year in [2024]:
-            logger.info(f"Processing year: {year}")
-            for month in range(1, 5):
-                logger.info(f"Processing month: {month:02d}")
-                games = fetch_chess_com_games(username, year, month)
-                save_games_to_db(games, format_chess_com_game)
+        games = fetch_chess_com_games(username, year, month)
+        save_games_to_db(games, format_chess_com_game)
+
     
     for username in lichess_users:
         logger.info("-"*50)
         logger.info(f"Starting to process player: {username}")
-        for year in [2024]:
-            logger.info(f"Processing year: {year}")
-            for month in range(1, 5):
-                logger.info(f"Processing month: {month:02d}")
-                games = fetch_lichess_games(username, year, month)
-                save_games_to_db(games, format_lichess_game)
-    
+        games = fetch_lichess_games(username, year, month)
+        save_games_to_db(games, format_lichess_game)
+
     logger.info("Scraping and saving process completed.")
     logger.info("="*50)

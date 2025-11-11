@@ -81,6 +81,23 @@ def fetch_chess_com_games(username: str, year: int, month: int) -> list:
         logger.info("="*50)
         sys.exit(1)
 
+def fetch_chess_com_games_v2(url : str) -> list:
+    logger.info(f"Fetching games from {url}")
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) "
+                      "Chrome/130.0.0.0 Safari/537.36",
+        "Accept": "application/json",
+    }
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        games = response.json().get("games", [])
+        return games 
+    else:
+        logger.error(f"Status Code: {response.status_code}, Response: {response.text}")
+        logger.info("="*50)
+        return []
+
 
 def format_lichess_game(game: dict) -> dict:
     white = game.get("players", {}).get("white", {})

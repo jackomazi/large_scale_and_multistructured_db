@@ -1,6 +1,2 @@
-apache-airflow==3.1.2
-pendulum==3.1.0
-pymongo==4.15.3
-pytest==9.0.0
-python_dateutil==2.9.0.post0
-Requests==2.32.5
+dotenv==0.9.9
+requests==2.32.5

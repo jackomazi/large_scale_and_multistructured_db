@@ -1,20 +1,5 @@
 # large_scale_and_multistructured_db
 
-Idee:
-- Utente si registra inserendo:
-    - username (unico)
-    - password
-    - email
-
-- Utente può loggarsi con username e password.
-- Utente può aggiungere una partita al mongoDB inserendo un file PGN.
-- Utente può cercare partite nel DB locale per username, opening, data, ecc.
-- Utente può visualizzare statistiche sulle proprie partite (es. percentuale vittorie per apertura, tempo medio per mossa, ecc).
-- Utente può scaricare le proprie partite.
-- Admin può aggiungere/modificare/rimuovere utenti. Alimenta il DB massivo con dati di partite (scraping da chess.com, lichess.org, ecc).
-
-
-
-- Quando l'utente cerca una partita per username, opening, data, ecc, il sistema prima cerca nel DB locale (se esiste), altrimenti fa scraping sui siti (chess.com, lichess.org) e salva i dati nel DB locale per future ricerche. L'utente può suggerire da quale sito fare scraping (default: entrambi).
-Se i dati sono troppo vecchi (es. più vecchi di 1 mese), il sistema fa scraping per aggiornare i dati.
-
+## Piano B - Mod Management app
+  tramite lo script nmRest.py ho preso quello che ci interessa dall'api V1 di Nexus Mods. Questa api però è abbastanza limitata perchè non consente di visualizzare più di 10 mod di un certo gioco e non fornisce informazioni sugli utenti.
+  Da valutare la validità dell'api graphql: https://graphql.nexusmods.com, sto provando ad utilizzarla in nmGraphQL.py ma non so come funziona e non trovo esempi :)

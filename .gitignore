@@ -1,4 +1,4 @@
-venv
-dumps
+.venv/
+dumps/
 .env
 *.log

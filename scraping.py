@@ -28,6 +28,7 @@ except Exception as e:
     sys.exit(1)
 
 def extract_moves_from_pgn(pgn: str) -> str:
+    """Extracts and formats the moves from a PGN string."""
     lines = pgn.splitlines()
     moves = []
     for line in lines:
@@ -45,6 +46,7 @@ def extract_moves_from_pgn(pgn: str) -> str:
 
 
 def format_chess_com_game(game: dict) -> dict:
+    """Formats a Chess.com game dictionary into a structured format for MongoDB storage."""
     return {
         "url": game.get("url"),
         "white_player": game.get("white", {}).get("username"),
@@ -62,6 +64,7 @@ def format_chess_com_game(game: dict) -> dict:
     }
 
 def fetch_chess_com_games(username: str, year: int, month: int) -> list:
+    """Fetches games for a given Chess.com username within a specified year and month."""
     url = f"https://api.chess.com/pub/player/{username}/games/{year}/{month:02d}"
     logger.info(f"Fetching games for {username} for {year}-{month:02d} from {url}")
     headers = {
@@ -82,6 +85,7 @@ def fetch_chess_com_games(username: str, year: int, month: int) -> list:
         sys.exit(1)
 
 def fetch_chess_com_games_v2(url : str) -> list:
+    """Fetches games from a given Chess.com API URL."""
     logger.info(f"Fetching games from {url}")
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -100,6 +104,7 @@ def fetch_chess_com_games_v2(url : str) -> list:
 
 
 def format_lichess_game(game: dict) -> dict:
+    """Formats a Lichess game dictionary into a structured format for MongoDB storage."""
     white = game.get("players", {}).get("white", {})
     black = game.get("players", {}).get("black", {})
     winner = game.get("winner")
@@ -121,16 +126,22 @@ def format_lichess_game(game: dict) -> dict:
     }
 
 def fetch_lichess_games(username: str, year: str, month: str) -> list:
-    start_day = datetime(year, month, 1)
-    last_day = calendar.monthrange(year, month)[1]
+    """Fetches games for a given Lichess username within a specified year and month."""
+    start_day = datetime(year, month, 1) # primo giorno del mese
+    last_day = calendar.monthrange(year, month)[1] # ottengo l'ultimo giorno del mese
     end_date = datetime(year, month, last_day, 23, 59, 59)
 
-    since = int(calendar.timegm(start_day.timetuple()) * 1000)
+    since = int(calendar.timegm(start_day.timetuple()) * 1000) # timestamp in milliseconds, mi serve per l'url di lichess
     until = int(calendar.timegm(end_date.timetuple()) * 1000)
 
+    # costruisco l'url per ottenere le partite
+    # aggiunto parametro opening=true per ottenere info apertura
+    # aggiunto pgnInJson=true per ottenere i movimenti in formato stringa
+    # ci sono altri parametri che si possono aggiungere, vedi documentazione lichess API
     url = f"https://lichess.org/api/games/user/{username}?since={since}&until={until}&max=300&format=ndjson&opening=true&pgnInJson=true"
+
     logger.info(f"Fetching games for {username} for {year}-{month:02d} from {url}")
-    headers = {"Accept": "application/x-ndjson"}
+    headers = {"Accept": "application/x-ndjson"} # per ottenere risposta in formato ndjson
     try:
         response = requests.get(url, headers=headers, stream =True)
     except Exception as e:
@@ -140,10 +151,10 @@ def fetch_lichess_games(username: str, year: str, month: str) -> list:
     
     games = []
     if response.status_code == 200:
-        sleep(1)
+        sleep(1) # per evitare di sovraccaricare il server di lichess
         for line in response.iter_lines():
             if line:
-                game = json.loads(line)
+                game = json.loads(line) # transformo la riga in un dizionario
                 games.append(game)
         logger.info(f"Fetched {len(games)} games for {username} for {year}-{month:02d}")
         return games
@@ -154,12 +165,14 @@ def fetch_lichess_games(username: str, year: str, month: str) -> list:
         sys.exit(1)
 
 def save_games_to_db(games: str, formatter: callable) -> None:
+    """Saves a list of games to the MongoDB database using the provided formatter function."""
     if not games:
         logger.info("No games to save to the database.")
         return
-    for g in games:
-        game_doc = formatter(g)
-        collection.update_one(
+    
+    for g in games: # scorre tutte le partite ottenute
+        game_doc = formatter(g) # formatta la partita usando la funzione di formattazione specifica
+        collection.update_one( # aggiorna o inserisce il documento nel db
             {"url": game_doc["url"]},
             {"$set": game_doc},
             upsert=True
@@ -168,29 +181,34 @@ def save_games_to_db(games: str, formatter: callable) -> None:
 
 
 if __name__ == "__main__":
-    chess_com_users = ["jack_o_mazi",
-                        "jeccabahug", 
-                        "MagnusCarlsen",
-                          "Hikaru",
-                            "GothamChess", 
-                            "FabianoCaruana", 
-                            "GukeshDommaraju", 
-                            "AlirezaFirouzja"]
-    lichess_users = ["OjaiJoao"]
+    # lista di users di chess_com da processare
+    chess_com_users = ["jack_o_mazi"]#,
+                        #"jeccabahug", 
+                        #"MagnusCarlsen",
+                        #  "Hikaru",
+                        #    "GothamChess", 
+                        #    "FabianoCaruana", 
+                        #    "GukeshDommaraju", 
+                        #    "AlirezaFirouzja"]
     
+    # lista di users di lichess da processare
+    #lichess_users = ["OjaiJoao"]
+    
+    # calcolo l'anno e il mese scorso
     now = datetime.now()
 
     last_month = now - relativedelta(months=1)
     year = last_month.year
     month = last_month.month
 
+    # processa gli utenti di chess.com
     for username in chess_com_users:
         logger.info("-"*50)
         logger.info(f"Starting to process player: {username}")
-        games = fetch_chess_com_games(username, year, month)
-        save_games_to_db(games, format_chess_com_game)
+        games = fetch_chess_com_games(username, year, month) # ottengo le partite di chess.com di username, in uno specifico mese e anno
+        save_games_to_db(games, format_chess_com_game) # salvo le partite nel db
 
-    
+    # processa gli utenti di lichess
     for username in lichess_users:
         logger.info("-"*50)
         logger.info(f"Starting to process player: {username}")

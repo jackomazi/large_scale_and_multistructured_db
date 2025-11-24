@@ -1,0 +1,190 @@
+[{
+  "_id": {
+    "$oid": "6910afca89b0930404f6b88f"
+  },
+  "url": "https://www.chess.com/game/live/143884521606",
+  "black_player": "jack_o_mazi",
+  "black_rating": 1595,
+  "eco_url": "https://www.chess.com/openings/Polish-Opening-Outflank-Variation-2.Bb2",
+  "end_time": 1759567162,
+  "opening": "Polish-Opening-Outflank-Variation-2.Bb2",
+  "pgn": "b4 c6 Bb2 d5 e3 Bf5 Nf3 e6 a4 Bxb4 Bxg7 Nf6 Bxh8 Bg4 h3 Bh5 a5 Kd7 c3 Bc5 g4 Bg6 Ne5+ Ke7 d4 Qxh8 Nxg6+ hxg6 dxc5 Ne4 Qd4 Qh4 Rh2 Nd7 Nd2 Ndxc5 Nf3 Qh7 Bd3 Kd7 c4 Kc7 cxd5 exd5 a6 b6 Rc1 Re8 Bxe4 Rxe4 Ng5 Rxd4 Nxh7 Nd3+ Kf1 Ra4 Rc3 Ne5 Ng5 Rxa6 f4 Ra1+ Kg2 Ra2+ Kg3 Rxh2 Kxh2 f6 fxe5 fxg5 Ra3 a5 Kg3 Kd7 h4 gxh4+ Kxh4 Ke6 Kg5 Kxe5 Kxg6 Ke4 Kf7 c5 g5 d4 g6 dxe3 g7 e2 Ra1 c4 g8=Q c3 Qg4+ Kd3 Qd7+ Kc2 Qa4+ Kb2 Ra2+ Kc1 Qc2# 1-0",
+  "rated": true,
+  "result_black": "checkmated",
+  "result_white": "win",
+  "time_class": "blitz",
+  "white_player": "jeccabahug",
+  "white_rating": 1592,
+  "moves": "b4 c6 Bb2 d5 e3 Bf5 Nf3 e6 a4 Bxb4 Bxg7 Nf6 Bxh8 Bg4 h3 Bh5 a5 Kd7 c3 Bc5 g4 Bg6 Ne5+ Ke7 d4 Qxh8 Nxg6+ hxg6 dxc5 Ne4 Qd4 Qh4 Rh2 Nd7 Nd2 Ndxc5 Nf3 Qh7 Bd3 Kd7 c4 Kc7 cxd5 exd5 a6 b6 Rc1 Re8 Bxe4 Rxe4 Ng5 Rxd4 Nxh7 Nd3+ Kf1 Ra4 Rc3 Ne5 Ng5 Rxa6 f4 Ra1+ Kg2 Ra2+ Kg3 Rxh2 Kxh2 f6 fxe5 fxg5 Ra3 a5 Kg3 Kd7 h4 gxh4+ Kxh4 Ke6 Kg5 Kxe5 Kxg6 Ke4 Kf7 c5 g5 d4 g6 dxe3 g7 e2 Ra1 c4 g8=Q c3 Qg4+ Kd3 Qd7+ Kc2 Qa4+ Kb2 Ra2+ Kc1 Qc2# 1-0"
+},
+{
+  "_id": {
+    "$oid": "6910afca89b0930404f6b890"
+  },
+  "url": "https://www.chess.com/game/live/143884682978",
+  "black_player": "Renderchess",
+  "black_rating": 1616,
+  "eco_url": "https://www.chess.com/openings/Queens-Gambit-Declined-Chigorin-Defense-3.Nf3",
+  "end_time": 1759567243,
+  "opening": "Queens-Gambit-Declined-Chigorin-Defense-3.Nf3",
+  "pgn": "d4 d5 c4 Nc6 Nf3 Nf6 g3 Bg4 Bg2 Qd7 O-O O-O-O Nc3 h5 Bg5 h4 Nxh4 dxc4 Nf3 Bh3 Bxf6 exf6 e3 Bxg2 Kxg2 Qh3+ Kg1 Bd6 Ne2 g5 Qc2 g4 Nh4 Rxh4 Nf4 Qxh2# 0-1",
+  "rated": true,
+  "result_black": "win",
+  "result_white": "checkmated",
+  "time_class": "blitz",
+  "white_player": "jack_o_mazi",
+  "white_rating": 1587,
+  "moves": "d4 d5 c4 Nc6 Nf3 Nf6 g3 Bg4 Bg2 Qd7 O-O O-O-O Nc3 h5 Bg5 h4 Nxh4 dxc4 Nf3 Bh3 Bxf6 exf6 e3 Bxg2 Kxg2 Qh3+ Kg1 Bd6 Ne2 g5 Qc2 g4 Nh4 Rxh4 Nf4 Qxh2# 0-1"
+},
+{
+  "_id": {
+    "$oid": "6910afca89b0930404f6b891"
+  },
+  "url": "https://www.chess.com/game/live/143884718406",
+  "black_player": "jack_o_mazi",
+  "black_rating": 1595,
+  "eco_url": "https://www.chess.com/openings/Queens-Pawn-Opening-Zukertort-Variation-2...c6-3.e3-Bg4",
+  "end_time": 1759567339,
+  "opening": "Queens-Pawn-Opening-Zukertort-Variation-2...c6-3.e3-Bg4",
+  "pgn": "Nf3 c6 d4 d5 e3 Bg4 Be2 e6 Ne5 Bxe2 Qxe2 Nf6 f4 Bd6 Nd2 O-O O-O Nbd7 c3 a5 Ndf3 a4 a3 b5 h3 Qc7 Bd2 Ne4 Be1 Nxe5 fxe5 Be7 Nd2 Bg5 Nxe4 dxe4 Rd1 h6 Bg3 Qb6 Rf2 c5 dxc5 Qxc5 Bf4 Bxf4 exf4 Rad8 Rxd8 Rxd8 Qxe4 Rd1+ Kh2 Qxf2 0-1",
+  "rated": true,
+  "result_black": "win",
+  "result_white": "resigned",
+  "time_class": "blitz",
+  "white_player": "jeziel87",
+  "white_rating": 1573,
+  "moves": "Nf3 c6 d4 d5 e3 Bg4 Be2 e6 Ne5 Bxe2 Qxe2 Nf6 f4 Bd6 Nd2 O-O O-O Nbd7 c3 a5 Ndf3 a4 a3 b5 h3 Qc7 Bd2 Ne4 Be1 Nxe5 fxe5 Be7 Nd2 Bg5 Nxe4 dxe4 Rd1 h6 Bg3 Qb6 Rf2 c5 dxc5 Qxc5 Bf4 Bxf4 exf4 Rad8 Rxd8 Rxd8 Qxe4 Rd1+ Kh2 Qxf2 0-1"
+},
+{
+  "_id": {
+    "$oid": "6910afca89b0930404f6b892"
+  },
+  "url": "https://www.chess.com/game/live/143884768460",
+  "black_player": "KiranSeetharamChess",
+  "black_rating": 1616,
+  "eco_url": "https://www.chess.com/openings/Englund-Gambit",
+  "end_time": 1759567672,
+  "opening": "Englund-Gambit",
+  "pgn": "d4 e5 c4 exd4 Nf3 c5 g3 Nf6 Bg2 Bd6 O-O Nc6 Bg5 Be7 Nbd2 Ng4 Bxe7 Qxe7 Re1 Nge5 Qc2 Nxf3+ Nxf3 O-O e3 dxe3 Rxe3 Qf6 Rae1 d6 Re8 Be6 Rxa8 Rxa8 b3 Nd4 Nxd4 Qxd4 Bxb7 Rb8 Bf3 g6 Rd1 Qe5 Bd5 Bxd5 Rxd5 Qe1+ Kg2 Re8 Qd2 Qe4+ Kg1 Qb1+ Kg2 Re1 Rxd6 Rg1+ Kh3 Qf1+ Kg4 h5+ Kh4 Rg2 Qh6 Rxh2+ Kg5 Qc1+ Kf6 Qxh6 Rd8+ Kh7 Kxf7 Qg7+ Ke6 Rxf2 Kd5 Rf6 Kxc5 Qe7+ Kb5 Qxd8 Ka4 Qb6 Ka3 Qe3 Kb2 Qxg3 Ka3 Qc7 Kb2 Rf3 Ka3 Qb6 Kb2 Qb4 Ka1 Rf2 Kb1 Qc3 c5 Qb2# 0-1",
+  "rated": true,
+  "result_black": "win",
+  "result_white": "checkmated",
+  "time_class": "blitz",
+  "white_player": "jack_o_mazi",
+  "white_rating": 1587,
+  "moves": "d4 e5 c4 exd4 Nf3 c5 g3 Nf6 Bg2 Bd6 O-O Nc6 Bg5 Be7 Nbd2 Ng4 Bxe7 Qxe7 Re1 Nge5 Qc2 Nxf3+ Nxf3 O-O e3 dxe3 Rxe3 Qf6 Rae1 d6 Re8 Be6 Rxa8 Rxa8 b3 Nd4 Nxd4 Qxd4 Bxb7 Rb8 Bf3 g6 Rd1 Qe5 Bd5 Bxd5 Rxd5 Qe1+ Kg2 Re8 Qd2 Qe4+ Kg1 Qb1+ Kg2 Re1 Rxd6 Rg1+ Kh3 Qf1+ Kg4 h5+ Kh4 Rg2 Qh6 Rxh2+ Kg5 Qc1+ Kf6 Qxh6 Rd8+ Kh7 Kxf7 Qg7+ Ke6 Rxf2 Kd5 Rf6 Kxc5 Qe7+ Kb5 Qxd8 Ka4 Qb6 Ka3 Qe3 Kb2 Qxg3 Ka3 Qc7 Kb2 Rf3 Ka3 Qb6 Kb2 Qb4 Ka1 Rf2 Kb1 Qc3 c5 Qb2# 0-1"
+},
+{
+  "_id": {
+    "$oid": "6910afca89b0930404f6b893"
+  },
+  "url": "https://www.chess.com/game/live/143888521136",
+  "black_player": "gokhanklc",
+  "black_rating": 1613,
+  "eco_url": "https://www.chess.com/openings/Queens-Pawn-Opening-Horwitz-Defense-2.Nf3-c5-3.c4-cxd4",
+  "end_time": 1759575685,
+  "opening": "Queens-Pawn-Opening-Horwitz-Defense-2.Nf3-c5-3.c4-cxd4",
+  "pgn": "d4 e6 c4 c5 Nf3 cxd4 g3 Nc6 Bg2 e5 O-O d6 Bg5 f6 Bd2 Nge7 Be1 Ng6 Nbd2 Be7 Ne4 O-O Qa4 Bd7 Qc2 Nb4 Bxb4 a5 Bxd6 Bxd6 Nxd6 Qc7 Ne4 Rac8 b3 b5 c5 b4 Nfd2 Ne7 Rfc1 Bf5 Qd1 Nd5 a3 Nc3 Nxc3 bxc3 Ne4 Bxe4 Bxe4 Qxc5 Qd3 g6 h4 f5 Bg2 e4 Qd1 Rfd8 h5 d3 exd3 exd3 Ra2 c2 Qd2 Qc3 Qxc3 Rxc3 Bf3 Rxb3 hxg6 hxg6 a4 Rb1 Ra1 Rdb8 Raxb1 Rxb1 Rxb1 cxb1=Q+ Kg2 d2 0-1",
+  "rated": true,
+  "result_black": "win",
+  "result_white": "resigned",
+  "time_class": "blitz",
+  "white_player": "jack_o_mazi",
+  "white_rating": 1579,
+  "moves": "d4 e6 c4 c5 Nf3 cxd4 g3 Nc6 Bg2 e5 O-O d6 Bg5 f6 Bd2 Nge7 Be1 Ng6 Nbd2 Be7 Ne4 O-O Qa4 Bd7 Qc2 Nb4 Bxb4 a5 Bxd6 Bxd6 Nxd6 Qc7 Ne4 Rac8 b3 b5 c5 b4 Nfd2 Ne7 Rfc1 Bf5 Qd1 Nd5 a3 Nc3 Nxc3 bxc3 Ne4 Bxe4 Bxe4 Qxc5 Qd3 g6 h4 f5 Bg2 e4 Qd1 Rfd8 h5 d3 exd3 exd3 Ra2 c2 Qd2 Qc3 Qxc3 Rxc3 Bf3 Rxb3 hxg6 hxg6 a4 Rb1 Ra1 Rdb8 Raxb1 Rxb1 Rxb1 cxb1=Q+ Kg2 d2 0-1"
+},
+{
+  "_id": {
+    "$oid": "6910afca89b0930404f6b894"
+  },
+  "url": "https://www.chess.com/game/live/143888634646",
+  "black_player": "jack_o_mazi",
+  "black_rating": 1570,
+  "eco_url": "https://www.chess.com/openings/Caro-Kann-Defense-Advance-Tal-Variation",
+  "end_time": 1759575711,
+  "opening": "Caro-Kann-Defense-Advance-Tal-Variation",
+  "pgn": "e4 c6 d4 d5 e5 Bf5 h4 e6 g4 Bg6 h5 Be4 f3 Qh4+ Rxh4 1-0",
+  "rated": true,
+  "result_black": "resigned",
+  "result_white": "win",
+  "time_class": "blitz",
+  "white_player": "Smurfin-izz-bad",
+  "white_rating": 1566,
+  "moves": "e4 c6 d4 d5 e5 Bf5 h4 e6 g4 Bg6 h5 Be4 f3 Qh4+ Rxh4 1-0"
+},
+{
+  "_id": {
+    "$oid": "6910afca89b0930404f6b895"
+  },
+  "url": "https://www.chess.com/game/live/143888647586",
+  "black_player": "marbasoguz",
+  "black_rating": 1538,
+  "eco_url": "https://www.chess.com/openings/Slav-Defense-Modern-Line-3...Nf6-4.g3-e6-5.Bg2",
+  "end_time": 1759575774,
+  "opening": "Slav-Defense-Modern-Line-3...Nf6-4.g3-e6-5.Bg2",
+  "pgn": "d4 e6 c4 d5 Nf3 Nf6 g3 c6 Bg2 Bd7 O-O Be7 Bg5 h6 Bf4 c5 cxd5 Nxd5 Be5 Nc6 dxc5 Nxe5 Nxe5 Bxc5 Qc2 O-O Qxc5 Rc8 Qxa7 Rc2 Qxb7 Bc6 Nxc6 1-0",
+  "rated": true,
+  "result_black": "resigned",
+  "result_white": "win",
+  "time_class": "blitz",
+  "white_player": "jack_o_mazi",
+  "white_rating": 1577,
+  "moves": "d4 e6 c4 d5 Nf3 Nf6 g3 c6 Bg2 Bd7 O-O Be7 Bg5 h6 Bf4 c5 cxd5 Nxd5 Be5 Nc6 dxc5 Nxe5 Nxe5 Bxc5 Qc2 O-O Qxc5 Rc8 Qxa7 Rc2 Qxb7 Bc6 Nxc6 1-0"
+},
+{
+  "_id": {
+    "$oid": "6910afca89b0930404f6b896"
+  },
+  "url": "https://www.chess.com/game/live/143888677636",
+  "black_player": "jack_o_mazi",
+  "black_rating": 1569,
+  "eco_url": "https://www.chess.com/openings/Caro-Kann-Defense-Advance-Variation-3...Bf5-4.Bd3",
+  "end_time": 1759575894,
+  "opening": "Caro-Kann-Defense-Advance-Variation-3...Bf5-4.Bd3",
+  "pgn": "e4 c6 d4 d5 e5 Bf5 Bd3 e6 Bxf5 exf5 Qd3 g6 c4 Bg7 Nf3 Ne7 Bg5 O-O c5 Qd7 Bxe7 Qxe7 O-O Nd7 Re1 a6 Re2 b6 b4 bxc5 bxc5 a5 Nc3 a4 Rae1 a3 e6 fxe6 Rxe6 Qd8 Rxc6 Qa5 Nxd5 Rac8 Rxc8 1-0",
+  "rated": true,
+  "result_black": "resigned",
+  "result_white": "win",
+  "time_class": "blitz",
+  "white_player": "mrifatfr",
+  "white_rating": 1587,
+  "moves": "e4 c6 d4 d5 e5 Bf5 Bd3 e6 Bxf5 exf5 Qd3 g6 c4 Bg7 Nf3 Ne7 Bg5 O-O c5 Qd7 Bxe7 Qxe7 O-O Nd7 Re1 a6 Re2 b6 b4 bxc5 bxc5 a5 Nc3 a4 Rae1 a3 e6 fxe6 Rxe6 Qd8 Rxc6 Qa5 Nxd5 Rac8 Rxc8 1-0"
+},
+{
+  "_id": {
+    "$oid": "6910afca89b0930404f6b897"
+  },
+  "url": "https://www.chess.com/game/live/143888736670",
+  "black_player": "jack_o_mazi",
+  "black_rating": 1561,
+  "eco_url": "https://www.chess.com/openings/Polish-Opening-Outflank-Variation-2.Bb2",
+  "end_time": 1759576166,
+  "opening": "Polish-Opening-Outflank-Variation-2.Bb2",
+  "pgn": "b4 c6 Bb2 d5 e3 Bf5 c4 e6 Nf3 Bxb4 cxd5 Nf6 dxe6 Bxe6 Qc2 O-O Bd3 Bg4 a3 Ba5 Nc3 Nbd7 h3 Bh5 g4 Bg6 Bxg6 hxg6 g5 Nh7 h4 Nc5 O-O-O Qb6 Ne5 Rfd8 Na4 Nxa4 Qxa4 Qc5+ Qc4 Qxc4+ Nxc4 Bc7 f4 Rd3 Kc2 Rad8 h5 b5 hxg6 fxg6 Ne5 Bxe5 Bxe5 R3d5 Kc3 R8d7 e4 Rd3+ Kc2 Rxa3 d4 Re3 Rhe1 Ra3 Rd3 Ra6 Kb3 Rb6 Ra1 Rbb7 Ra6 Nf8 Rxc6 a5 Rdc3 a4+ Kb4 Kh7 Rh3+ Kg8 Rhc3 Kh7 f5 gxf5 exf5 Rf7 g6+ Nxg6 fxg6+ 1-0",
+  "rated": true,
+  "result_black": "resigned",
+  "result_white": "win",
+  "time_class": "blitz",
+  "white_player": "Djangologie",
+  "white_rating": 1587,
+  "moves": "b4 c6 Bb2 d5 e3 Bf5 c4 e6 Nf3 Bxb4 cxd5 Nf6 dxe6 Bxe6 Qc2 O-O Bd3 Bg4 a3 Ba5 Nc3 Nbd7 h3 Bh5 g4 Bg6 Bxg6 hxg6 g5 Nh7 h4 Nc5 O-O-O Qb6 Ne5 Rfd8 Na4 Nxa4 Qxa4 Qc5+ Qc4 Qxc4+ Nxc4 Bc7 f4 Rd3 Kc2 Rad8 h5 b5 hxg6 fxg6 Ne5 Bxe5 Bxe5 R3d5 Kc3 R8d7 e4 Rd3+ Kc2 Rxa3 d4 Re3 Rhe1 Ra3 Rd3 Ra6 Kb3 Rb6 Ra1 Rbb7 Ra6 Nf8 Rxc6 a5 Rdc3 a4+ Kb4 Kh7 Rh3+ Kg8 Rhc3 Kh7 f5 gxf5 exf5 Rf7 g6+ Nxg6 fxg6+ 1-0"
+},
+{
+  "_id": {
+    "$oid": "6910afca89b0930404f6b898"
+  },
+  "url": "https://www.chess.com/game/live/143926114010",
+  "black_player": "grotoc33",
+  "black_rating": 1546,
+  "eco_url": "https://www.chess.com/openings/Queens-Pawn-Opening-Symmetrical-Variation-3.c4",
+  "end_time": 1759661358,
+  "opening": "Queens-Pawn-Opening-Symmetrical-Variation-3.c4",
+  "pgn": "d4 d5 c4 Nf6 Nf3 Be6 g3 g6 Bg2 Bg7 Bg5 O-O O-O Nbd7 Nbd2 c6 Re1 dxc4 e4 Bg4 Qc2 b5 a4 a6 e5 Nd5 Nh4 Be6 Ne4 Nb4 Qd2 Nd3 Bf1 Nxe1 Qxe1 Nb6 Nc5 Bd5 a5 Nd7 Nxd7 Qxd7 Bg2 Rae8 Bxd5 Qxd5 Qd2 f6 exf6 exf6 Be3 f5 Ng2 Rd8 Nf4 Qf7 Re1 Rfe8 Qc3 Rxe3 fxe3 c5 dxc5 Bxc3 0-1",
+  "rated": true,
+  "result_black": "win",
+  "result_white": "resigned",
+  "time_class": "blitz",
+  "white_player": "jack_o_mazi",
+  "white_rating": 1552,
+  "moves": "d4 d5 c4 Nf6 Nf3 Be6 g3 g6 Bg2 Bg7 Bg5 O-O O-O Nbd7 Nbd2 c6 Re1 dxc4 e4 Bg4 Qc2 b5 a4 a6 e5 Nd5 Nh4 Be6 Ne4 Nb4 Qd2 Nd3 Bf1 Nxe1 Qxe1 Nb6 Nc5 Bd5 a5 Nd7 Nxd7 Qxd7 Bg2 Rae8 Bxd5 Qxd5 Qd2 f6 exf6 exf6 Be3 f5 Ng2 Rd8 Nf4 Qf7 Re1 Rfe8 Qc3 Rxe3 fxe3 c5 dxc5 Bxc3 0-1"
+}]

@@ -1,2 +1,6 @@
 .mypy_cache/
+scraping/log/logs.log
+test_con_airflow/
 myenv/
+__pycache__/
+images/

@@ -1172,3 +1172,176 @@
 2025-11-09 16:19:00,720 - INFO - Saved 300 games to the database.
 2025-11-09 16:19:00,720 - INFO - Scraping and saving process completed.
 2025-11-09 16:19:00,720 - INFO - ==================================================
+2025-11-11 12:17:41,144 - INFO - ==================================================
+2025-11-11 12:17:41,144 - INFO - Starting the chess.com scraping script.
+2025-11-11 12:18:11,596 - ERROR - Failed to connect to MongoDB: localhost:27017: [WinError 10061] Impossibile stabilire la connessione. Rifiuto persistente del computer di destinazione (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 30s, Topology Description: <TopologyDescription id: 69131b5563ce1c80ddbb54d0, topology_type: Unknown, servers: [<ServerDescription ('localhost', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('localhost:27017: [WinError 10061] Impossibile stabilire la connessione. Rifiuto persistente del computer di destinazione (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>
+2025-11-11 12:18:11,596 - INFO - ==================================================
+2025-11-11 12:18:30,686 - INFO - ==================================================
+2025-11-11 12:18:30,687 - INFO - Starting the chess.com scraping script.
+2025-11-11 12:19:01,192 - ERROR - Failed to connect to MongoDB: localhost:27017: [WinError 10061] Impossibile stabilire la connessione. Rifiuto persistente del computer di destinazione (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 30s, Topology Description: <TopologyDescription id: 69131b864ac8bc7f71d73018, topology_type: Unknown, servers: [<ServerDescription ('localhost', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('localhost:27017: [WinError 10061] Impossibile stabilire la connessione. Rifiuto persistente del computer di destinazione (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>
+2025-11-11 12:19:01,192 - INFO - ==================================================
+2025-11-11 12:19:16,159 - INFO - ==================================================
+2025-11-11 12:19:16,159 - INFO - Starting the chess.com scraping script.
+2025-11-11 12:19:46,170 - ERROR - Failed to connect to MongoDB: localhost:27017: [WinError 10061] Impossibile stabilire la connessione. Rifiuto persistente del computer di destinazione (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 30s, Topology Description: <TopologyDescription id: 69131bb4439da753472f7f43, topology_type: Unknown, servers: [<ServerDescription ('localhost', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('localhost:27017: [WinError 10061] Impossibile stabilire la connessione. Rifiuto persistente del computer di destinazione (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>
+2025-11-11 12:19:46,171 - INFO - ==================================================
+2025-11-11 12:20:49,460 - INFO - ==================================================
+2025-11-11 12:20:49,461 - INFO - Starting the chess.com scraping script.
+2025-11-11 12:21:19,952 - ERROR - Failed to connect to MongoDB: localhost:27017: [WinError 10061] Impossibile stabilire la connessione. Rifiuto persistente del computer di destinazione (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 30s, Topology Description: <TopologyDescription id: 69131c1123ecf1e77bd0ee80, topology_type: Unknown, servers: [<ServerDescription ('localhost', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('localhost:27017: [WinError 10061] Impossibile stabilire la connessione. Rifiuto persistente del computer di destinazione (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>
+2025-11-11 12:21:19,953 - INFO - ==================================================
+2025-11-11 12:41:17,658 - INFO - ==================================================
+2025-11-11 12:41:17,659 - INFO - Starting the chess.com scraping script.
+2025-11-11 12:41:17,674 - INFO - Connected to MongoDB successfully.
+2025-11-11 12:41:17,674 - INFO - --------------------------------------------------
+2025-11-11 12:41:17,674 - INFO - Starting to process player: jack_o_mazi
+2025-11-11 12:41:17,674 - INFO - Fetching games for jack_o_mazi for 2025-10 from https://api.chess.com/pub/player/jack_o_mazi/games/2025/10
+2025-11-11 12:41:18,503 - INFO - Fetched 51 games for jack_o_mazi for 2025-10
+2025-11-11 12:41:18,585 - INFO - Saved 51 games to the database.
+2025-11-11 12:41:18,586 - INFO - --------------------------------------------------
+2025-11-11 12:41:18,586 - INFO - Starting to process player: jeccabahug
+2025-11-11 12:41:18,586 - INFO - Fetching games for jeccabahug for 2025-10 from https://api.chess.com/pub/player/jeccabahug/games/2025/10
+2025-11-11 12:41:20,491 - INFO - Fetched 789 games for jeccabahug for 2025-10
+2025-11-11 12:41:21,434 - INFO - Saved 789 games to the database.
+2025-11-11 12:41:21,434 - INFO - --------------------------------------------------
+2025-11-11 12:41:21,434 - INFO - Starting to process player: MagnusCarlsen
+2025-11-11 12:41:21,434 - INFO - Fetching games for MagnusCarlsen for 2025-10 from https://api.chess.com/pub/player/MagnusCarlsen/games/2025/10
+2025-11-11 12:41:22,269 - INFO - Fetched 266 games for MagnusCarlsen for 2025-10
+2025-11-11 12:41:22,715 - INFO - Saved 266 games to the database.
+2025-11-11 12:41:22,715 - INFO - --------------------------------------------------
+2025-11-11 12:41:22,715 - INFO - Starting to process player: Hikaru
+2025-11-11 12:41:22,715 - INFO - Fetching games for Hikaru for 2025-10 from https://api.chess.com/pub/player/Hikaru/games/2025/10
+2025-11-11 12:41:23,575 - INFO - Fetched 350 games for Hikaru for 2025-10
+2025-11-11 12:41:24,474 - INFO - Saved 350 games to the database.
+2025-11-11 12:41:24,474 - INFO - --------------------------------------------------
+2025-11-11 12:41:24,474 - INFO - Starting to process player: GothamChess
+2025-11-11 12:41:24,474 - INFO - Fetching games for GothamChess for 2025-10 from https://api.chess.com/pub/player/GothamChess/games/2025/10
+2025-11-11 12:41:25,383 - INFO - Fetched 128 games for GothamChess for 2025-10
+2025-11-11 12:41:26,511 - INFO - Saved 128 games to the database.
+2025-11-11 12:41:26,512 - INFO - --------------------------------------------------
+2025-11-11 12:41:26,512 - INFO - Starting to process player: FabianoCaruana
+2025-11-11 12:41:26,512 - INFO - Fetching games for FabianoCaruana for 2025-10 from https://api.chess.com/pub/player/FabianoCaruana/games/2025/10
+2025-11-11 12:41:27,614 - INFO - Fetched 32 games for FabianoCaruana for 2025-10
+2025-11-11 12:41:27,798 - INFO - Saved 32 games to the database.
+2025-11-11 12:41:27,798 - INFO - --------------------------------------------------
+2025-11-11 12:41:27,798 - INFO - Starting to process player: GukeshDommaraju
+2025-11-11 12:41:27,798 - INFO - Fetching games for GukeshDommaraju for 2025-10 from https://api.chess.com/pub/player/GukeshDommaraju/games/2025/10
+2025-11-11 12:41:28,838 - INFO - Fetched 0 games for GukeshDommaraju for 2025-10
+2025-11-11 12:41:28,846 - INFO - No games to save to the database.
+2025-11-11 12:41:28,846 - INFO - --------------------------------------------------
+2025-11-11 12:41:28,846 - INFO - Starting to process player: AlirezaFirouzja
+2025-11-11 12:41:28,847 - INFO - Fetching games for AlirezaFirouzja for 2025-10 from https://api.chess.com/pub/player/AlirezaFirouzja/games/2025/10
+2025-11-11 12:41:29,863 - INFO - Fetched 0 games for AlirezaFirouzja for 2025-10
+2025-11-11 12:41:29,866 - INFO - No games to save to the database.
+2025-11-11 12:41:29,866 - INFO - --------------------------------------------------
+2025-11-11 12:41:29,867 - INFO - Starting to process player: OjaiJoao
+2025-11-11 12:41:29,867 - INFO - Fetching games for OjaiJoao for 2025-10 from https://lichess.org/api/games/user/OjaiJoao?since=1759276800000&until=1761955199000&max=300&format=ndjson&opening=true&pgnInJson=true
+2025-11-11 12:41:42,552 - INFO - Fetched 300 games for OjaiJoao for 2025-10
+2025-11-11 12:41:43,412 - INFO - Saved 300 games to the database.
+2025-11-11 12:41:43,412 - INFO - Scraping and saving process completed.
+2025-11-11 12:41:43,412 - INFO - ==================================================
+2025-11-11 17:13:36,809 - INFO - ==================================================
+2025-11-11 17:13:36,810 - INFO - Starting the chess.com scraping script.
+2025-11-11 17:13:36,857 - INFO - Connected to MongoDB successfully.
+2025-11-11 17:14:19,408 - INFO - ==================================================
+2025-11-11 17:14:19,408 - INFO - Starting the chess.com scraping script.
+2025-11-11 17:14:19,420 - INFO - Connected to MongoDB successfully.
+2025-11-11 17:16:41,332 - INFO - ==================================================
+2025-11-11 17:16:41,332 - INFO - Starting the chess.com scraping script.
+2025-11-11 17:16:41,383 - INFO - Connected to MongoDB successfully.
+2025-11-11 17:18:42,760 - INFO - ==================================================
+2025-11-11 17:18:42,760 - INFO - Starting the chess.com scraping script.
+2025-11-11 17:18:42,773 - INFO - Connected to MongoDB successfully.
+2025-11-11 17:18:44,945 - INFO - Fetching games from https://api.chess.com/pub/player/00sonal1234/games/2013/09
+2025-11-11 17:19:24,322 - INFO - ==================================================
+2025-11-11 17:19:24,322 - INFO - Starting the chess.com scraping script.
+2025-11-11 17:19:24,378 - INFO - Connected to MongoDB successfully.
+2025-11-11 17:19:24,379 - INFO - --------------------------------------------------
+2025-11-11 17:19:24,379 - INFO - Starting to process player: jack_o_mazi
+2025-11-11 17:19:24,379 - INFO - Fetching games for jack_o_mazi for 2025-10 from https://api.chess.com/pub/player/jack_o_mazi/games/2025/10
+2025-11-11 17:19:25,089 - INFO - Fetched 51 games for jack_o_mazi for 2025-10
+2025-11-11 17:19:25,222 - INFO - Saved 51 games to the database.
+2025-11-11 17:19:25,222 - INFO - --------------------------------------------------
+2025-11-11 17:19:25,222 - INFO - Starting to process player: jeccabahug
+2025-11-11 17:19:25,223 - INFO - Fetching games for jeccabahug for 2025-10 from https://api.chess.com/pub/player/jeccabahug/games/2025/10
+2025-11-11 17:19:27,121 - INFO - Fetched 789 games for jeccabahug for 2025-10
+2025-11-11 17:19:28,025 - INFO - Saved 789 games to the database.
+2025-11-11 17:19:28,025 - INFO - --------------------------------------------------
+2025-11-11 17:19:28,025 - INFO - Starting to process player: MagnusCarlsen
+2025-11-11 17:19:28,025 - INFO - Fetching games for MagnusCarlsen for 2025-10 from https://api.chess.com/pub/player/MagnusCarlsen/games/2025/10
+2025-11-11 17:19:28,810 - INFO - Fetched 266 games for MagnusCarlsen for 2025-10
+2025-11-11 17:19:29,727 - INFO - Saved 266 games to the database.
+2025-11-11 17:19:29,728 - INFO - --------------------------------------------------
+2025-11-11 17:19:29,728 - INFO - Starting to process player: Hikaru
+2025-11-11 17:19:29,728 - INFO - Fetching games for Hikaru for 2025-10 from https://api.chess.com/pub/player/Hikaru/games/2025/10
+2025-11-11 17:19:30,773 - INFO - Fetched 350 games for Hikaru for 2025-10
+2025-11-11 17:19:31,626 - INFO - Saved 350 games to the database.
+2025-11-11 17:19:31,627 - INFO - --------------------------------------------------
+2025-11-11 17:19:31,627 - INFO - Starting to process player: GothamChess
+2025-11-11 17:19:31,627 - INFO - Fetching games for GothamChess for 2025-10 from https://api.chess.com/pub/player/GothamChess/games/2025/10
+2025-11-11 17:19:32,786 - INFO - Fetched 128 games for GothamChess for 2025-10
+2025-11-11 17:19:33,176 - INFO - Saved 128 games to the database.
+2025-11-11 17:19:33,176 - INFO - --------------------------------------------------
+2025-11-11 17:19:33,176 - INFO - Starting to process player: FabianoCaruana
+2025-11-11 17:19:33,176 - INFO - Fetching games for FabianoCaruana for 2025-10 from https://api.chess.com/pub/player/FabianoCaruana/games/2025/10
+2025-11-11 17:19:34,202 - INFO - Fetched 32 games for FabianoCaruana for 2025-10
+2025-11-11 17:19:34,460 - INFO - Saved 32 games to the database.
+2025-11-11 17:19:34,460 - INFO - --------------------------------------------------
+2025-11-11 17:19:34,461 - INFO - Starting to process player: GukeshDommaraju
+2025-11-11 17:19:34,461 - INFO - Fetching games for GukeshDommaraju for 2025-10 from https://api.chess.com/pub/player/GukeshDommaraju/games/2025/10
+2025-11-11 17:19:35,834 - INFO - Fetched 0 games for GukeshDommaraju for 2025-10
+2025-11-11 17:19:35,839 - INFO - No games to save to the database.
+2025-11-11 17:19:35,840 - INFO - --------------------------------------------------
+2025-11-11 17:19:35,840 - INFO - Starting to process player: AlirezaFirouzja
+2025-11-11 17:19:35,840 - INFO - Fetching games for AlirezaFirouzja for 2025-10 from https://api.chess.com/pub/player/AlirezaFirouzja/games/2025/10
+2025-11-11 17:19:36,755 - INFO - Fetched 0 games for AlirezaFirouzja for 2025-10
+2025-11-11 17:19:36,758 - INFO - No games to save to the database.
+2025-11-11 17:19:36,758 - INFO - --------------------------------------------------
+2025-11-11 17:19:36,758 - INFO - Starting to process player: OjaiJoao
+2025-11-11 17:19:36,759 - INFO - Fetching games for OjaiJoao for 2025-10 from https://lichess.org/api/games/user/OjaiJoao?since=1759276800000&until=1761955199000&max=300&format=ndjson&opening=true&pgnInJson=true
+2025-11-11 17:19:49,212 - INFO - Fetched 300 games for OjaiJoao for 2025-10
+2025-11-11 17:19:51,604 - INFO - Saved 300 games to the database.
+2025-11-11 17:19:51,604 - INFO - Scraping and saving process completed.
+2025-11-11 17:19:51,605 - INFO - ==================================================
+2025-11-11 17:19:58,246 - INFO - ==================================================
+2025-11-11 17:19:58,246 - INFO - Starting the chess.com scraping script.
+2025-11-11 17:19:58,262 - INFO - Connected to MongoDB successfully.
+2025-11-11 17:20:00,046 - INFO - Fetching games from https://api.chess.com/pub/player/00sonal1234/games/2013/09
+2025-11-11 17:20:00,900 - INFO - Fetching games from https://api.chess.com/pub/player/00sonal1234/games/2014/02
+2025-11-11 17:21:21,397 - INFO - ==================================================
+2025-11-11 17:21:21,397 - INFO - Starting the chess.com scraping script.
+2025-11-11 17:21:21,412 - INFO - Connected to MongoDB successfully.
+2025-11-11 17:21:23,320 - INFO - Fetching games from https://api.chess.com/pub/player/00sonal1234/games/2013/09
+2025-11-11 17:21:23,893 - INFO - Fetching games from https://api.chess.com/pub/player/00sonal1234/games/2014/02
+2025-11-11 17:21:24,492 - INFO - Fetching games from https://api.chess.com/pub/player/00sonal1234/games/2014/03
+2025-11-11 17:21:25,307 - INFO - Fetching games from https://api.chess.com/pub/player/00sonal1234/games/2014/06
+2025-11-11 17:21:27,458 - INFO - Fetching games from https://api.chess.com/pub/player/01990saurabh/games/2014/07
+2025-11-11 17:21:28,397 - INFO - Fetching games from https://api.chess.com/pub/player/01990saurabh/games/2014/08
+2025-11-11 17:21:30,359 - INFO - Fetching games from https://api.chess.com/pub/player/01990saurabh/games/2014/09
+2025-11-11 17:21:31,954 - INFO - Fetching games from https://api.chess.com/pub/player/01990saurabh/games/2014/10
+2025-11-11 17:21:34,419 - INFO - Fetching games from https://api.chess.com/pub/player/120192u91j2heoinks-jasjha/games/2025/02
+2025-11-11 17:21:35,136 - INFO - Fetching games from https://api.chess.com/pub/player/120192u91j2heoinks-jasjha/games/2025/04
+2025-11-11 17:21:35,962 - INFO - Fetching games from https://api.chess.com/pub/player/120192u91j2heoinks-jasjha/games/2025/05
+2025-11-11 17:21:36,888 - INFO - Fetching games from https://api.chess.com/pub/player/120192u91j2heoinks-jasjha/games/2025/07
+2025-11-11 17:21:39,076 - INFO - Fetching games from https://api.chess.com/pub/player/123raksh/games/2022/10
+2025-11-11 17:21:40,122 - INFO - Fetching games from https://api.chess.com/pub/player/123raksh/games/2022/11
+2025-11-11 17:21:41,246 - INFO - Fetching games from https://api.chess.com/pub/player/123raksh/games/2022/12
+2025-11-11 17:21:43,120 - INFO - Fetching games from https://api.chess.com/pub/player/123raksh/games/2023/01
+2025-11-11 17:21:45,685 - INFO - Fetching games from https://api.chess.com/pub/player/1magnuscarlsen2/games/2015/12
+2025-11-11 17:21:46,536 - INFO - Fetching games from https://api.chess.com/pub/player/1magnuscarlsen2/games/2016/01
+2025-11-11 17:21:48,435 - INFO - Fetching games from https://api.chess.com/pub/player/1magnuscarlsen2/games/2016/02
+2025-11-11 17:21:50,386 - INFO - Fetching games from https://api.chess.com/pub/player/1magnuscarlsen2/games/2016/03
+2025-11-11 17:21:54,692 - INFO - Fetching games from https://api.chess.com/pub/player/20tung12/games/2022/10
+2025-11-11 17:21:55,312 - INFO - Fetching games from https://api.chess.com/pub/player/20tung12/games/2023/03
+2025-11-11 17:21:56,041 - INFO - Fetching games from https://api.chess.com/pub/player/20tung12/games/2023/04
+2025-11-11 17:21:56,772 - INFO - Fetching games from https://api.chess.com/pub/player/20tung12/games/2023/05
+2025-11-11 17:21:58,554 - INFO - Fetching games from https://api.chess.com/pub/player/352ff/games/2022/09
+2025-11-11 17:21:59,322 - INFO - Fetching games from https://api.chess.com/pub/player/352ff/games/2022/10
+2025-11-11 17:22:00,039 - INFO - Fetching games from https://api.chess.com/pub/player/352ff/games/2022/11
+2025-11-11 17:22:00,857 - INFO - Fetching games from https://api.chess.com/pub/player/352ff/games/2022/12
+2025-11-11 17:22:02,781 - INFO - Fetching games from https://api.chess.com/pub/player/5122004chess/games/2018/01
+2025-11-11 17:22:03,643 - INFO - Fetching games from https://api.chess.com/pub/player/5122004chess/games/2018/02
+2025-11-11 17:22:04,427 - INFO - Fetching games from https://api.chess.com/pub/player/5122004chess/games/2018/07
+2025-11-11 17:22:05,143 - INFO - Fetching games from https://api.chess.com/pub/player/5122004chess/games/2018/08
+2025-11-11 17:22:07,185 - INFO - Fetching games from https://api.chess.com/pub/player/864aditya/games/2018/03
+2025-11-11 17:22:07,850 - INFO - Fetching games from https://api.chess.com/pub/player/864aditya/games/2018/04
+2025-11-11 17:22:08,631 - INFO - Fetching games from https://api.chess.com/pub/player/864aditya/games/2018/06
+2025-11-11 17:22:09,343 - INFO - Fetching games from https://api.chess.com/pub/player/864aditya/games/2018/10

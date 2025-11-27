@@ -53,7 +53,7 @@ class chess_com_interface:
         return response.json().get("archives")
     
     @staticmethod
-    # Scraping games from erchive given an url of said archive
+    # Scraping games from archive given an url of said archive
     def get_chess_com_games(url : str) -> list:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "

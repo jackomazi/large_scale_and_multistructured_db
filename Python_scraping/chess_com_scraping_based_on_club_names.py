@@ -64,7 +64,7 @@ if __name__ == "__main__":
                     continue
 
                 # Formating
-                for i_game, game in tqdm(enumerate(games), desc="Scraping archive games..."):
+                for i_game, game in tqdm(enumerate(games), total= len(games), desc="Scraping games"):
                     formatted_game = chess_com_interface.format_chess_com_game(game)
                     # Rename id property complying to mongo DB specification
                     formatted_game["_id"] = formatted_game["url"]

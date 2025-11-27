@@ -4,3 +4,4 @@ pymongo==4.15.3
 pytest==9.0.0
 python_dateutil==2.9.0.post0
 Requests==2.32.5
+tqdm==4.67.1

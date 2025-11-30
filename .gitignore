@@ -1,6 +1,13 @@
 .mypy_cache/
-scraping/log/logs.log
-test_con_airflow/
+*.log
 myenv/
 __pycache__/
 images/
+
+# .venv config for IDE
+pyrightconfig.json
+
+# UV python package manager
+uv.lock
+pyproject.toml
+.python-version

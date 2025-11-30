@@ -1,0 +1,210 @@
+[{
+  "_id": {
+    "$oid": "6910afd789b0930404f6bbd6"
+  },
+  "url": "https://lichess.org/yUMEAlI1",
+  "black_player": "Swastikaggarwal",
+  "black_rating": 1861,
+  "eco_url": "A46",
+  "end_time": {
+    "$date": "2025-10-31T22:59:52.583Z"
+  },
+  "opening": "Queen's Pawn Game: Veresov Attack, Classical Defense",
+  "pgn": "d4 e6 Nf3 Nf6 Nc3 d5 Bg5 Be7 Bxf6 Bxf6 e4 Be7 exd5 e5 Bd3 exd4 O-O dxc3 Re1 O-O bxc3 g6 c4 Bf6 Rc1 Bg7 Re2 c6 h3 cxd5 cxd5 Nd7 Qf1 Nb6 c4 Bf5 Bxf5 Nxc4 Rd2 Nd6 Bd3 Rc8 Rcd1 Re8 Be2 Rf8 Rd3 f6 Nd4 f5 Ne6 Qf6 Nxf8 Kxf8 Bf3 Kg8 g3 Rf8 Bg2 f4 Re3 fxg3 Rxg3 Nf5 Rf3 Nd4 Rxf6 Bxf6 Rxd4 Bxd4 d6 Bf6 Qc4+ Kg7 d7 Rd8 Qd5 g5 Qxb7 Kg6 Qc6 h6 Qe6 h5 Be4+ Kh6 Qf7 h4 Qg6#",
+  "rated": true,
+  "result_black": "loss",
+  "result_white": "win",
+  "time_class": "ultraBullet",
+  "white_player": "OjaiJoao",
+  "white_rating": 2161,
+  "moves": "d4 e6 Nf3 Nf6 Nc3 d5 Bg5 Be7 Bxf6 Bxf6 e4 Be7 exd5 e5 Bd3 exd4 O-O dxc3 Re1 O-O bxc3 g6 c4 Bf6 Rc1 Bg7 Re2 c6 h3 cxd5 cxd5 Nd7 Qf1 Nb6 c4 Bf5 Bxf5 Nxc4 Rd2 Nd6 Bd3 Rc8 Rcd1 Re8 Be2 Rf8 Rd3 f6 Nd4 f5 Ne6 Qf6 Nxf8 Kxf8 Bf3 Kg8 g3 Rf8 Bg2 f4 Re3 fxg3 Rxg3 Nf5 Rf3 Nd4 Rxf6 Bxf6 Rxd4 Bxd4 d6 Bf6 Qc4+ Kg7 d7 Rd8 Qd5 g5 Qxb7 Kg6 Qc6 h6 Qe6 h5 Be4+ Kh6 Qf7 h4 Qg6#"
+},
+{
+  "_id": {
+    "$oid": "6910afd789b0930404f6bbd7"
+  },
+  "url": "https://lichess.org/shDdG7Jz",
+  "black_player": "OjaiJoao",
+  "black_rating": 2158,
+  "eco_url": "A40",
+  "end_time": {
+    "$date": "2025-10-31T22:59:01.965Z"
+  },
+  "opening": "Horwitz Defense",
+  "pgn": "d4 e6 c3 d5 Bg5 Nf6 Bxf6 Qxf6 e4 Qd8 exd5 exd5 Nf3 c5 Bd3 Be7 O-O cxd4 cxd4 O-O Bc2 g6 Nc3 Nc6 Rc1 Bg4 Ne5 Bxd1 Nxc6 bxc6 Rfxd1 Bf6 Re1 Re8 Ne2 c5 dxc5 d4 Bb3 Rb8 Rcd1 d3 Nf4 Rxe1+ Rxe1 d2 Rd1 Rxb3 axb3 Qd4 Ne2 Qxb2 Kf1 Qc2 Nc3 Bxc3 Rxd2 Qxd2 g3 Qe1+ Kg2 Bd4 Kh3 Qxf2 Kg4 Bxc5 Kg5 Qd4 Kh6 Qb4 g4 Qxb3 h4 Qb5 g5 Bd4 h5 gxh5 Kxh5 Be3 Kh6 Qxg5#",
+  "rated": true,
+  "result_black": "win",
+  "result_white": "loss",
+  "time_class": "ultraBullet",
+  "white_player": "paizo_malakies",
+  "white_rating": 1917,
+  "moves": "d4 e6 c3 d5 Bg5 Nf6 Bxf6 Qxf6 e4 Qd8 exd5 exd5 Nf3 c5 Bd3 Be7 O-O cxd4 cxd4 O-O Bc2 g6 Nc3 Nc6 Rc1 Bg4 Ne5 Bxd1 Nxc6 bxc6 Rfxd1 Bf6 Re1 Re8 Ne2 c5 dxc5 d4 Bb3 Rb8 Rcd1 d3 Nf4 Rxe1+ Rxe1 d2 Rd1 Rxb3 axb3 Qd4 Ne2 Qxb2 Kf1 Qc2 Nc3 Bxc3 Rxd2 Qxd2 g3 Qe1+ Kg2 Bd4 Kh3 Qxf2 Kg4 Bxc5 Kg5 Qd4 Kh6 Qb4 g4 Qxb3 h4 Qb5 g5 Bd4 h5 gxh5 Kxh5 Be3 Kh6 Qxg5#"
+},
+{
+  "_id": {
+    "$oid": "6910afd789b0930404f6bbd8"
+  },
+  "url": "https://lichess.org/TX0JGUXx",
+  "black_player": "OjaiJoao",
+  "black_rating": 2166,
+  "eco_url": "C00",
+  "end_time": {
+    "$date": "2025-10-31T22:58:08.944Z"
+  },
+  "opening": "French Defense: Queen's Knight",
+  "pgn": "e4 e6 Nc3 d5 exd5 exd5 Nf3 Nf6 d4 Bd6 Bg5 O-O Bxf6 Qxf6 Be2 c6 O-O Nd7 Re1 Qd8 Bd3 Nf6 h4 Re8 Ng5 Rxe1+ Qxe1 h6 Nf3 Bg4 Ne5 Be6 f4 Qc7 Qf2 Re8 Re1 Bc8 Rf1 Ne4 Bxe4 dxe4 Nxe4 f6 Nxf6+ gxf6 Ng4 Qg7 Qg3 h5 Nxf6+ Kf7 Qxg7+ Kxg7 Nxe8+ Kf7 Nxd6+ Ke7 Nxc8+ Kd7 f5 Kxc8 f6 Kd7 f7 Kd6 f8=Q+ Kd5 Qf7+ Kd6 Qf6+ Kc7 Qf5 Kb6 Qf6 Kb5 Qe5+ c5 Qd5 b6 Qxc5+ bxc5 Rf5",
+  "rated": true,
+  "result_black": "loss",
+  "result_white": "win",
+  "time_class": "ultraBullet",
+  "white_player": "BBisplaying",
+  "white_rating": 2030,
+  "moves": "e4 e6 Nc3 d5 exd5 exd5 Nf3 Nf6 d4 Bd6 Bg5 O-O Bxf6 Qxf6 Be2 c6 O-O Nd7 Re1 Qd8 Bd3 Nf6 h4 Re8 Ng5 Rxe1+ Qxe1 h6 Nf3 Bg4 Ne5 Be6 f4 Qc7 Qf2 Re8 Re1 Bc8 Rf1 Ne4 Bxe4 dxe4 Nxe4 f6 Nxf6+ gxf6 Ng4 Qg7 Qg3 h5 Nxf6+ Kf7 Qxg7+ Kxg7 Nxe8+ Kf7 Nxd6+ Ke7 Nxc8+ Kd7 f5 Kxc8 f6 Kd7 f7 Kd6 f8=Q+ Kd5 Qf7+ Kd6 Qf6+ Kc7 Qf5 Kb6 Qf6 Kb5 Qe5+ c5 Qd5 b6 Qxc5+ bxc5 Rf5"
+},
+{
+  "_id": {
+    "$oid": "6910afd789b0930404f6bbd9"
+  },
+  "url": "https://lichess.org/1p5XILBc",
+  "black_player": "zicote",
+  "black_rating": 1786,
+  "eco_url": "C00",
+  "end_time": {
+    "$date": "2025-10-31T22:57:27.693Z"
+  },
+  "opening": "French Defense: Queen's Knight",
+  "pgn": "e4 e6 Nc3 Ne7 Nf3 Nd5 d4 Nxc3 bxc3 Be7 Bd3 O-O O-O f5 Re1 fxe4 Bxe4 d5 Bd3 Rxf3 h4 Rxd3 Qxd3 Nc6 g3 Bxh4 gxh4 Qxh4 Qg3 Qxg3+ fxg3 Nxd4 Bf4 Nf3+ Kg2 Nxe1+ Rxe1 c5 Bc7 Bd7 Be5 Rf8 c4 d4 Kh2 Bc6 Re2 Rf5 Bf4 Rh5+ Kg1 Rh1+ Kf2 Rh2+ Ke1 Rh3 Kd2 Rh1 c3 Rg1 cxd4 Rg2 Rxg2 Bxg2 dxc5 Bc6 Ke3 b6 Kd4 bxc5+ Kxc5 Be4 Kd6 Bf5 c5 Bg4 Be5 g6 c6",
+  "rated": true,
+  "result_black": "loss",
+  "result_white": "win",
+  "time_class": "ultraBullet",
+  "white_player": "OjaiJoao",
+  "white_rating": 2165,
+  "moves": "e4 e6 Nc3 Ne7 Nf3 Nd5 d4 Nxc3 bxc3 Be7 Bd3 O-O O-O f5 Re1 fxe4 Bxe4 d5 Bd3 Rxf3 h4 Rxd3 Qxd3 Nc6 g3 Bxh4 gxh4 Qxh4 Qg3 Qxg3+ fxg3 Nxd4 Bf4 Nf3+ Kg2 Nxe1+ Rxe1 c5 Bc7 Bd7 Be5 Rf8 c4 d4 Kh2 Bc6 Re2 Rf5 Bf4 Rh5+ Kg1 Rh1+ Kf2 Rh2+ Ke1 Rh3 Kd2 Rh1 c3 Rg1 cxd4 Rg2 Rxg2 Bxg2 dxc5 Bc6 Ke3 b6 Kd4 bxc5+ Kxc5 Be4 Kd6 Bf5 c5 Bg4 Be5 g6 c6"
+},
+{
+  "_id": {
+    "$oid": "6910afd789b0930404f6bbda"
+  },
+  "url": "https://lichess.org/u9foAxOq",
+  "black_player": "volevolepivole",
+  "black_rating": 1977,
+  "eco_url": "B08",
+  "end_time": {
+    "$date": "2025-10-31T22:56:40.282Z"
+  },
+  "opening": "Pirc Defense: Classical Variation",
+  "pgn": "d4 Nf6 Nf3 g6 Nc3 Bg7 e4 d6 e5 O-O exf6 exf6 Be3 Re8 Be2 Bg4 O-O Bxf3 Bxf3 Nc6 Re1 d5 Qd2 Ne7 Rad1 Nf5 Re2 Nd6 Bf4 Ne4 Nxe4 dxe4 Rxe4 f5 Rxe8+ Qxe8 c3 Qd7 Re1 Rd8 Be5 Bf8 Bf6 Re8 Rxe8 Qxe8 h4 Qd7 Qg5 Be7 Qf4 Bxf6 h5 Kg7 hxg6 fxg6 g4 Qe7 gxf5 Bg5 f6+ Bxf6 Qe4 Qf7 Qxb7 Be7 Be4 Bd6 Qd5 Qf4 Qe6 Qh2+ Kf1 Qh1+ Ke2 Qh2 Kd3 Qf4 Kc4 Qf6 Bd5 Qxe6 Bxe6 Kf6 Kd5 Be5 f4 Bd6 Ke4 Bxf4 Kxf4 g5+ Kg4 h5+",
+  "rated": true,
+  "result_black": "win",
+  "result_white": "loss",
+  "time_class": "ultraBullet",
+  "white_player": "OjaiJoao",
+  "white_rating": 2174,
+  "moves": "d4 Nf6 Nf3 g6 Nc3 Bg7 e4 d6 e5 O-O exf6 exf6 Be3 Re8 Be2 Bg4 O-O Bxf3 Bxf3 Nc6 Re1 d5 Qd2 Ne7 Rad1 Nf5 Re2 Nd6 Bf4 Ne4 Nxe4 dxe4 Rxe4 f5 Rxe8+ Qxe8 c3 Qd7 Re1 Rd8 Be5 Bf8 Bf6 Re8 Rxe8 Qxe8 h4 Qd7 Qg5 Be7 Qf4 Bxf6 h5 Kg7 hxg6 fxg6 g4 Qe7 gxf5 Bg5 f6+ Bxf6 Qe4 Qf7 Qxb7 Be7 Be4 Bd6 Qd5 Qf4 Qe6 Qh2+ Kf1 Qh1+ Ke2 Qh2 Kd3 Qf4 Kc4 Qf6 Bd5 Qxe6 Bxe6 Kf6 Kd5 Be5 f4 Bd6 Ke4 Bxf4 Kxf4 g5+ Kg4 h5+"
+},
+{
+  "_id": {
+    "$oid": "6910afd789b0930404f6bbdb"
+  },
+  "url": "https://lichess.org/uKG31LQJ",
+  "black_player": "OjaiJoao",
+  "black_rating": 2184,
+  "eco_url": "A40",
+  "end_time": {
+    "$date": "2025-10-31T22:55:55.605Z"
+  },
+  "opening": "Horwitz Defense",
+  "pgn": "d4 e6 Nf3 Nf6 c3 c5 Bg5 cxd4 Bxf6 Qxf6 cxd4 d5 Nc3 Qd8 e3 Nc6 Bb5 e5 Bxc6+ bxc6 Nxe5 Bd7 Qf3 Bd6 Qxf7#",
+  "rated": true,
+  "result_black": "loss",
+  "result_white": "win",
+  "time_class": "ultraBullet",
+  "white_player": "paizo_malakies",
+  "white_rating": 1907,
+  "moves": "d4 e6 Nf3 Nf6 c3 c5 Bg5 cxd4 Bxf6 Qxf6 cxd4 d5 Nc3 Qd8 e3 Nc6 Bb5 e5 Bxc6+ bxc6 Nxe5 Bd7 Qf3 Bd6 Qxf7#"
+},
+{
+  "_id": {
+    "$oid": "6910afd789b0930404f6bbdc"
+  },
+  "url": "https://lichess.org/sgJHhyvU",
+  "black_player": "cretsos55",
+  "black_rating": 2298,
+  "eco_url": "A40",
+  "end_time": {
+    "$date": "2025-10-31T22:55:35.794Z"
+  },
+  "opening": "Horwitz Defense",
+  "pgn": "d4 e6 Nf3 Ne7 Nc3 d6 e4 h6 e5 g5 exd6 cxd6 h3 Bg7 Bd3 f5 O-O O-O Re1 g4 hxg4 fxg4 Nh4 Nbc6 g3 Nxd4 Ne2 Nec6 Nxd4 Nxd4 c3 Nc6 Bc2 Ne5 Qe2 Qf6 Bf4 Bd7 Qe4 Bc6 Qh7+ Kf7 Bxe5 dxe5 Bg6+ Ke7 Re2 Rh8 Rae1 Rxh7 Bxh7 Kf7 Ng6 e4 Ne5+ Qxe5 Bxe4 Bxe4 Rxe4 Qf6 Rf4 Re8 Rxf6+ Bxf6 Re4 e5 Rxg4 Re6 Re4 Ke7 Re3 Bg5 f4 Bxf4 gxf4 Rg6+ Kf2 Re6 Rxe5 Kd7 Kf3 Rf6 Re6 Rxe6 f5 Ke7 Kg4 Rf6 Kh5 Kf7",
+  "rated": true,
+  "result_black": "win",
+  "result_white": "loss",
+  "time_class": "ultraBullet",
+  "white_player": "OjaiJoao",
+  "white_rating": 2188,
+  "moves": "d4 e6 Nf3 Ne7 Nc3 d6 e4 h6 e5 g5 exd6 cxd6 h3 Bg7 Bd3 f5 O-O O-O Re1 g4 hxg4 fxg4 Nh4 Nbc6 g3 Nxd4 Ne2 Nec6 Nxd4 Nxd4 c3 Nc6 Bc2 Ne5 Qe2 Qf6 Bf4 Bd7 Qe4 Bc6 Qh7+ Kf7 Bxe5 dxe5 Bg6+ Ke7 Re2 Rh8 Rae1 Rxh7 Bxh7 Kf7 Ng6 e4 Ne5+ Qxe5 Bxe4 Bxe4 Rxe4 Qf6 Rf4 Re8 Rxf6+ Bxf6 Re4 e5 Rxg4 Re6 Re4 Ke7 Re3 Bg5 f4 Bxf4 gxf4 Rg6+ Kf2 Re6 Rxe5 Kd7 Kf3 Rf6 Re6 Rxe6 f5 Ke7 Kg4 Rf6 Kh5 Kf7"
+},
+{
+  "_id": {
+    "$oid": "6910afd789b0930404f6bbdd"
+  },
+  "url": "https://lichess.org/bZ658zuU",
+  "black_player": "volevolepivole",
+  "black_rating": 1982,
+  "eco_url": "C50",
+  "end_time": {
+    "$date": "2025-10-31T22:54:32.189Z"
+  },
+  "opening": "Four Knights Game: Italian Variation",
+  "pgn": "e4 e5 Nc3 Nc6 Nf3 Nf6 Bc4 Bc5 Bxf7+ Kxf7 O-O Bxf2+ Rxf2 Rf8 d3 Kg8 Rf1 d6 h3 Bg4 Bg5 Bxf3 Qxf3 Nd4 Qf2 Qe8 Bxf6 Rxf6 Qd2 Qg6 Nd5 Nf3+ Rxf3 Rxf3 Ne7+ Kh8 Nxg6+ hxg6 gxf3 Rf8 Rf1 Rf4 Qxf4 exf4 d4 g5 e5 g6 exd6 cxd6 Re1 d5 c4 Kh7 cxd5 Kh6 d6 Kh5 d7 Kh4 d8=Q Kg3 Re5 Kxf3 Qxg5 b5 Qg2#",
+  "rated": true,
+  "result_black": "loss",
+  "result_white": "win",
+  "time_class": "ultraBullet",
+  "white_player": "OjaiJoao",
+  "white_rating": 2185,
+  "moves": "e4 e5 Nc3 Nc6 Nf3 Nf6 Bc4 Bc5 Bxf7+ Kxf7 O-O Bxf2+ Rxf2 Rf8 d3 Kg8 Rf1 d6 h3 Bg4 Bg5 Bxf3 Qxf3 Nd4 Qf2 Qe8 Bxf6 Rxf6 Qd2 Qg6 Nd5 Nf3+ Rxf3 Rxf3 Ne7+ Kh8 Nxg6+ hxg6 gxf3 Rf8 Rf1 Rf4 Qxf4 exf4 d4 g5 e5 g6 exd6 cxd6 Re1 d5 c4 Kh7 cxd5 Kh6 d6 Kh5 d7 Kh4 d8=Q Kg3 Re5 Kxf3 Qxg5 b5 Qg2#"
+},
+{
+  "_id": {
+    "$oid": "6910afd789b0930404f6bbde"
+  },
+  "url": "https://lichess.org/6DMxOVrX",
+  "black_player": "OjaiJoao",
+  "black_rating": 2197,
+  "eco_url": "A00",
+  "end_time": {
+    "$date": "2025-10-31T22:53:49.656Z"
+  },
+  "opening": "Mieses Opening",
+  "pgn": "d3 e6 Nd2 d5 e4 Nf6 Ne2 dxe4 dxe4 c5 Ng3 Nc6 Be2 Bd6 Bd3 O-O O-O Bxg3 fxg3 e5 Nf3 h6 Qe2 Qe7 Qf2 Be6 Bc4 Bxc4 Nh4 Bxf1 Nf5 Qd7 Qf3 Nxe4 Qg4 g6 Nxh6+ Kh7 Qxd7 Nf6 Qh3 Kg7 Nf5+ gxf5 Qh6+ Kg8 Qxf6 Rad8 Bh6",
+  "rated": true,
+  "result_black": "loss",
+  "result_white": "win",
+  "time_class": "ultraBullet",
+  "white_player": "zicote",
+  "white_rating": 1782,
+  "moves": "d3 e6 Nd2 d5 e4 Nf6 Ne2 dxe4 dxe4 c5 Ng3 Nc6 Be2 Bd6 Bd3 O-O O-O Bxg3 fxg3 e5 Nf3 h6 Qe2 Qe7 Qf2 Be6 Bc4 Bxc4 Nh4 Bxf1 Nf5 Qd7 Qf3 Nxe4 Qg4 g6 Nxh6+ Kh7 Qxd7 Nf6 Qh3 Kg7 Nf5+ gxf5 Qh6+ Kg8 Qxf6 Rad8 Bh6"
+},
+{
+  "_id": {
+    "$oid": "6910afd789b0930404f6bbdf"
+  },
+  "url": "https://lichess.org/TdkZlhGV",
+  "black_player": "OjaiJoao",
+  "black_rating": 2206,
+  "eco_url": "C01",
+  "end_time": {
+    "$date": "2025-10-31T22:53:03.432Z"
+  },
+  "opening": "French Defense: Exchange Variation",
+  "pgn": "e4 e6 Nc3 d5 exd5 exd5 d4 Nf6 Nf3 Be7 Bg5 O-O Bxf6 Bxf6 Be2 c5 O-O cxd4 Re1 dxc3 bxc3 Nc6 Qd3 d4 Ng5 dxc3 Qxh7#",
+  "rated": true,
+  "result_black": "loss",
+  "result_white": "win",
+  "time_class": "ultraBullet",
+  "white_player": "BBisplaying",
+  "white_rating": 2016,
+  "moves": "e4 e6 Nc3 d5 exd5 exd5 d4 Nf6 Nf3 Be7 Bg5 O-O Bxf6 Bxf6 Be2 c5 O-O cxd4 Re1 dxc3 bxc3 Nc6 Qd3 d4 Ng5 dxc3 Qxh7#"
+}]

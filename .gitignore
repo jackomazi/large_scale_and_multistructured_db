@@ -3,6 +3,7 @@
 myenv/
 __pycache__/
 images/
+dumps/
 
 # .venv config for IDE
 pyrightconfig.json

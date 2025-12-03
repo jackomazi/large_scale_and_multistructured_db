@@ -56,6 +56,8 @@ if __name__ == "__main__":
             user_info["_id"] = user_info.pop("@id")
             # Add key property to store user players ids
             user_info["games"] = []
+            # Add key property to store user game stats
+            user_info["stats"] = chess_com_interface.get_player_games_stats(user)
 
             if i_user >= scraping_values.get("max_scrap_users_per_club"):
                 break

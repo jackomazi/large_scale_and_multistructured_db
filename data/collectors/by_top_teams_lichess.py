@@ -44,8 +44,11 @@ if __name__ == "__main__":
     for i_team, team in enumerate(teams):
         print(f"Scraping team: {i_team} - {team}")
         player_data_list = []
+        # get n users from team
         usernames = lichess_interface.get_n_users_from_team(team, number_of_users_per_team)
+        # get player infos for each user
         for username in tqdm(usernames, desc=f"Scraping users from team {team}"):
+            
             player_info = lichess_interface.get_player_infos(username)
             if player_info:
                 player_data_list.append(player_info)

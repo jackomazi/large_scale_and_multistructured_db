@@ -30,7 +30,7 @@ class lichess_interface:
         """Fetches player information for a given Lichess username.
         url example: https://lichess.org/api/user/harshitsuperboy?profile=true
         """
-        url = f"https://lichess.org/api/user/{username}?profile=true"
+        url = f"https://lichess.org/api/user/{username}?profile=true&rank=true"
         headers = {"Accept": "application/json"}
         response = requests.get(url,headers=headers)
         return response.json()

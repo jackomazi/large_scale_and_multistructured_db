@@ -1,6 +1,6 @@
 import json
 import sys
-
+import os
 from pymongo import MongoClient
 from tqdm import tqdm
 
@@ -17,7 +17,13 @@ if __name__ == "__main__":
     except:
         sys.exit(1)
 
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.join(script_dir, "..", "config_lichess.json")
+    with open(config_path, "r") as config_file:
+        config_data = json.load(config_file)
+    n = config_data.get("number_of_games_per_user", 20)
     teams = ["lichess-swis"]
+    
     for i_team, team in enumerate(teams):
         print(f"Scraping team: {i_team}")
         # Team scraping
@@ -30,11 +36,9 @@ if __name__ == "__main__":
             user_info["_id"] = user_info.pop("id")
             # Add key property to store user players ids
             user_info["games"] = []
-
+            
             # get last 20 games of user
-            games = lichess_interface.get_lichess_games(
-                f"https://lichess.org/api/games/user/{user}?max=20&format=ndjson&opening=true&pgnInJson=true"
-            )
+            games = lichess_interface.get_lichess_games(user, n)
 
             for i_game, game in tqdm(
                 enumerate(games), total=len(games), desc="Scraping games"

@@ -2,13 +2,13 @@ import requests
 import re
 from datetime import datetime
 import json
-class lichess_interface:
 
+class lichess_interface:
     @staticmethod
-    # Scraping player usernames from teams
-    # https://lichess.org/api/team/lichess-swis/users
     def get_players_usernames(team : str) -> list:
-        """ Scrapes the usernames of all players in a given Lichess team. """
+        """ Fetches player usernames from a given Lichess team.
+        url example: https://lichess.org/api/team/lichess-swis/users
+        """
         url = f"https://lichess.org/api/team/{team}/users"
         headers = {"Accept": "application/x-ndjson"}
         print(f"Fetching team {team} from {url}")
@@ -26,28 +26,72 @@ class lichess_interface:
         return usernames
     
     @staticmethod
-    # Scraping player infos
     def get_player_infos(username: str) -> dict:
-        # Standard api call
+        """Fetches player information for a given Lichess username.
+        url example: https://lichess.org/api/user/harshitsuperboy?profile=true
+        """
         url = f"https://lichess.org/api/user/{username}?profile=true"
         headers = {"Accept": "application/json"}
         response = requests.get(url,headers=headers)
         return response.json()
 
     @staticmethod
-    def get_lichess_games(url : str) -> list:
+    def get_lichess_games(user : str, n: int) -> list:
+        """Fetches Lichess games from a given URL in NDJSON format.
+        url example: https://lichess.org/api/games/user/{username}?max=20&format=ndjson&opening=true&pgnInJson=true
+        """
+        url = f"https://lichess.org/api/games/user/{user}?max={n}&format=ndjson&opening=true&pgnInJson=true"
         headers = {"Accept": "application/x-ndjson"}
         games = []
         response = requests.get(url, headers=headers, stream =True)
         if response.status_code == 200:
             for line in response.iter_lines():
                 if line:
-                    game = json.loads(line) # transformo la riga in un dizionario
+                    game = json.loads(line)
                     games.append(game)
             return games
         else:
             return []
-        
+    
+    @staticmethod
+    def get_teams_list(page: int) -> list:
+        """Fetches a list of Lichess teams from a specific page.
+        url example: https://lichess.org/api/team/all?page=1
+        """
+        url = f"https://lichess.org/api/team/all?page={page}"
+        print(f"Fetching teams from page {page} at {url}")
+        headers = {"Accept": "application/json"}
+        response = requests.get(url, headers=headers)
+        if response.status_code != 200:
+            print(f"Error fetching teams from page {page}: {response.status_code}")
+            return []
+        teams = []
+        data = response.json()
+        for team in data['currentPageResults']:
+            teams.append(team)
+        return teams
+
+    @staticmethod
+    def get_n_users_from_team(team: str, n: int) -> list:
+        """Fetches up to n player usernames from a given Lichess team.
+        url example: https://lichess.org/api/team/lichess-swis/users?full=false
+        """
+        url = f"https://lichess.org/api/team/{team}/users?full=false"
+        print(f"Fetching up to {n} users from team {team} at {url}")
+        headers = {"Accept": "application/x-ndjson"}
+        response = requests.get(url, headers=headers, stream=True)
+        if response.status_code != 200:
+            print(f"Errore fetching team {team}: {response.status_code}")
+            return []
+        usernames = []
+        for i, line in enumerate(response.iter_lines()):
+            if i >= n:
+                break
+            if line:
+                user = json.loads(line)
+                usernames.append(user["name"])
+        return usernames
+
     @staticmethod
     def format_lichess_game(game: dict) -> dict:
         """Formats a Lichess game dictionary into a structured format for MongoDB storage."""
@@ -82,6 +126,7 @@ class lichess_interface:
             "rated": game.get("rated"),
             "end_time": end_time
         }
+    
 
 
 

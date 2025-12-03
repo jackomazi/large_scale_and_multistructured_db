@@ -2,7 +2,6 @@ import re
 
 import requests
 
-
 class chess_com_interface:
     @staticmethod
     # Scaping player usernames from clubs

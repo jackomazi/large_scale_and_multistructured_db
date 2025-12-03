@@ -57,6 +57,8 @@ if __name__ == "__main__":
         user_info["_id"] = user_info.pop("@id")
         # Add key property to store user players ids
         user_info["games"] = []
+        # Add key property to store user game stats
+        user_info["stats"] = chess_com_interface.get_player_games_stats(username)
 
         for i_archive, archive in enumerate(archives):
             # Fetching games from archive

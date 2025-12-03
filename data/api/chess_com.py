@@ -90,6 +90,21 @@ class chess_com_interface:
         }
 
     @staticmethod
+    # Scraping player infos
+    def get_player_games_stats(username: str) -> dict:
+        # Standard api call
+        url = f"https://api.chess.com/pub/player/{username}/stats"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/130.0.0.0 Safari/537.36",
+            "Accept": "application/json",
+        }
+        response = requests.get(url, headers=headers)
+
+        return response.json()
+
+    @staticmethod
     # Support method for 'format_chess_com_games'
     def extract_moves_from_pgn(pgn: str) -> str:
         lines = pgn.splitlines()

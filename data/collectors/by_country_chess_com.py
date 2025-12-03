@@ -35,6 +35,8 @@ if __name__ == "__main__":
             users_to_process, desc=f"Fetching player data for {country}"
         ):
             player_info = chess_com_interface.get_player_infos(username)
+            # Add key property to store user game stats
+            player_info["stats"] = chess_com_interface.get_player_games_stats(username)
             if player_info:
                 player_data_list.append(player_info)
 

@@ -68,6 +68,148 @@ rated: Bool,
 end_time:  "Epoch Unix date"
 ```
 
+### Lichess data collection
+There is a similar structure for Lichess data collection. We provide a first simple version of a script called [by_team_lichess.py](data/collectors/by_team_lichess.py) that collect users from a given team and fetch a number of games for each user.
+
+A second and more advanced version of the script is the [by_top_teams_lichess.py](data/collectors/by_top_teams_lichess.py) that fetch users from the top teams in Lichess and fetch a number of games for each user.
+It uses the [config_lichess.json](data/config_lichess.json) file to set the number of pages of teams to fetch, the number of users per team and the number of games per user. It is still under development, for now it dumps user infos into the [dump](data/collectors/dump) folder as json files.
+
+An example of user data formatting from Lichess:
+
+```json
+{
+    "id": "bandityamoisture",
+    "username": "Bandityamoisture",
+    "perfs": {
+        "bullet": {
+            "games": 0,
+            "rating": 1500,
+            "rd": 500,
+            "prog": 0,
+            "prov": true
+        },
+        "blitz": {
+            "games": 0,
+            "rating": 1500,
+            "rd": 500,
+            "prog": 0,
+            "prov": true
+        },
+        "rapid": {
+            "games": 0,
+            "rating": 1500,
+            "rd": 500,
+            "prog": 0,
+            "prov": true
+        },
+        "classical": {
+            "games": 0,
+            "rating": 1500,
+            "rd": 500,
+            "prog": 0,
+            "prov": true
+        },
+        "correspondence": {
+            "games": 0,
+            "rating": 1500,
+            "rd": 500,
+            "prog": 0,
+            "prov": true
+        },
+        "racingKings": {
+            "games": 61,
+            "rating": 1932,
+            "rd": 56,
+            "prog": 4
+        }
+    },
+    "createdAt": 1764088470969,
+    "profile": {
+        "flag": "RU",
+        "bio": "https://lichess.org/tournament/SYW5hOxp\r\nCash tourney on my bday"
+    },
+    "seenAt": 1764769023875,
+    "playTime": {
+        "total": 6093,
+        "tv": 1309
+    },
+    "url": "https://lichess.org/@/Bandityamoisture",
+    "count": {
+        "all": 61,
+        "rated": 61,
+        "draw": 6,
+        "loss": 17,
+        "win": 38,
+        "bookmark": 0,
+        "playing": 0,
+        "import": 0,
+        "me": 0
+    }
+}
+```
+
+#### MongoDB data structure
+
+##### User data formatting:
+ 
+```
+{
+  "_id": "karadere19",
+  "username": "Karadere19",
+  "perfs": {...
+  },
+  "createdAt": {
+    "$numberLong": "1621441600160"
+  },
+  "seenAt": {
+    "$numberLong": "1659784330015"
+  },
+  "playTime": {
+    "total": 88944,
+    "tv": 0
+  },
+  "url": "https://lichess.org/@/Karadere19",
+  "count": {
+    "all": 617,
+    "rated": 588,
+    "draw": 14,
+    "loss": 363,
+    "win": 240,
+    "bookmark": 0,
+    "playing": 0,
+    "import": 0,
+    "me": 0
+  },
+  "games": [
+    "https://lichess.org/meICeKtf",
+    "https://lichess.org/tJNceLBD",
+    ...
+  ]
+}
+```
+
+##### Game data formatting:
+
+```
+{
+  "_id": "https://lichess.org/tJNceLBD",
+  "url": "https://lichess.org/tJNceLBD",
+  "white_player": "Hikmet2014",
+  "black_player": "Karadere19",
+  "white_rating": 1600,
+  "black_rating": 892,
+  "result_white": "draw",
+  "result_black": "draw",
+  "eco_url": "https://www.365chess.com/eco/C40",
+  "opening": "King's Knight Opening",
+  "moves": "e4 e5 Nf3",
+  "time_class": "rapid",
+  "rated": false,
+  "end_time": {
+    "$date": "2021-12-09T18:58:00.539Z"
+  }
+}
+```
 
 Idee:
 - Utente si registra inserendo:

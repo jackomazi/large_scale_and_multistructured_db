@@ -7,8 +7,6 @@ from tqdm import tqdm
 from api.lichess import lichess_interface
 from storage.mongo_interface import mongo_db_interface
 
-
-
 if __name__ == "__main__":
     
     try:
@@ -50,13 +48,13 @@ if __name__ == "__main__":
         for username in tqdm(usernames, desc=f"Scraping users from team {team}"):
             
             player_info = lichess_interface.get_player_infos(username)
-            if player_info:
+            if player_info: # check if player_info is not empty
                 player_data_list.append(player_info)
             
             if not player_data_list:
                 print(f"No player data collected for team {team}.")
                 continue
-
+                
             dumps_dir = os.path.join(os.path.dirname(script_dir), "dumps/lichess_teams")
             os.makedirs(dumps_dir, exist_ok=True)
             output_path = os.path.join(dumps_dir, f"{team}_players.json")

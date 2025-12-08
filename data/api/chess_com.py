@@ -101,7 +101,25 @@ class chess_com_interface:
         }
         response = requests.get(url, headers=headers)
 
-        return response.json()
+        return chess_com_interface.format_chess_com_player_stats(response.json())
+    
+    @staticmethod
+    # Formats player stats
+    def format_chess_com_player_stats(stats: dict) -> dict:
+        #Chess games types (with direct equivalent of Lichess)
+        types = ["chess_bullet","chess_blitz","chess_rapid"]
+
+        new_dict = {}
+        # Name changes and best score memorization for lichess compatibility 
+        for type in types:
+            type_name = type.split("_")[1]
+            # Not all categories have the 'best' attribute...
+            try:
+                new_dict[type_name] = stats.get(type).get("best").get("rating")
+            except:
+                new_dict[type_name] = stats.get(type).get("last").get("rating")
+            
+        return new_dict
 
     @staticmethod
     # Support method for 'format_chess_com_games'
@@ -123,7 +141,7 @@ class chess_com_interface:
 
     @staticmethod
     def get_country_players(country_code: str) -> list:
-        """Fetches a list of player usernames for a given country code."""
+        # Fetches a list of player usernames for a given country code
         url = f"https://api.chess.com/pub/country/{country_code}/players"
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "

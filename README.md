@@ -27,24 +27,30 @@ There are two main collections, one for user data (name, stats ecc...) and one f
 {
     "_id": "https://api.chess.com/pub/player/00sonal1234"
     "avatar": "https://images.chesscomfiles.com/uploads/v1/user/13697762.dc1e21aa.200…",
-    "player_id": int,
+    "player_id": 98541127,
     "url": "https://www.chess.com/member/00sonal1234",
-    "name": String,
-    "username": String,
-    "followers": int,
+    "name": "String",
+    "username": "String",
+    "followers": 2,
     "country": "https://api.chess.com/pub/country/IN",
-    "location": String,
+    "location": "String",
     "last_online": "Epoch Unix date",
     "joined": "Epoch Unix date",
-    "status": String,
-    "is_streamer": bool,
-    "verified": bool,
-    "streaming_platforms": Array (empty),
-    "games": Array (2):
+    "status": "String",
+    "is_streamer": false,
+    "verified": false,
+    "streaming_platforms": "Array",
+    "games": [
         0: "https://www.chess.com/game/live/610659145",
         1: "https://www.chess.com/game/live/610665113",
         ...
-    "stats": Object
+    ],
+    "stats": {
+        "bullet": 1800,
+        "blitz":1429,
+        "rapid":1054
+    }
+
 }
 ```
 
@@ -56,17 +62,17 @@ As you can see, user and games association in done through direct correlation wi
 {
     "_id": "https://www.chess.com/game/live/610659145",
     "url": "https://www.chess.com/game/live/610659145",
-    "white_player": String,
-    "black_player": String,
-    "white_rating": int,
-    "black_rating": int,
-    "result_white": String,
-    "result_black": String,
+    "white_player": "String",
+    "black_player": "String",
+    "white_rating": 1500,
+    "black_rating": 1200,
+    "result_white": "String",
+    "result_black": "String",
     "eco_url": "https://www.chess.com/openings/Nimzowitsch-Larsen-Attack-Modern-Variat…",
-    "opening": String,
-    "moves": String,
-    "time_class": String,
-    "rated": Bool,
+    "opening": "String",
+    "moves": "String",
+    "time_class": "String",
+    "rated": true,
     "end_time":  "Epoch Unix date"
 }
 ```

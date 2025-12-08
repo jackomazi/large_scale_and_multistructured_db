@@ -17,7 +17,7 @@ The Python script files [by_club_chess_com.py](data\collectors\by_club_chess_com
     - "max_scrap_archives": Users games data are organized in "archives" based on the date of the games, is the maximum number of archives to compute per user.
     - "max_scrap_games_per_archive": Maximum games to compute per archive.
 
-#### MongoDB data structure
+## MongoDB data structure
 
 There are two main collections, one for user data (name, stats ecc...) and one for games informations:
 

@@ -5,6 +5,7 @@ import os
 # Using chess.com interface methods
 from api.chess_com import chess_com_interface
 from pymongo import MongoClient
+from bson.objectid import ObjectId
 
 # Using mongo db mothod to interact with a certain collection
 from storage.mongo_interface import mongo_db_interface
@@ -53,7 +54,7 @@ if __name__ == "__main__":
             user_archives = chess_com_interface.get_player_games_archives(user)
             # Slight variation to user object
             # Rename id property complying to mongo DB specification
-            user_info["_id"] = user_info.pop("@id")
+            user_info.pop("@id")
             # Add key property to store user players ids
             user_info["games"] = []
             # Add key property to store user game stats
@@ -69,24 +70,20 @@ if __name__ == "__main__":
                 )
                 games = chess_com_interface.get_chess_com_games(archive_url)
                 # If the archive is empty jump ahead
-                if games is []:
+                if not games:
                     continue
 
                 # Formating
-                for i_game, game in tqdm(
-                    enumerate(games), total=len(games), desc="Scraping games"
-                ):
+                for i_game, game in tqdm(enumerate(games), total=len(games), desc="Scraping games"):
                     formatted_game = chess_com_interface.format_chess_com_game(game)
-                    # Rename id property complying to mongo DB specification
-                    formatted_game["_id"] = formatted_game["url"]
-
-                    # Add id of game to user games
-                    user_info["games"].append(formatted_game["_id"])
 
                     # Saving games to mongoDB
-                    mongo_db_interface.store_dict_to_MongoDB(
+                    game_mongo_id = mongo_db_interface.store_dict_to_MongoDB(
                         formatted_game, collection_games
                     )
+
+                    # Add id of game to user games
+                    user_info["games"].append(game_mongo_id)
 
                     if i_game >= scraping_values.get("max_scrap_games_per_archive"):
                         break

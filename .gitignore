@@ -4,6 +4,7 @@ myenv/
 __pycache__/
 images/
 dumps/
+.DS_store
 
 # .venv config for IDE
 pyrightconfig.json

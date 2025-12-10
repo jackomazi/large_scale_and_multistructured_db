@@ -2,6 +2,7 @@ import requests
 import re
 from datetime import datetime
 import json
+from faker import Faker
 
 class lichess_interface:
     @staticmethod
@@ -127,7 +128,51 @@ class lichess_interface:
             "end_time": end_time
         }
     
+    @staticmethod
+    def format_lichess_player_infos(user_info: dict) -> dict:
+        # Useless data
+        user_info.pop("id", None)
+        user_info.pop("url", None)
+        user_info.pop("count", None)
+        user_info.pop("playTime", None)
 
+        # Location fetching
+        user_info["country"] = user_info.get("profile").get("flag")
+
+        # Date modification
+        date = user_info.get("seenAt") / 1000
+        user_info["last_online"] =  datetime.fromtimestamp(date).strftime('%Y-%m-%d %H:%M:%S')
+        date = user_info.get("createdAt") / 1000
+        user_info["joined"] = datetime.fromtimestamp(date).strftime('%Y-%m-%d %H:%M:%S')
+
+        # Adding empty array/object to comply with MongoDB data structure constraints
+        user_info["games"] = []
+        user_info["stats"] = {}
+
+        # Modifiying "perf" value for Chess.com compability
+        game_mods_in_common = ["bullet","blitz","rapid"]
+        stats = {}
+        for game_mod in game_mods_in_common:
+            stat = user_info.get("perfs").get(game_mod)
+            stat.pop("games", None)
+            stat.pop("rd", None)
+            stat.pop("prog", None)
+            stat.pop("prov", None)
+            stats[game_mod] = stat
+
+        user_info["stats"] = stats
+
+        # Adding some basic fake informations
+        fake = Faker()
+        # Missing name form Chess.com
+        user_info["name"] = fake.name()
+        # Fake data for 'login' pourposes
+        # Adding fake mail
+        user_info["mail"] = fake.email()
+        # Adding fake password hashed
+        user_info["password"] = fake.sha256()
+
+        return user_info
 
 
 

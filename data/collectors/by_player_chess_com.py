@@ -53,10 +53,6 @@ if __name__ == "__main__":
         archives = chess_com_interface.get_player_games_archives(username)
         # Fetching user infos
         user_info = chess_com_interface.get_player_infos(username)
-        # Rename id property complying to mongo DB specification
-        user_info["_id"] = user_info.pop("@id")
-        # Add key property to store user players ids
-        user_info["games"] = []
         # Add key property to store user game stats
         user_info["stats"] = chess_com_interface.get_player_games_stats(username)
 
@@ -69,14 +65,13 @@ if __name__ == "__main__":
 
             for i_game, game in enumerate(games):
                 formatted_game = chess_com_interface.format_chess_com_game(game)
-                # Rname id property complying to mongo DB specification
-                formatted_game["_id"] = formatted_game["url"]
+                # Saving games to mongoDB
+                game_mongo_id = mongo_db_interface.store_dict_to_MongoDB(
+                    formatted_game, collection_games
+                )
 
                 # Add id of game to user games
-                user_info["games"].append(formatted_game["_id"])
-
-                # Saving games to mongoDB
-                mongo_db_interface.store_dict_to_MongoDB(formatted_game,collection_games)
+                user_info["games"].append(game_mongo_id)
 
                 if i_game >= scraping_values.get("max_scrap_games_per_archive"):
                     break

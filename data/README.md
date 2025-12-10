@@ -411,61 +411,43 @@ We transform data from both sources into a unified structure to facilitate analy
 
 ```json
 {
-  "_id": {"$oid": "6938501e3476babef72428a6"},
+  "_id": {
+    "$oid": "69397642ce8d9e08bfd261bf"
+  },
   "avatar": "https://images.chesscomfiles.com/uploads/v1/user/13697762.dc1e21aa.200x200o.dd8e0600e6df.png",
   "player_id": 13697762,
-  "url": "https://www.chess.com/member/00sonal1234",
   "name": "kittu kapil",
   "username": "00sonal1234",
   "followers": 1,
-  "country": "https://api.chess.com/pub/country/IN",
+  "country": "IN",
   "location": "delhi",
-  "last_online": 1484205470,
-  "joined": 1380377504,
+  "last_online": "2025-12-07 14:31:28",
+  "joined": "2013-09-28 16:11:44",
   "status": "basic",
   "is_streamer": false,
   "verified": false,
   "streaming_platforms": [],
   "games": [
     {
-      "$oid": "6938501d3476babef7242897"
+      "$oid": "6939763ece8d9e08bfd261bb"
     },
     {
-      "$oid": "6938501d3476babef7242898"
+      "$oid": "6939763ece8d9e08bfd261bc"
     },
     {
-      "$oid": "6938501d3476babef7242899"
+      "$oid": "69397642ce8d9e08bfd261bd"
     },
     {
-      "$oid": "6938501d3476babef724289a"
-    },
-    {
-      "$oid": "6938501d3476babef724289b"
-    },
-    {
-      "$oid": "6938501d3476babef724289c"
-    },
-    {
-      "$oid": "6938501d3476babef724289d"
-    },
-    {
-      "$oid": "6938501d3476babef724289e"
-    },
-    {
-      "$oid": "6938501d3476babef724289f"
-    },
-    {
-      "$oid": "6938501e3476babef72428a0"
-    },
-    {
-      "$oid": "6938501e3476babef72428a1"
+      "$oid": "69397642ce8d9e08bfd261be"
     }
   ],
   "stats": {
     "bullet": 1800,
     "blitz": 1429,
     "rapid": 1054
-  }
+  },
+  "mail": "wilsonmarcus@example.org",
+  "password": "73467ed48d7084f764505c6c4735331b2d0bdfaf144559b958e99c2c2e5c1fa3"
 }
 ```
 

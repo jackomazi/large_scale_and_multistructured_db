@@ -52,12 +52,7 @@ if __name__ == "__main__":
         for i_user, user in enumerate(usernames):
             user_info = chess_com_interface.get_player_infos(user)
             user_archives = chess_com_interface.get_player_games_archives(user)
-            # Slight variation to user object
-            # Rename id property complying to mongo DB specification
-            user_info.pop("@id")
-            # Add key property to store user players ids
-            user_info["games"] = []
-            # Add key property to store user game stats
+            # Storing user game stats
             user_info["stats"] = chess_com_interface.get_player_games_stats(user)
 
             if i_user >= scraping_values.get("max_scrap_users_per_club"):

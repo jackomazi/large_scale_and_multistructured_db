@@ -1,4 +1,6 @@
 import re
+from datetime import datetime
+from faker import Faker
 
 import requests
 
@@ -35,7 +37,38 @@ class chess_com_interface:
         }
 
         response = requests.get(url, headers=headers)
-        return response.json()
+        reformatted = chess_com_interface.format_player_info(response.json())
+        return reformatted
+    
+    @staticmethod
+    # Shaving off useless or incopatible data with Lichess
+    def format_player_info(user_info: dict) -> dict:
+        # Useless data
+        if "@id" in user_info:
+            user_info.pop("@id")
+        user_info.pop("url")
+        # Location modification
+        location_url = user_info.get("country")
+        user_info["country"] = location_url.split("/")[-1]
+        # Date modification
+        date = user_info.get("last_online")
+        user_info["last_online"] =  datetime.fromtimestamp(date).strftime('%Y-%m-%d %H:%M:%S')
+        date = user_info.get("joined")
+        user_info["joined"] = datetime.fromtimestamp(date).strftime('%Y-%m-%d %H:%M:%S')
+        # Adding empty array/object to comply with MongoDB data structure constraints
+        user_info["games"] = []
+        user_info["stats"] = {}
+
+        # Adding some basic fake informations
+        fake = Faker()
+        # Fake data for 'login' pourposes
+        # Adding fake mail
+        user_info["mail"] = fake.email()
+        # Adding fake password hashed
+        user_info["password"] = fake.sha256()
+
+        return user_info
+
 
     @staticmethod
     # Scraping player games archives

@@ -291,16 +291,79 @@ We utilize specific endpoints from Chess.com and Lichess to build our dataset. B
 
 **Base URL**: `https://lichess.org`
 
-#### A. Team Users
+#### Teams
+
+* **Method**: `get_teams_list(page)`
+* **Endpoint**: `/api/team/all`
+* **Purpose**: Retrieve a list of the most popular teams and their infos on Lichess from a specific page. The number of teams per page is fixed by the API (15 teams per page).
+* **Example Dump**:
+```json
+{
+    "id": "lichess-swiss",
+    "name": "Lichess Swiss",
+    "description": "The official Lichess Swiss team. We organize regular swiss tournaments for all to join.",
+    "open": true,
+    "leader": {
+      "name": "Lichess",
+      "flair": "activity.lichess",
+      "patron": true,
+      "patronColor": 10,
+      "id": "lichess"
+    },
+    "nbMembers": 657383,
+    "flair": "food-drink.cheese-wedge",
+    "leaders": [
+      {
+        "name": "thibault",
+        "flair": "nature.seedling",
+        "patron": true,
+        "patronColor": 10,
+        "id": "thibault"
+      },
+      {
+        "name": "Lichess",
+        "flair": "activity.lichess",
+        "patron": true,
+        "patronColor": 10,
+        "id": "lichess"
+      }
+    ]
+}
+```
+* **Useful fields**:
+  * `id`: used to fetch users of the team.
+  * `nbMembers`: could be useful to filter teams with a minimum number of members or make statistics about team sizes.
+
+#### Team Users
 
 * **Method**: `get_players_usernames(team)`
 * **Endpoint**: `/api/team/{teamId}/users`
-* **Purpose**: Retrieves usernames of players belonging to a Lichess team.
+* **Purpose**: Retrieves up to 5000 usernames of players belonging to a Lichess team, sorted by joining date.
+* **Example Dump**:
+    ```json
+    {
+      "name":"Karadere19",
+      "id":"karadere19",
+      "url":"https://lichess.org/@/Karadere19",
+      "joinedTeamAt":1622462979699
+    }
+    ```
+* **Useful fields**:
+  * `name`: We will use these lists of users to populate our db app.
 
-#### B. User Profile
+#### n Users from Team
+* **Method**: `get_n_users_from_team(team, n)`
+* **Endpoint**: `/api/team/{teamId}/users`
+* **Purpose**: Retrieves up to `n` usernames of players belonging to a Lichess team, sorted by joining date. This is a more contolled version of the previous method.
+
+
+
+#### User Profile Infos
 
 * **Method**: `get_player_infos(username)`
 * **Endpoint**: `/api/user/{username}` (This is an inferred endpoint as the original README just had a dump)
+* **Parameters**: 
+  * `rank`=true: shows user global rank for each perf (if the user has a rank)
 * **Purpose**: Retrieves profile information for a Lichess user.
 * **Example Dump**:
 
@@ -375,12 +438,69 @@ We utilize specific endpoints from Chess.com and Lichess to build our dataset. B
         }
     }
     ```
+* **Useful fields**:
+  * `perfs`: contains, for each perf, infos about: # of games, current rating, rating deviation (`rd`) which shows the reliability of the rank (initially the deviation is high, then when the user reach more stable rating it become lower), progress (`prog`) which is the elo gained/lost in the last game. 
+  * `profile`: contains user profile information. Not all fields are always available. For our purpose the `flag` field could be useful.
+  * `playTime`: contains information about the total playtime in minutes and the time spent on TV mode (watching other games).
+    * `total`: total minutes played
+  * `count`: contains stats about games and interactions:
+      - `all`: total games played
+      - `draw`, `loss`, `win`: breakdown of results
 
-#### D. User Games
+#### User Games
 
 * **Method**: `get_lichess_games(user, n)`
 * **Endpoint**: `/api/games/user/{username}`
 * **Purpose**: Retrieves the last `n` games played by a user in NDJSON format.
+* **Example Dump**:
+```json
+  {
+  "id": "su6fmJh1",
+  "rated": true,
+  "variant": "standard",
+  "speed": "bullet",
+  "perf": "bullet",
+  "createdAt": 1765443797836,
+  "lastMoveAt": 1765443853385,
+  "status": "outoftime",
+  "source": "swiss",
+  "players": {
+    "white": {
+      "user": {
+        "name": "harshitsuperboy",
+        "id": "harshitsuperboy"
+      },
+      "rating": 1963,
+      "ratingDiff": -4
+    },
+    "black": {
+      "user": {
+        "name": "VanyaDemyan",
+        "id": "vanyademyan"
+      },
+      "rating": 2077,
+      "ratingDiff": 4
+    }
+  },
+  "winner": "black",
+  "opening": {
+    "eco": "A01",
+    "name": "Nimzo-Larsen Attack",
+    "ply": 1
+  },
+  "moves": "b3 Nc6 Bb2 d6 d3 e6 Nd2 e5 Rb1 f6 g3 f5 Bg2 f4 Ngf3 fxg3 fxg3 Nf6 O-O Be7 e4 h6 c3 O-O d4 Nh7 dxe5 dxe5 c4 Bd6 Qe2 Ne7 Bxe5 Bc5+ Kh1 Bd7 Bb2 Bd6 e5 Bxe5 Qxe5 Nf6 Nh4 Nc6 Bxc6 Bxc6+ Kg1 Qe8 Qxe8 Rfxe8 Ng6 Re2 Ne5 Rxd2 Nxc6 Rc2 Bxf6 Rb2",
+  "pgn": "[Event \"HyperBullet\"]\n[Site \"https://lichess.org/su6fmJh1\"]\n[Date \"2025.12.11\"]\n[White \"harshitsuperboy\"]\n[Black \"VanyaDemyan\"]\n[Result \"0-1\"]\n[GameId \"su6fmJh1\"]\n[UTCDate \"2025.12.11\"]\n[UTCTime \"09:03:17\"]\n[WhiteElo \"1963\"]\n[BlackElo \"2077\"]\n[WhiteRatingDiff \"-4\"]\n[BlackRatingDiff \"+4\"]\n[Variant \"Standard\"]\n[TimeControl \"30+0\"]\n[ECO \"A01\"]\n[Opening \"Nimzo-Larsen Attack\"]\n[Termination \"Time forfeit\"]\n\n1. b3 Nc6 2. Bb2 d6 3. d3 e6 4. Nd2 e5 5. Rb1 f6 6. g3 f5 7. Bg2 f4 8. Ngf3 fxg3 9. fxg3 Nf6 10. O-O Be7 11. e4 h6 12. c3 O-O 13. d4 Nh7 14. dxe5 dxe5 15. c4 Bd6 16. Qe2 Ne7 17. Bxe5 Bc5+ 18. Kh1 Bd7 19. Bb2 Bd6 20. e5 Bxe5 21. Qxe5 Nf6 22. Nh4 Nc6 23. Bxc6 Bxc6+ 24. Kg1 Qe8 25. Qxe8 Rfxe8 26. Ng6 Re2 27. Ne5 Rxd2 28. Nxc6 Rc2 29. Bxf6 Rb2 0-1\n\n\n",
+  "swiss": "MxNTY1WE",
+  "clock": {
+    "initial": 30,
+    "increment": 0,
+    "totalTime": 30
+  }
+}
+```
+* **Useful fields**: here everything is potentially useful, pgn is a redundancy so it could be removed. 
+From this data we can analyze `opening` played by a player when he is playing as black or as white, like a match on players.white.user.name = {username} and group by opening.name, with a count of documents.
+
 
 ## Configuration & Scripts
 

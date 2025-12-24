@@ -10,9 +10,13 @@ We utilize specific endpoints from Chess.com and Lichess to build our dataset. B
 
 **Base URL**: `https://api.chess.com`
 
+#### Tournaments
+
+
+
 #### Clubs
 
-* **Method**: coming soon
+* **Method**: get_club_infos
 * **Endpoint**: `/pub/club/{club-name}`
 * **Purpose**: Retrieve the information about a given chess.com chess club, could be useful if we want to have a club collection, especially if we want to give this app a "social media" aspect, with also the possibility of integrating this with graphdb.
 * **Example Dump**:
@@ -532,7 +536,7 @@ We transform data from both sources into a unified structure to facilitate analy
 ```json
 {
   "_id": {
-    "$oid": "69397642ce8d9e08bfd261bf"
+    "$oid": "694a9069017a44c151fce9cc"
   },
   "avatar": "https://images.chesscomfiles.com/uploads/v1/user/13697762.dc1e21aa.200x200o.dd8e0600e6df.png",
   "player_id": 13697762,
@@ -541,7 +545,7 @@ We transform data from both sources into a unified structure to facilitate analy
   "followers": 1,
   "country": "IN",
   "location": "delhi",
-  "last_online": "2025-12-07 14:31:28",
+  "last_online": "2017-01-12 08:17:50",
   "joined": "2013-09-28 16:11:44",
   "status": "basic",
   "is_streamer": false,
@@ -549,16 +553,50 @@ We transform data from both sources into a unified structure to facilitate analy
   "streaming_platforms": [],
   "games": [
     {
-      "$oid": "6939763ece8d9e08bfd261bb"
+      "_id": {
+        "$oid": "694a9068017a44c151fce9bd"
+      },
+      "white": "00sonal1234",
+      "black": "pawnchewer",
+      "opening": "Nimzowitsch-Larsen-Attack-Modern-Variation-2.Bb2-Nc6-3.e3-d5",
+      "winner": "pawnchewer",
+      "date": 1380377920
     },
     {
-      "$oid": "6939763ece8d9e08bfd261bc"
+      "_id": {
+        "$oid": "694a9068017a44c151fce9be"
+      },
+      "white": "InfiniteRegress",
+      "black": "00sonal1234",
+      "opening": "Owens-Defense",
+      "winner": "00sonal1234",
+      "date": 1380378480
     },
     {
-      "$oid": "69397642ce8d9e08bfd261bd"
+      "_id": {
+        "$oid": "694a9068017a44c151fce9bf"
+      },
+      "white": "00sonal1234",
+      "black": "Wajdi_Mliki",
+      "opening": "Nimzowitsch-Larsen-Attack-Modern-Variation-2.Bb2",
+      "winner": "Wajdi_Mliki",
+      "date": 1380379084
     },
     {
-      "$oid": "69397642ce8d9e08bfd261be"
+      "_id": null,
+      "white": null,
+      "black": null,
+      "opening": null,
+      "winner": null,
+      "date": null
+    },
+    {
+      "_id": null,
+      "white": null,
+      "black": null,
+      "opening": null,
+      "winner": null,
+      "date": null
     }
   ],
   "stats": {
@@ -566,8 +604,8 @@ We transform data from both sources into a unified structure to facilitate analy
     "blitz": 1429,
     "rapid": 1054
   },
-  "mail": "wilsonmarcus@example.org",
-  "password": "73467ed48d7084f764505c6c4735331b2d0bdfaf144559b958e99c2c2e5c1fa3"
+  "mail": "mayerroger@example.net",
+  "password": "ae80a8803174372bd46d0edf9853e68932c5c4e71501cdfb093385283f461c03"
 }
 ```
 
@@ -591,10 +629,96 @@ We transform data from both sources into a unified structure to facilitate analy
 }
 ```
 
+### Club data structure
+```json
+{
+  "_id": {
+    "$oid": "694a907c017a44c151fcea49"
+  },
+  "name": "India 11",
+  "description": "<p>We invite Indians and all chess lovers to join group 'INDIA-11'. Our club represents India in all official International team matches at chess.com. We play serious chess to have good fun. We play team and vote chess matches as well. And, If you're looking to chat with other friends and chess players, then India 11 is best group for you. India 11, has the second most active chat room on Chess.com and the best for chatting, socializing and networking, where you can meet and discuss with great chess players all over the world. To access the instant chat room, &gt;&gt; STEP 1: Log into live chess. STEP 2: Go to the \"Chat\" tab located under the graph seek, STEP 3: Select \"Rooms\". STEP 4: Finally click \"Join\" which is next to 'India 11'. Please, invite your all Indian friends to join India 11. So enjoy and have nonstop 24/7 fun.</p>",
+  "country": "IN",
+  "creation_date": "2016-04-25 12:55:03",
+  "members_numeber": 0,
+  "admin": "cool64chess",
+  "members": [
+    {
+      "_id": {
+        "$oid": "694a9069017a44c151fce9cc"
+      },
+      "name": "00sonal1234",
+      "stats": {
+        "bullet": 1800,
+        "blitz": 1429,
+        "rapid": 1054
+      },
+      "country": "IN"
+    },
+    {
+      "_id": {
+        "$oid": "694a906d017a44c151fce9ee"
+      },
+      "name": "01990saurabh",
+      "stats": {
+        "bullet": 1425,
+        "blitz": 1989,
+        "rapid": 1829
+      },
+      "country": "IN"
+    },
+    {
+      "_id": {
+        "$oid": "694a9071017a44c151fce9f2"
+      },
+      "name": "120192u91j2heoinks-jasjha",
+      "stats": {
+        "bullet": 377,
+        "blitz": 469,
+        "rapid": 568
+      },
+      "country": "IN"
+    },
+    {
+      "_id": {
+        "$oid": "694a9075017a44c151fcea1d"
+      },
+      "name": "123raksh",
+      "stats": {
+        "bullet": 902,
+        "blitz": 1202,
+        "rapid": 1332
+      },
+      "country": "IN"
+    },
+    {
+      "_id": {
+        "$oid": "694a9079017a44c151fcea48"
+      },
+      "name": "1magnuscarlsen2",
+      "stats": {
+        "bullet": 1542,
+        "blitz": 1252,
+        "rapid": 1200
+      },
+      "country": "IN"
+    },
+    {
+      "_id": null,
+      "name": null,
+      "stats": null,
+      "country": null
+    }
+  ],
+  "members_number": 5
+}
+```
+
+
 ## Join Strategy
 
-The association between users and games is maintained through a direct reference in the User document.
+The associations between entities is mantained through partial embedding realized with an array of objects containing the reference document *_id* and the necessary data to allow user to make simple aggregation queries on a specific document (user profile, clubs and tournaments)
 
-* The **User** document contains a `games` field, which is an array of ObjectIDs.
-* Each ObjectID in this array links to a specific document in the **Games** collection.
-* This allows for efficient retrieval of all games associated with a specific user.
+*user* document contains *games* array linking to game document.
+*user* document contains *tournament* array linking to tournament document.
+*club* document contains *memebers* array linking to user document.
+*tournament* document contains *games* array linking to game document.

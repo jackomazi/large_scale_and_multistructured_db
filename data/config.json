@@ -1,10 +1,14 @@
 {
-  "max_scrap_users_per_club": 10,
-  "max_scrap_archives": 3,
-  "max_scrap_games_per_archive": 20,
+  "max_scrap_users_per_club": 2,
+  "max_scrap_archives": 1,
+  "max_scrap_games_per_archive": 3,
   "max_users_per_country": 20,
+  "max_tournament_per_user": 2,
+  "maximum_games_stored_per_user_document": 5,
+  "maximum_user_stored_per_club": 60,
+  "maximum_games_per_tournament": 20,
   "countries": ["FR", "IT", "US", "IN", "DE"],
-  "clubs": ["india-11", "pro-chess-league-late-qualifier", "team-italia-doc"],
+  "clubs": ["india-11"],
   "players_usernames": [
     "jack_o_mazi",
     "jeccabahug",

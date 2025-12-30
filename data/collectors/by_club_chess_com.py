@@ -14,10 +14,16 @@ from api.absolute_opening_detector import ChessOpeningDetector
 from storage.mongo_interface import mongo_db_interface
 from tqdm import tqdm
 
+#Using neo4j db method to memorize key relationships
+from storage.neo4j_interface import neo4j_interface
+
 if __name__ == "__main__":
 
     # Opening detector
     opening_detector = ChessOpeningDetector()
+
+    #Neo4J interface
+    neo4j_dr = neo4j_interface()
 
     try:
         client = MongoClient("mongodb://localhost:27017/")
@@ -62,6 +68,13 @@ if __name__ == "__main__":
         # Club scraping
         usernames = chess_com_interface.get_players_usernames(club)
         club = chess_com_interface.get_club_info(club)
+
+        #Saving club to mongo DB
+        club_mongo_id = mongo_db_interface.store_dict_to_MongoDB(club, collection_clubs)
+
+        #Saving club to Neo4j
+        neo4j_dr.insert_club_entity(club_mongo_id, club.get("name"))
+
         # Users scraping
         for i_user, user in enumerate(usernames):
 
@@ -72,43 +85,6 @@ if __name__ == "__main__":
             user_archives = chess_com_interface.get_player_games_archives(user)
             # Storing user game stats
             user_info["stats"] = chess_com_interface.get_player_games_stats(user)
-            # Fetching user tournament data
-            tournaments = chess_com_interface.get_chess_com_player_tournaments(user)
-            for i_tournament, tournament in enumerate(tournaments):
-
-                if i_tournament >= scraping_values.get("max_tournament_per_user"):
-                    break
-
-                tournament_url = tournament.get("@id")
-
-                #Create tournament document for mongoDB
-                tournament_doc = chess_com_interface.get_chess_com_tournament(tournament_url)
-                if "Error" in tournament_doc:
-                    print("Jumping")
-                    continue
-
-                #Fetching games from tournaments and mongoDB memorization and cached inside tournament document
-                games = chess_com_interface.get_games_from_tournament(tournament_url)
-                if games is None:
-                    print("Jumping")
-                    continue
-
-                for i_game, game in tqdm(enumerate(games), total=len(games), desc="Scraping games tournaments"):
-                    if i_game >= scraping_values.get("maximum_games_per_tournament"):
-                        break
-                    formatted_game = chess_com_interface.format_chess_com_game(game)
-                    if formatted_game["opening"] is None:
-                        formatted_game["opening"] = chess_com_interface.fetch_tournament_game_opening(game.get("pgn"),opening_detector)
-                    game_mongo_id = mongo_db_interface.store_dict_to_MongoDB(
-                        formatted_game, collection_games
-                    )
-                    tournament_doc["games"].append(chess_com_interface.format_chess_com_game_essentials(game_mongo_id,formatted_game,False))
-
-                #MongoDB tournament memorization
-                tournament_mongo_id = mongo_db_interface.store_dict_to_MongoDB(tournament_doc, collection_tournament)
-
-                #Caching inside user profile
-                user_info["tournaments"].append(chess_com_interface.format_chess_com_tournament_essentials(tournament_mongo_id, tournament, False))
 
             # Archives scraping
             for i_archive, archive_url in enumerate(user_archives):
@@ -147,14 +123,50 @@ if __name__ == "__main__":
             # Saving user to mongoDB
             user_mongo_id = mongo_db_interface.store_dict_to_MongoDB(user_info, collection_users)
 
-            # Storing user short profile into club document
-            club["members"].append(chess_com_interface.format_chess_com_player_essentials(user_mongo_id, user_info, False)) 
+            # Saving user to Neo4J
+            neo4j_dr.insert_user_entity(user_mongo_id, user_info.get("username"))
 
-        # Set maximum document size to minimize document relocation
-        # Insert "blank" data into games array
-        club["members_number"] = len(club.get("members"))
-        for i in range(0,scraping_values["maximum_user_stored_per_club"] - len(club.get("members"))):
-            club["members"].append(chess_com_interface.format_chess_com_player_essentials(None, None, True))    
+            # Neo4J user-club relationship
+            neo4j_dr.connect_user_club(user_mongo_id, club_mongo_id, chess_com_interface.format_chess_com_player_essentials(user_mongo_id, user_info, False))
 
-        #Saving club to mongo DB
-        mongo_db_interface.store_dict_to_MongoDB(club, collection_clubs)
+            # Fetching user tournament data
+            tournaments = chess_com_interface.get_chess_com_player_tournaments(user)
+            for i_tournament, tournament in enumerate(tournaments):
+
+                if i_tournament >= scraping_values.get("max_tournament_per_user"):
+                    break
+
+                tournament_url = tournament.get("@id")
+
+                #Create tournament document for mongoDB
+                tournament_doc = chess_com_interface.get_chess_com_tournament(tournament_url)
+                if "Error" in tournament_doc:
+                    print("Jumping")
+                    continue
+
+                #Fetching games from tournaments and mongoDB memorization and cached inside tournament document
+                games = chess_com_interface.get_games_from_tournament(tournament_url)
+                if games is None:
+                    print("Jumping")
+                    continue
+
+                for i_game, game in tqdm(enumerate(games), total=len(games), desc="Scraping games tournaments"):
+                    if i_game >= scraping_values.get("maximum_games_per_tournament"):
+                        break
+                    formatted_game = chess_com_interface.format_chess_com_game(game)
+                    if formatted_game["opening"] is None:
+                        formatted_game["opening"] = chess_com_interface.fetch_tournament_game_opening(game.get("pgn"),opening_detector)
+                    game_mongo_id = mongo_db_interface.store_dict_to_MongoDB(
+                        formatted_game, collection_games
+                    )
+                    tournament_doc["games"].append(chess_com_interface.format_chess_com_game_essentials(game_mongo_id,formatted_game,False))
+
+                #MongoDB tournament memorization
+                tournament_mongo_id = mongo_db_interface.store_dict_to_MongoDB(tournament_doc, collection_tournament)
+
+                #Neo4J tournament memorization
+                neo4j_dr.insert_tournament_entity(tournament_mongo_id, tournament_doc.get("name"))
+
+                #Inserting user-tournament relationship
+                neo4j_dr.connect_user_tournament(user_mongo_id, tournament_mongo_id, chess_com_interface.format_chess_com_tournament_essentials(tournament_mongo_id, tournament, False))
+

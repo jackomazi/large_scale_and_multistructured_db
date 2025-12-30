@@ -50,7 +50,6 @@ class chess_com_interface:
         formatted_club["creation_date"] = datetime.fromtimestamp(date).strftime('%Y-%m-%d %H:%M:%S')
         formatted_club["members_numeber"] = 0
         formatted_club["admin"] = club.get("admin")[0].split("/")[-1]
-        formatted_club["members"] = []
         return formatted_club
 
     @staticmethod
@@ -172,6 +171,7 @@ class chess_com_interface:
         if date is not None:
             tournament["finish_time"] = datetime.fromtimestamp(date).strftime('%Y-%m-%d %H:%M:%S')
         tournament.pop("rounds")
+        tournament.pop("players")
         tournament["games"] = []
         return tournament
 

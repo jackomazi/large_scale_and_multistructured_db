@@ -13,3 +13,6 @@ pyrightconfig.json
 uv.lock
 pyproject.toml
 .python-version
+
+# .env config for Neo4j passwords
+.env

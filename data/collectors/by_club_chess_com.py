@@ -64,6 +64,8 @@ if __name__ == "__main__":
         }
 
     for i_club, club in enumerate(scraping_values["clubs"]):
+        if i_club > 2:
+            break
         print(f"Scraping club: {i_club}")
         # Club scraping
         usernames = chess_com_interface.get_players_usernames(club)
@@ -85,6 +87,7 @@ if __name__ == "__main__":
             user_archives = chess_com_interface.get_player_games_archives(user)
             # Storing user game stats
             user_info["stats"] = chess_com_interface.get_player_games_stats(user)
+            user_info["club"] = club
 
             # Archives scraping
             for i_archive, archive_url in enumerate(user_archives):

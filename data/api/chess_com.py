@@ -4,6 +4,7 @@ from faker import Faker
 import chess.pgn
 import os
 import json
+import random
 
 import requests
 
@@ -82,7 +83,6 @@ class chess_com_interface:
         formatted_club["country"] = club.get("country").split("/")[-1]
         date = club.get("created")
         formatted_club["creation_date"] = datetime.fromtimestamp(date).strftime('%Y-%m-%d %H:%M:%S')
-        formatted_club["members_numeber"] = 0
         formatted_club["admin"] = club.get("admin")[0].split("/")[-1]
         return formatted_club
 
@@ -108,7 +108,14 @@ class chess_com_interface:
         # Useless data
         if "@id" in user_info:
             user_info.pop("@id")
-        user_info.pop("url")
+        try:
+            user_info.pop("url")
+            user_info.pop("avatar")
+            user_info.pop("player_id")
+            user_info.pop("location")
+            user_info.pop("status")
+        except:
+            pass
         # Location modification
         location_url = user_info.get("country")
         user_info["country"] = location_url.split("/")[-1]
@@ -120,7 +127,7 @@ class chess_com_interface:
         # Adding empty array/object to comply with MongoDB data structure constraints
         user_info["games"] = []
         user_info["stats"] = {}
-        user_info["tournaments"] = []
+        user_info["club"] = ""
 
         # Adding some basic fake informations
         fake = Faker()
@@ -207,6 +214,11 @@ class chess_com_interface:
         tournament.pop("rounds")
         tournament.pop("players")
         tournament["games"] = []
+        # Formatting tournament settings
+        tournament["max_rating"] = tournament.get("settings").get("max_rating")
+        tournament["min_rating"] = 600
+        tournament["max_partecipants"] = random.uniform(10,20)
+        tournament["time_control"] = tournament.get("settings").get("time_control")
         return tournament
 
     @staticmethod

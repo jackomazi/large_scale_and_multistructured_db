@@ -2,7 +2,8 @@ import re
 from datetime import datetime
 from faker import Faker
 import chess.pgn
-import io
+import os
+import json
 
 import requests
 
@@ -39,6 +40,39 @@ class chess_com_interface:
         response = requests.get(url, headers=headers)
 
         return chess_com_interface.format_club_info(response.json())
+    
+    @staticmethod
+    def get_list_of_working_club_names_for_nation(nation: str, number: int) -> []:
+        # Standard api call
+        url = f"https://api.chess.com/pub/country/{nation}/clubs"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/130.0.0.0 Safari/537.36",
+            "Accept": "application/json",
+        }
+        response = requests.get(url, headers=headers)
+        clubs_urls = response.json().get("clubs")
+
+        # Getting firts n working clubs
+        working_clubs = []
+        i = 0
+
+        if clubs_urls is None:
+            return []
+        
+        clubs_urls = clubs_urls[::-1]
+
+        for club in clubs_urls:
+            response = requests.get(f"{club}/members", headers=headers)
+            if response.status_code == 200:
+                i += 1
+                working_clubs.append(club.split("/")[-1])
+            if i > number:
+                break
+
+        return working_clubs
+
 
     @staticmethod
     def format_club_info(club: dict) -> dict:
@@ -365,3 +399,30 @@ class chess_com_interface:
         response = requests.get(url, headers=headers)
         return response.json().get("players", [])
 
+
+if __name__ == "__main__":
+    filename = "../config.json"
+    if os.path.exists(filename):
+        with open(filename, 'r', encoding='utf-8') as f:
+            try:
+                data = json.load(f)
+            except json.JSONDecodeError:
+                print("Il file è vuoto o corrotto. Ne verrà creato uno nuovo.")
+                data = {}
+
+    working_clubs = []
+    print("fetching italian clubs")
+    working_clubs += chess_com_interface.get_list_of_working_club_names_for_nation("IT",10)
+    print("fetching french clubs")
+    working_clubs += chess_com_interface.get_list_of_working_club_names_for_nation("FR",10)
+    print("fetching us clubs")
+    working_clubs += chess_com_interface.get_list_of_working_club_names_for_nation("US",10)
+    print("fetching indian clubs")
+    working_clubs += chess_com_interface.get_list_of_working_club_names_for_nation("IN",10)
+    print("fetching german clubs")
+    working_clubs += chess_com_interface.get_list_of_working_club_names_for_nation("DE",10)
+    data["clubs"] = working_clubs
+
+    # 3. Scrivi il file aggiornato
+    with open(filename, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)

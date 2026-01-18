@@ -1,40 +1,45 @@
 package it.unipi.chessApp.model;
+
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-//import jakarta.persistence.*;
 import org.springframework.data.mongodb.core.mapping.Field;
 
-
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Document(collection = "games")
-public class Chess {
+public class Game {
     @Id
-    private String id;  // corrisponde a _id
+    private String id;
 
-    private String url;
+    @Field("white_player")
+    private String whitePlayer;
 
     @Field("black_player")
     private String blackPlayer;
 
-    @Field("black_rating")
-    private int blackRating;
-    @Field("eco_url")
-    private String ecoUrl;
-    @Field("end_time")
-    private long endTime;
-    private String opening;
-    private String pgn;
-    private boolean rated;
-    @Field("result_black")
-    private String resultBlack;
-    @Field("result_white")
-    private String resultWhite;
-    @Field("time_class")
-    private String timeClass;
-    @Field("white_player")
-    private String whitePlayer;
     @Field("white_rating")
     private int whiteRating;
+
+    @Field("black_rating")
+    private int blackRating;
+
+    @Field("result_white")
+    private String resultWhite;
+
+    @Field("result_black")
+    private String resultBlack;
+
+    private String opening;
+
     private String moves;
+
+    @Field("time_class")
+    private String timeClass;
+
+    @Field("end_time")
+    private long endTime;
 }

@@ -29,7 +29,6 @@ if __name__ == "__main__":
         collection_tournament = db["tournaments_isaia"]
         collection_team = db["teams_isaia"]
 
-
         print("MongoDB connection successful")
     except:
         sys.exit(1)

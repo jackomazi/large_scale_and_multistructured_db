@@ -16,17 +16,3 @@ pyproject.toml
 
 # .env config for Neo4j passwords
 .env
-
-target/
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
-
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
-### VS Code ###
-.vscode/

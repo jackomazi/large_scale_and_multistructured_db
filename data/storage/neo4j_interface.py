@@ -14,7 +14,7 @@ class neo4j_interface:
         self.database = database
 
     def insert_user_entity(self, mongo_id, username):
-        
+
         query = "CREATE (usr:USER { name: $username, mongo_id: $mongo_id} )"
 
         try:
@@ -52,7 +52,7 @@ class neo4j_interface:
                 "SET part.draws = $draws " \
                 "SET part.losses = $losses " \
                 "SET part.placement = $placement"
-        
+
         try:
             self.driver.execute_query(query, mongo_id_club=str(mongo_id_club), mongo_id_user=str(mongo_id_user),
                                        wins = tournament_user_stats.get("wins"),
@@ -70,12 +70,12 @@ class neo4j_interface:
                 "MATCH (clb:CLUB) WHERE clb.mongo_id = $mongo_id_club " \
                 "CREATE (usr)-[jnd:JOINED]->(clb) " \
                 "SET jnd.country = $country " \
-                "SET jnd.butter = $bullet " \
+                "SET jnd.bullet = $bullet " \
                 "SET jnd.blitz = $blitz " \
                 "SET jnd.rapid = $rapid "
-        
+
         try:
-            self.driver.execute_query(query, mongo_id_club=str(mongo_id_club), mongo_id_user=str(mongo_id_user), 
+            self.driver.execute_query(query, mongo_id_club=str(mongo_id_club), mongo_id_user=str(mongo_id_user),
                                       country = club_user_infos.get("country"),
                                       bullet = club_user_infos.get("stats").get("bullet"),
                                       blitz = club_user_infos.get("stats").get("blitz"),
@@ -83,14 +83,14 @@ class neo4j_interface:
                                       database_=self.database)
         except Exception as e:
             print("Connection user-club not successfull")
-            print(f"Reason: {e}") 
+            print(f"Reason: {e}")
 
     def connect_user_user(self, mongo_id_user1, mongo_id_user2):
 
         query = "MATCH (usr:USER) WHERE usr.mongo_id = $mongo_id_user1 " \
                 "MATCH (usr1:USER) WHERE usr1.mongo_id = $mongo_id_user2 " \
                 "CREATE (usr)-[:FOLLOWS]->(usr1)"
-        
+
         try:
             self.driver.execute_query(query, mongo_id_user2=str(mongo_id_user2), mongo_id_user1=str(mongo_id_user1), database_=self.database)
         except Exception as e:

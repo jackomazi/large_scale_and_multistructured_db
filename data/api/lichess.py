@@ -1,8 +1,10 @@
 import requests
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 from faker import Faker
+from dateutil.parser import isoparse
+import time
 
 class lichess_interface:
     @staticmethod
@@ -32,8 +34,16 @@ class lichess_interface:
         url example: https://lichess.org/api/user/harshitsuperboy?profile=true
         """
         url = f"https://lichess.org/api/user/{username}?profile=true&rank=true"
-        headers = {"Accept": "application/json"}
+        
+        headers = {"Accept": "application/json",
+                   "User-Agent": "Lichess Data Collector - for academic purposes - contact: andreagiacomazzi202@gmail.com"}
         response = requests.get(url,headers=headers)
+        
+        if response.status_code == 429:
+            print("\nRate limit exceeded.")
+            return {}
+        elif response.status_code != 200:
+            return {}
         return response.json()
 
     @staticmethod
@@ -73,6 +83,31 @@ class lichess_interface:
         for team in data['currentPageResults']:
             teams.append(team)
         return teams
+
+    @staticmethod
+    def get_team_infos(team: str) -> dict:
+        """Fetches Lichess team information for a given team ID.
+        url example: https://lichess.org/api/team/lichess-swis
+        """
+        url = f"https://lichess.org/api/team/{team}"
+        headers = {"Accept": "application/json"}
+        response = requests.get(url, headers=headers)
+        if response.status_code != 200:
+            return {}
+        return response.json()
+    
+    @staticmethod
+    def format_team_infos(team_info: dict) -> dict:
+        """Formats a Lichess team information dictionary into a structured format for MongoDB storage."""
+        team_info.pop("id", None)
+        team_info.pop("open", None)
+        team_info["number_members"] = team_info.pop("nbMembers", None)
+        team_info.pop("leader", None)
+        team_info.pop("leaders", None)
+        team_info.pop("joined", None)
+        team_info.pop("requested", None)
+        team_info.pop("flair", None)
+        return team_info
 
     @staticmethod
     def get_n_users_from_team(team: str, n: int) -> list:
@@ -129,6 +164,26 @@ class lichess_interface:
         }
     
     @staticmethod
+    def format_lichess_game_essentials(game_mongo_id: str, formatted_game: dict, is_blank: bool) -> dict:
+        """Formats essential information of a Lichess game for user document storage."""
+        if is_blank:
+            return {"_id": None,
+                    "white": "name",
+                    "black": "name",
+                    "opening": "name",
+                    "winner": "name",
+                    "date": "date"
+                    }
+        return {
+            "_id": game_mongo_id,
+            "white": formatted_game.get("white_player"),
+            "black": formatted_game.get("black_player"),
+            "opening": formatted_game.get("opening"),
+            "winner": formatted_game.get("result_white") if formatted_game.get("result_white") == "win" else formatted_game.get("result_black") if formatted_game.get("result_black") == "win" else "draw",
+            "date": formatted_game.get("end_time").strftime('%Y-%m-%d %H:%M:%S') if formatted_game.get("end_time") else None
+        }
+    
+    @staticmethod
     def format_lichess_player_infos(user_info: dict) -> dict:
         # Useless data
         user_info.pop("id", None)
@@ -136,10 +191,13 @@ class lichess_interface:
         user_info.pop("count", None)
         user_info.pop("playTime", None)
 
-        # Location fetching
-        user_info["country"] = user_info.get("profile").get("flag")
+        try:
+            # Location fetching
+            user_info["country"] = user_info.get("profile").get("flag")
+        except:
+            user_info["country"] = None
 
-        # Date modification
+        # Date modification for MongoDB storage                 
         date = user_info.get("seenAt") / 1000
         user_info["last_online"] =  datetime.fromtimestamp(date).strftime('%Y-%m-%d %H:%M:%S')
         date = user_info.get("createdAt") / 1000
@@ -172,7 +230,207 @@ class lichess_interface:
         # Adding fake password hashed
         user_info["password"] = fake.sha256()
 
+        # remove other unnecessary fields
+        user_info.pop("profile", None)
+        user_info.pop("perfs", None)
+        user_info.pop("flair", None)
+        user_info.pop("seenAt", None)
+        user_info.pop("createdAt", None)
+
         return user_info
+    
+    @staticmethod
+    def format_lichess_player_essentials(id: str, user:dict) -> dict:
+        """Formats essential information of a Lichess player for user document storage."""
+        return {
+            "_id": id,
+            "name": user.get("name"),
+            "stats": user.get("stats"),
+            "country": user.get("country")}
+        
+
+    @staticmethod
+    # Scraping user tournaments
+    def get_n_lichess_player_tournaments(username: str, n: int) -> list:
+        """ Fetches n player tournaments from a given Lichess username.
+        url example: https://lichess.org/api/user/{username}/tournament/played
+        url example: https://lichess.org/api/user/senukRandidu/tournament/played?nb=1
+        """
+        url = f"https://lichess.org/api/user/{username}/tournament/played?nb={n}"
+        headers = {"Accept": "application/x-ndjson"}
+        response = requests.get(url, headers=headers)
+        if response.status_code != 200:
+            return []
+        tournaments = []
+        for line in response.text.splitlines():
+            try:
+                tournaments.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+        return tournaments
+
+    #@staticmethod
+    #def format_lichess_player_tournament(tournament: dict) -> dict:
+    #    """Formats a Lichess tournament dictionary into a structured format for MongoDB storage."""
+    #    tournament["id"] = tournament["tournament"]["id"]
+    #    tournament["name"] = tournament["tournament"]["fullName"]
+    #    tournament["max_players"] = tournament["tournament"]["nbPlayers"]
+    #    tournament["started_at"] = datetime.fromtimestamp(tournament["tournament"]["startsAt"]/1000)
+    #    tournament["finished_at"] = datetime.fromtimestamp(tournament["tournament"]["finishesAt"]/1000) if tournament["tournament"].get("finishesAt") else None
+    #    tournament["creator"] = tournament["tournament"]["createdBy"]
+    #    return tournament
+    
+    @staticmethod
+    def get_lichess_tournament_infos(tournament_id: str) -> dict:
+        """Fetches Lichess tournament information for a given tournament ID.
+        url example: https://lichess.org/api/tournament/{tournament_id}
+        """
+        url = f"https://lichess.org/api/tournament/{tournament_id}"
+        headers = {"Accept": "application/json"}
+        response = requests.get(url, headers=headers)
+        if response.status_code != 200:
+            return {}
+        return response.json()
+
+    @staticmethod
+    def get_lichess_tournament_infos_with_players(tournament_id: str) -> dict:
+        """Fetches Lichess tournament information for a given tournament ID.
+        url example: https://lichess.org/api/tournament/{tournament_id}
+        """
+        url = f"https://lichess.org/api/tournament/{tournament_id}"
+        headers = {"Accept": "application/json"}
+        page = 1
+        all_participants = []
+        seen_ids = set()
+        last_page_ids = None
+        tournament = None
+        while True:
+            response = requests.get(
+                url,
+                headers=headers,
+                params={"page": page}
+            )
+            if response.status_code != 200:
+                break
+            data = response.json()
+            # salva i metadata solo una volta
+            if tournament is None:
+                tournament = {k: v for k, v in data.items() if k != "standing"}
+            players_page = data.get("standing", {}).get("players", [])
+            if not players_page:
+                break
+            current_ids = [p.get("name") for p in players_page]
+            if current_ids == last_page_ids:
+                break
+
+            for p in players_page:
+                pid = p.get("name")
+                if pid and pid not in seen_ids:
+                    seen_ids.add(pid)
+                    all_participants.append(p)
+
+            last_page_ids = current_ids
+            page += 1
+            time.sleep(0.3)  # rate limit
+        if tournament is None:
+            return {}
+
+        tournament["players"] = all_participants
+
+        return tournament
+    
+    @staticmethod
+    def get_n_participants_in_tournament(tournament_info: dict) -> list:
+        """Returns the list of participants in a tournament given its info dictionary."""
+        players = [player['name'] for player in tournament_info['standing']['players']]
+
+        return players
+
+    @staticmethod
+    def get_lichess_tournament_games(tournament_id: str, username: str) -> list:
+        """Fetches Lichess tournament games for a given tournament ID in NDJSON format.
+        url example: https://lichess.org/api/tournament/{tournament_id}/games
+        """
+        url = f"https://lichess.org/api/tournament/{tournament_id}/games?player={username}&opening=true"
+        
+        headers = {"Accept": "application/x-ndjson"}
+        games = []
+        response = requests.get(url, headers=headers, stream =True)
+        if response.status_code == 200:
+            # Parse NDJSON response
+            for line in response.iter_lines():
+                # For each line in the response, parse it as JSON
+                if line:
+                    game = json.loads(line)
+                    # Append the parsed game to the list
+                    games.append(game)
+            return games
+        else:
+            return []
+
+    @staticmethod
+    def format_lichess_tournament_info(tournament_info: dict) -> dict:
+        """Formats a Lichess tournament information dictionary into a structured format for MongoDB storage."""
+        # rename fields
+        tournament_info["number_partecipants"] = tournament_info.pop("nbPlayers")
+        tournament_info["creator"] = tournament_info.pop("createdBy")
+        tournament_info["name"] = tournament_info.pop("fullName")
+
+        # finished at, calculated from startsAt + field minutes
+        try:
+            starts_at = isoparse(tournament_info["startsAt"])
+        except Exception as e:
+            starts_at = None
+        tournament_info["started_at"] = starts_at
+        if tournament_info.get("minutes"):
+            tournament_info["finished_at"] = starts_at + timedelta(minutes=tournament_info["minutes"])
+        else:
+            tournament_info["finished_at"] = None
+        tournament_info.pop("startsAt")
+        tournament_info.pop("minutes", None)
+
+        # time control and clock limit
+        tournament_info["time_control"] = tournament_info["perf"]["name"]
+        tournament_info.pop("perf")
+
+        tournament_info["clock_limit"] = tournament_info["clock"]["limit"]
+        tournament_info["clock_increment"] = tournament_info["clock"]["increment"]
+        tournament_info.pop("clock")
+
+        # chess variant, possible values: standard, chess960 (Fischer Random)
+        tournament_info["chess_variant"] = tournament_info.pop("variant")
+
+        # max rating
+        max_rating = tournament_info.pop("maxRating", None)
+        tournament_info["max_rating"] = max_rating.get("rating") if isinstance(max_rating, dict) else None
+
+        # remove unnecessary fields
+        tournament_info.pop("minRatedGames", None)
+
+        tournament_info.pop("duels", None)
 
 
+        ## da valutare
+        tournament_info.pop("berserkable", None)
 
+        tournament_info.pop("rated", None)
+
+        tournament_info.pop("stats", None)
+
+        tournament_info.pop("verdicts", None)
+
+        tournament_info.pop("pairingsClosed", None)
+
+        # for the app purposes, if the creator is lichess, we set it to admin
+        if tournament_info["creator"] == "lichess":
+            tournament_info["creator"] = "admin"
+
+        return tournament_info
+    
+    @staticmethod
+    def format_lichess_tournament_essentials(tournament_id: str, tournament_info: dict) -> dict:
+        """Formats essential information of a Lichess tournament for user document storage."""
+        return {
+            "_id": tournament_id,
+            "placement": tournament_info["player"]["rank"]
+            }

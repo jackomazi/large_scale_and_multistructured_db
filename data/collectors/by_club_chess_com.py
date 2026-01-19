@@ -70,7 +70,6 @@ if __name__ == "__main__":
         # Club scraping
         usernames = chess_com_interface.get_players_usernames(club)
         club = chess_com_interface.get_club_info(club)
-
         #Saving club to mongo DB
         club_mongo_id = mongo_db_interface.store_dict_to_MongoDB(club, collection_clubs)
 
@@ -82,7 +81,7 @@ if __name__ == "__main__":
 
             if i_user >= scraping_values.get("max_scrap_users_per_club"):
                 break
-
+                
             user_info = chess_com_interface.get_player_infos(user)
             user_archives = chess_com_interface.get_player_games_archives(user)
             # Storing user game stats
@@ -172,4 +171,3 @@ if __name__ == "__main__":
 
                 #Inserting user-tournament relationship
                 neo4j_dr.connect_user_tournament(user_mongo_id, tournament_mongo_id, chess_com_interface.format_chess_com_tournament_essentials(tournament_mongo_id, tournament, False))
-

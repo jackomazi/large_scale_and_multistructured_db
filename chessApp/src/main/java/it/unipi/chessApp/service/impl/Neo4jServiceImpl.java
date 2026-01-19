@@ -1,7 +1,7 @@
 package it.unipi.chessApp.service.impl;
 
 import it.unipi.chessApp.model.neo4j.ClubNode;
-import it.unipi.chessApp.model.neo4j.JoinedRelationship;
+import it.unipi.chessApp.model.neo4j.ClubMember;
 import it.unipi.chessApp.model.neo4j.ParticipatedRelationship;
 import it.unipi.chessApp.model.neo4j.TournamentNode;
 import it.unipi.chessApp.model.neo4j.UserNode;
@@ -54,12 +54,13 @@ public class Neo4jServiceImpl implements Neo4jService {
             UserNode user = userOpt.get();
             ClubNode club = clubOpt.get();
 
-            JoinedRelationship joined = new JoinedRelationship();
+            //
+
+            ClubMember joined = new ClubMember();
             joined.setCountry(country);
             joined.setBulletRating(bulletRating);
             joined.setBlitzRating(blitzRating);
             joined.setRapidRating(rapidRating);
-            joined.setClub(club);
 
             user.getClubs().add(joined);
             userNodeRepository.save(user);

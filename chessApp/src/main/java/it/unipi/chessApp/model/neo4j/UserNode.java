@@ -24,7 +24,7 @@ public class UserNode {
     private List<UserNode> following = new ArrayList<>();
 
     @Relationship(type = "JOINED", direction = Relationship.Direction.OUTGOING)
-    private List<JoinedRelationship> clubs = new ArrayList<>();
+    private List<ClubMember> clubs = new ArrayList<>();
 
     @Relationship(type = "PARTECIPATED", direction = Relationship.Direction.OUTGOING)
     private List<ParticipatedRelationship> tournaments = new ArrayList<>();

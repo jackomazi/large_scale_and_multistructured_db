@@ -1,12 +1,16 @@
 package it.unipi.chessApp.service.impl;
 
 import it.unipi.chessApp.dto.ClubDTO;
+import it.unipi.chessApp.dto.ClubMemberDTO;
 import it.unipi.chessApp.dto.PageDTO;
 import it.unipi.chessApp.model.Club;
+import it.unipi.chessApp.model.neo4j.ClubMember;
 import it.unipi.chessApp.repository.ClubRepository;
+import it.unipi.chessApp.repository.neo4j.ClubNodeRepository;
 import it.unipi.chessApp.service.ClubService;
 import it.unipi.chessApp.service.exception.BusinessException;
 import it.unipi.chessApp.utils.Constants;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +23,7 @@ import org.springframework.stereotype.Service;
 public class ClubServiceImpl implements ClubService {
 
   private final ClubRepository clubRepository;
+  private final ClubNodeRepository clubNodeRepository;
 
   @Override
   public ClubDTO createClub(ClubDTO clubDTO) throws BusinessException {
@@ -32,17 +37,27 @@ public class ClubServiceImpl implements ClubService {
   }
 
   @Override
-  public ClubDTO getClubById(String id) throws BusinessException {
+  public ClubDTO getClubByName(String name) throws BusinessException {
     try {
       Club club = clubRepository
-        .findById(id)
+        .findByName(name)
         .orElseThrow(() ->
-          new BusinessException("Club not found with ID: " + id)
+          new BusinessException("Club not found with ID: " + name)
         );
-      return convertToDTO(club);
+      List<ClubMember> members = clubNodeRepository.findClubMembers(name);
+
+      ClubDTO clubDTO = convertToDTO(club);
+
+      List<ClubMemberDTO> clubMemberDTOS = new ArrayList<>();
+      for(ClubMember member: members){
+          clubMemberDTOS.add(convertMemberToDTO(member));
+      }
+      clubDTO.setMembers(clubMemberDTOS);
+      return clubDTO;
     } catch (BusinessException e) {
       throw e;
     } catch (Exception e) {
+        System.out.println(e.getMessage());
       throw new BusinessException("Error fetching club", e);
     }
   }
@@ -98,8 +113,17 @@ public class ClubServiceImpl implements ClubService {
     dto.setCountry(club.getCountry());
     dto.setCreationDate(club.getCreationDate());
     dto.setAdmin(club.getAdmin());
-    dto.setMembers(club.getMembers());
     return dto;
+  }
+
+  private ClubMemberDTO convertMemberToDTO(ClubMember member){
+      ClubMemberDTO dto = new ClubMemberDTO();
+      dto.setName(member.getName());
+      dto.setCountry(member.getCountry());
+      dto.setBlitzRating(member.getBlitzRating());
+      dto.setBulletRating(member.getBulletRating());
+      dto.setBulletRating(member.getBulletRating());
+      return dto;
   }
 
   private Club convertToEntity(ClubDTO dto) {
@@ -110,7 +134,6 @@ public class ClubServiceImpl implements ClubService {
     club.setCountry(dto.getCountry());
     club.setCreationDate(dto.getCreationDate());
     club.setAdmin(dto.getAdmin());
-    club.setMembers(dto.getMembers());
     return club;
   }
 }

@@ -27,11 +27,11 @@ public class ClubController {
     );
   }
 
-  @GetMapping("/{id}")
-  public ResponseEntity<ResponseWrapper<ClubDTO>> getClubById(
-    @PathVariable String id
+  @GetMapping("/{name}")
+  public ResponseEntity<ResponseWrapper<ClubDTO>> getClubByName(
+    @PathVariable String name
   ) throws BusinessException {
-    ClubDTO club = clubService.getClubById(id);
+    ClubDTO club = clubService.getClubByName(name);
     return ResponseEntity.ok(
       new ResponseWrapper<>("Club retrieved successfully", club)
     );

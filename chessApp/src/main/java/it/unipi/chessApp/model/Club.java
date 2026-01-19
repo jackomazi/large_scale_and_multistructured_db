@@ -1,5 +1,6 @@
 package it.unipi.chessApp.model;
 
+import it.unipi.chessApp.model.neo4j.ClubMember;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -21,5 +22,4 @@ public class Club {
     @Field("creation_date")
     private String creationDate;
     private String admin;
-    private List<Member> members;
 }

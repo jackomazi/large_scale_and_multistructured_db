@@ -9,14 +9,16 @@ from storage.mongo_interface import mongo_db_interface
 
 from storage.neo4j_interface import neo4j_interface
 import time
+
 if __name__ == "__main__":
 
     neo4j_dr = neo4j_interface()
     try:
         client = MongoClient("mongodb://localhost:27017/")
         client.server_info()
-        db = client["chess_db_test"]
 
+        # change the database name if needed
+        db = client["chess_db_test_3"]
 
         ## Uncomment to clear collections
         db["games_isaia"].drop()
@@ -31,6 +33,7 @@ if __name__ == "__main__":
 
         print("MongoDB connection successful")
     except:
+        print("Could not connect to MongoDB, exiting...")
         sys.exit(1)
 
     
@@ -51,7 +54,7 @@ if __name__ == "__main__":
     
     teams = []
 
-    for page in range(3, number_of_pages + 3): # fetch teams from pages
+    for page in range(1, number_of_pages + 1): # fetch teams from pages
         teams_on_page = lichess_interface.get_teams_list(page)
         for team in teams_on_page:
             teams.append(team["id"])
@@ -60,31 +63,34 @@ if __name__ == "__main__":
     print(f"Total teams fetched: {len(teams)}")
 
     for i_team, team in enumerate(teams):
+        
+        members = []
         print(f"Scraping team: {i_team} - {team}")
-        time.sleep(1)
         # team infos
         team_info = lichess_interface.get_team_infos(team)
         team_info = lichess_interface.format_team_infos(team_info)
+        team_info["members"] = []  # will be filled later
         # save team info to MongoDB
         team_mongo_id = mongo_db_interface.store_dict_to_MongoDB(team_info, collection_team)
         # insert in neo4j
         neo4j_dr.insert_club_entity(str(team_mongo_id), team_info.get("name"))
-        player_data_list = []
+        
         # get n users from team
-        usernames = lichess_interface.get_n_users_from_team(team, number_of_users_per_team)
-        # get player infos for each user
-        for username in tqdm(usernames, desc=f"Scraping users from team {team}"):
+        ids = lichess_interface.get_n_ids_from_team(team, number_of_users_per_team)
+        # get their infos
+        infos = lichess_interface.get_lichess_player_infos_by_list_ids(ids)
+        for user_info in infos:
             time.sleep(1)
-            player_info = lichess_interface.get_player_infos(username) # player info is a dict
-            
-            #time.sleep(1)
-            if not player_info:
-                print(f"  No data for user: {username}, skipping...")
+            if not user_info:
+                print(f"  No data for user id: {user_info}, skipping...")
             else:
-                player_info["games"] = []
-                player_info["team"] = team
-                # get last n games of user
+                user_info["games"] = []
+                user_info["team"] = team
+                username = user_info.get("username")
+
+                # get n games from user
                 games = lichess_interface.get_lichess_games(username, number_of_games_per_user)
+                # format and store games
                 for i_game, game in tqdm(
                     enumerate(games), total=len(games), desc=f"  Scraping games for user {username}"
                 ):
@@ -94,43 +100,93 @@ if __name__ == "__main__":
                         formatted_game, collection_games
                     )
                     # add essential game info to player data list
-                    player_info["games"].append(lichess_interface.format_lichess_game_essentials(game_mongo_id, formatted_game, False))
-
+                    user_info["games"].append(lichess_interface.format_lichess_game_essentials(game_mongo_id, formatted_game, False))
+                    
                 # format player info
-                player_info = lichess_interface.format_lichess_player_infos(player_info)
                 # store player info to MongoDB
-                user_mongo_id = mongo_db_interface.store_dict_to_MongoDB(player_info, collection_users)
+                user_info_formatted = lichess_interface.format_lichess_player_infos(user_info)
+                user_mongo_id = mongo_db_interface.store_dict_to_MongoDB(user_info_formatted, collection_users)
                 # insert user in neo4j
-                neo4j_dr.insert_user_entity(str(user_mongo_id), player_info.get("username"))
+                neo4j_dr.insert_user_entity(str(user_mongo_id), user_info_formatted.get("username"))
                 # connect user to team in neo4j
-                neo4j_dr.connect_user_club(str(user_mongo_id), str(team_mongo_id), lichess_interface.format_lichess_player_essentials(user_mongo_id, player_info))
-            
+                neo4j_dr.connect_user_club(str(user_mongo_id), str(team_mongo_id), lichess_interface.format_lichess_player_essentials(user_mongo_id, user_info_formatted))
+                # add user to team members list
+                player_essentials = lichess_interface.format_lichess_player_essentials(user_mongo_id, user_info_formatted)
+                player_essentials["username"] = username
+                members.append(player_essentials)
+                
             # get n tournaments played by user
             tournaments = lichess_interface.get_n_lichess_player_tournaments(username, number_of_tournaments_per_user)
             # store tournaments to MongoDB
             print(f"  Tournaments found for user {username}: {len(tournaments)}")
             for tournament in tournaments:
+                tour_games = []
                 # get games for the tournament
                 tournament_id = tournament["tournament"]["id"]
                 if tournament_id:
-                    infos = lichess_interface.get_lichess_tournament_infos(tournament_id)
-                    # get a list of participants
-                    players = lichess_interface.get_n_participants_in_tournament(infos)
-                    print(players)
-                    for p in players:
-                        p_info = lichess_interface.get_player_infos(p)
-                        p_info_formatted = lichess_interface.format_lichess_player_infos(p_info)
-                        p_user_mongo_id = mongo_db_interface.store_dict_to_MongoDB(p_info_formatted, collection_users)
-                        neo4j_dr.insert_user_entity(str(p_user_mongo_id), p_info_formatted.get("username"))
-                    infos_formatted = lichess_interface.format_lichess_tournament_info(infos)
+                    # get infos
+                    tour_infos = lichess_interface.get_lichess_tournament_infos(tournament_id)
+                    number_of_games = tour_infos["stats"]["games"]
+
+                    ## DA RIVEDERE: SI BLOCCA ALL'INFINITO
+                    # get all games played in the tournament
+                    tour_games = lichess_interface.get_lichess_tournament_games_all(tournament_id, number_of_games)
+                    for game in tour_games:
+                        game_formatted = lichess_interface.format_lichess_game(game)
+                        game_mongo_id = mongo_db_interface.store_dict_to_MongoDB(game_formatted, collection_games)
+                        tour_games.append(lichess_interface.format_lichess_game_essentials(game_mongo_id, game_formatted, False))
+
+                    # get formatted infos
+                    infos_formatted = lichess_interface.format_lichess_tournament_info(tour_infos)
+                    infos_formatted["games"] = tour_games
+                    # store tournament to MongoDB
                     tournament_mongo_id = mongo_db_interface.store_dict_to_MongoDB(infos_formatted, collection_tournament)
                     # insert tournament in neo4j
                     neo4j_dr.insert_tournament_entity(str(tournament_mongo_id), infos_formatted.get("name"))
                     # connect user to tournament in neo4j
-                    neo4j_dr.connect_user_tournament(str(user_mongo_id), str(tournament_mongo_id), {})  
-                    # get games for the tournament by the user
-                    games = lichess_interface.get_lichess_tournament_games(tournament_id, username)
-                    for game in games:
-                        game_formatted = lichess_interface.format_lichess_game(game)
-                        mongo_db_interface.store_dict_to_MongoDB(game_formatted, collection_games)  
+                    neo4j_dr.connect_user_tournament(str(user_mongo_id), str(tournament_mongo_id), {})
+
+                    ## here it's possible to fetch and store also other participants of the tournament, but you would need to 
+                    ## use the url https://lichess.org/api/tournament/{tournament_id} and set a new page number
+                    # get a list of participants
+                    player_names = lichess_interface.get_n_participants_in_tournament(tour_infos)
+                    try:
+                        player_names.remove(username)  # remove the main user to avoid duplicate entry
+                    except ValueError:
+                        pass
+                    # get about each participant using get_lichess_player_infos_by_list_ids
+                    participants_infos = lichess_interface.get_lichess_player_infos_by_list_ids(player_names)
+                    for p_info in participants_infos:
+                        p_tour_games = []
+                        time.sleep(1)
+                        if not p_info:
+                            print(f"    No data for user id: {p_info}, skipping...")
+                        else:
+                            p_info_formatted = lichess_interface.format_lichess_player_infos(p_info)
+                            games = lichess_interface.get_lichess_games(p_info_formatted.get("username"), number_of_games_per_user)
+                            p_info_formatted["games"] = []
+                            for i_game, game in tqdm(enumerate(games), total=len(games), desc=f"    Scraping games for tournament participant {p_info_formatted.get('username')}"):
+                                formatted_game = lichess_interface.format_lichess_game(game)
+                                # saving games to mongodb
+                                game_mongo_id = mongo_db_interface.store_dict_to_MongoDB(
+                                    formatted_game, collection_games
+                                )
+                                # add essential game info to player data list
+                                p_info_formatted["games"].append(lichess_interface.format_lichess_game_essentials(game_mongo_id, formatted_game, False))
+                            # 
+                            
+                            # store participant info to MongoDB
+                            p_user_mongo_id = mongo_db_interface.store_dict_to_MongoDB(p_info_formatted, collection_users)
+                            # insert user in neo4j
+                            neo4j_dr.insert_user_entity(str(p_user_mongo_id), p_info_formatted.get("username"))
+                            # connect user to tournament in neo4j
+                            neo4j_dr.connect_user_tournament(str(p_user_mongo_id), str(tournament_mongo_id), {})
+        
+        # after processing all users of a given team, add them to team in MongoDB
+        mongo_db_interface.add_members_to_team_in_MongoDB(team_mongo_id, members, collection_team)
+
+        # end so just one loop for testing
+        break
+
+
     print("Finished processing all teams.")

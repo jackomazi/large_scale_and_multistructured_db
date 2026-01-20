@@ -128,7 +128,6 @@ public class TournamentServiceImpl implements TournamentService {
     dto.setParticipants(tournament.getParticipants());
     dto.setMaxParticipants(tournament.getMaxParticipants());
     dto.setTimeControl(tournament.getTimeControl());
-    dto.setPlayers(tournament.getPlayers());
     dto.setGames(tournament.getGames());
     return dto;
   }
@@ -156,7 +155,6 @@ public class TournamentServiceImpl implements TournamentService {
     tournament.setParticipants(dto.getParticipants());
     tournament.setMaxParticipants(dto.getMaxParticipants());
     tournament.setTimeControl(dto.getTimeControl());
-    tournament.setPlayers(dto.getPlayers());
     tournament.setGames(dto.getGames());
     return tournament;
   }

@@ -4,6 +4,7 @@ import it.unipi.chessApp.dto.PageDTO;
 import it.unipi.chessApp.dto.ResponseWrapper;
 import it.unipi.chessApp.dto.TournamentDTO;
 import it.unipi.chessApp.dto.TournamentParticipantDTO;
+import it.unipi.chessApp.service.Neo4jService;
 import it.unipi.chessApp.service.TournamentService;
 import it.unipi.chessApp.service.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
@@ -19,18 +20,20 @@ import java.util.List;
 public class TournamentController {
 
   private final TournamentService tournamentService;
+  private final Neo4jService neo4jService;
 
   @PostMapping
   public ResponseEntity<ResponseWrapper<TournamentDTO>> createTournament(
     @RequestBody TournamentDTO tournamentDTO
   ) throws BusinessException {
-    TournamentDTO createdTournament = tournamentService.createTournament(
+    TournamentDTO createdTournamentDTO = tournamentService.createTournament(
       tournamentDTO
     );
+      neo4jService.createTournament(tournamentDTO.getId(), tournamentDTO.getName());
     return ResponseEntity.status(HttpStatus.CREATED).body(
       new ResponseWrapper<>(
         "Tournament created successfully",
-        createdTournament
+        createdTournamentDTO
       )
     );
   }

@@ -59,7 +59,7 @@ public class ClubServiceImpl implements ClubService {
           List<ClubMember> members = clubNodeRepository.findClubMembers(name);
           List<ClubMemberDTO> clubMemberDTOS = new ArrayList<>();
           for(ClubMember member: members){
-              clubMemberDTOS.add(convertMemberToDTO(member));
+              clubMemberDTOS.add(ClubMemberDTO.convertMemberToDTO(member));
           }
           return clubMemberDTOS;
       }
@@ -121,16 +121,6 @@ public class ClubServiceImpl implements ClubService {
     dto.setCreationDate(club.getCreationDate());
     dto.setAdmin(club.getAdmin());
     return dto;
-  }
-
-  private ClubMemberDTO convertMemberToDTO(ClubMember member){
-      ClubMemberDTO dto = new ClubMemberDTO();
-      dto.setName(member.getName());
-      dto.setCountry(member.getCountry());
-      dto.setBlitzRating(member.getBlitzRating());
-      dto.setBulletRating(member.getBulletRating());
-      dto.setBulletRating(member.getBulletRating());
-      return dto;
   }
 
   private Club convertToEntity(ClubDTO dto) {

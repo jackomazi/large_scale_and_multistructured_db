@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: it.unipi.chessApp.ChessAppApplicationTests
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.235 s -- in it.unipi.chessApp.ChessAppApplicationTests

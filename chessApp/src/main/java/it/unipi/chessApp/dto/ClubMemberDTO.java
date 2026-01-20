@@ -1,6 +1,8 @@
 package it.unipi.chessApp.dto;
 
 
+import it.unipi.chessApp.model.neo4j.ClubMember;
+
 public class ClubMemberDTO {
     private String name;
 
@@ -50,5 +52,15 @@ public class ClubMemberDTO {
 
     public void setRapidRating(int rapidRating) {
         this.rapidRating = rapidRating;
+    }
+
+    public static ClubMemberDTO convertMemberToDTO(ClubMember member){
+        ClubMemberDTO dto = new ClubMemberDTO();
+        dto.setName(member.getName());
+        dto.setCountry(member.getCountry());
+        dto.setBlitzRating(member.getBlitzRating());
+        dto.setBulletRating(member.getBulletRating());
+        dto.setBulletRating(member.getBulletRating());
+        return dto;
     }
 }

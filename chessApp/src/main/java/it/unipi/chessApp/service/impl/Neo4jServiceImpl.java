@@ -1,10 +1,12 @@
 package it.unipi.chessApp.service.impl;
 
+import it.unipi.chessApp.dto.UserDTO;
+import it.unipi.chessApp.model.User;
 import it.unipi.chessApp.model.neo4j.ClubNode;
-import it.unipi.chessApp.model.neo4j.ClubMember;
 import it.unipi.chessApp.model.neo4j.TournamentParticipant;
 import it.unipi.chessApp.model.neo4j.TournamentNode;
 import it.unipi.chessApp.model.neo4j.UserNode;
+import it.unipi.chessApp.repository.UserRepository;
 import it.unipi.chessApp.repository.neo4j.ClubNodeRepository;
 import it.unipi.chessApp.repository.neo4j.TournamentNodeRepository;
 import it.unipi.chessApp.repository.neo4j.UserNodeRepository;
@@ -22,6 +24,7 @@ public class Neo4jServiceImpl implements Neo4jService {
     private final UserNodeRepository userNodeRepository;
     private final ClubNodeRepository clubNodeRepository;
     private final TournamentNodeRepository tournamentNodeRepository;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
@@ -46,24 +49,33 @@ public class Neo4jServiceImpl implements Neo4jService {
 
     @Override
     @Transactional
-    public void joinClub(String userMongoId, String clubMongoId, String country, int bulletRating, int blitzRating, int rapidRating) {
-        Optional<UserNode> userOpt = userNodeRepository.findById(userMongoId);
-        Optional<ClubNode> clubOpt = clubNodeRepository.findById(clubMongoId);
+    public void joinClub(String userName, String clubName) {
+        try {
+            System.out.println("I'm at least heree");
+            Optional<UserNode> userOPT = userNodeRepository.findByName(userName);
+            System.out.println("I'm at least heree");
+            Optional<ClubNode> clubOPT = clubNodeRepository.findByName(clubName);
+            System.out.println("I'm at least heree");
 
-        if (userOpt.isPresent() && clubOpt.isPresent()) {
-            UserNode user = userOpt.get();
-            ClubNode club = clubOpt.get();
-
-            //
-
-            ClubMember joined = new ClubMember();
-            joined.setCountry(country);
-            joined.setBulletRating(bulletRating);
-            joined.setBlitzRating(blitzRating);
-            joined.setRapidRating(rapidRating);
-
-            user.getClubs().add(joined);
-            userNodeRepository.save(user);
+            if (userOPT.isPresent() && clubOPT.isPresent()) {
+                //Getting user infos & stats
+                Optional<User> user = userRepository.findByUsername(userOPT.get().getName());
+                System.out.println("Ciaoo");
+                if (user.isPresent()) {
+                    UserDTO userDTO = UserDTO.convertToDTO(user.get());
+                    System.out.println("I'm at least heree");
+                    userNodeRepository.createJoinedRelation(userName,
+                            clubName,
+                            userDTO.getCountry(),
+                            userDTO.getStats().getBullet(),
+                            userDTO.getStats().getBlitz(),
+                            userDTO.getStats().getRapid());
+                }
+            System.out.println("Ciaooooooo");
+            }
+        }
+        catch (Exception e){
+            System.out.println(e.getMessage());
         }
     }
 

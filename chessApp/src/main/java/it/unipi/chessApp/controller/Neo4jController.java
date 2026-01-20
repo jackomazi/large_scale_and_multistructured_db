@@ -38,15 +38,6 @@ public class Neo4jController {
                 .body(new ResponseWrapper<>("Neo4j Tournament created successfully", null));
     }
 
-    @PostMapping("/users/{userId}/clubs/{clubId}")
-    public ResponseEntity<ResponseWrapper<Void>> joinClub(
-            @PathVariable String userId,
-            @PathVariable String clubId,
-            @RequestBody Neo4jJoinClubDTO dto) {
-        neo4jService.joinClub(userId, clubId, dto.getCountry(), dto.getBulletRating(), dto.getBlitzRating(), dto.getRapidRating());
-        return ResponseEntity.ok(new ResponseWrapper<>("User joined club successfully in Neo4j", null));
-    }
-
     @PostMapping("/users/{userId}/tournaments/{tournamentId}")
     public ResponseEntity<ResponseWrapper<Void>> participateTournament(
             @PathVariable String userId,

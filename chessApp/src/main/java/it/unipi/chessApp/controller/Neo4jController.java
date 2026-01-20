@@ -2,7 +2,7 @@ package it.unipi.chessApp.controller;
 
 import it.unipi.chessApp.dto.Neo4jEntityDTO;
 import it.unipi.chessApp.dto.Neo4jJoinClubDTO;
-import it.unipi.chessApp.dto.Neo4jTournamentParticipationDTO;
+import it.unipi.chessApp.dto.TournamentParticipantDTO;
 import it.unipi.chessApp.dto.ResponseWrapper;
 import it.unipi.chessApp.service.Neo4jService;
 import lombok.RequiredArgsConstructor;
@@ -51,7 +51,7 @@ public class Neo4jController {
     public ResponseEntity<ResponseWrapper<Void>> participateTournament(
             @PathVariable String userId,
             @PathVariable String tournamentId,
-            @RequestBody Neo4jTournamentParticipationDTO dto) {
+            @RequestBody TournamentParticipantDTO dto) {
         neo4jService.participateTournament(userId, tournamentId, dto.getWins(), dto.getDraws(), dto.getLosses(), dto.getPlacement());
         return ResponseEntity.ok(new ResponseWrapper<>("User participation in tournament recorded successfully in Neo4j", null));
     }

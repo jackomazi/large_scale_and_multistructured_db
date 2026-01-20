@@ -9,7 +9,7 @@ import org.springframework.data.neo4j.core.schema.TargetNode;
 @RelationshipProperties
 @Data
 @NoArgsConstructor
-public class ParticipatedRelationship {
+public class TournamentPartecipant {
     @RelationshipId
     private Long id;
 

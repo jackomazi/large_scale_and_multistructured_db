@@ -27,7 +27,7 @@ public class UserNode {
     private List<ClubMember> clubs = new ArrayList<>();
 
     @Relationship(type = "PARTECIPATED", direction = Relationship.Direction.OUTGOING)
-    private List<ParticipatedRelationship> tournaments = new ArrayList<>();
+    private List<TournamentParticipant> tournaments = new ArrayList<>();
 
     public UserNode(String id, String name) {
         this.id = id;

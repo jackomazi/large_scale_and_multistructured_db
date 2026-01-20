@@ -44,22 +44,29 @@ public class ClubServiceImpl implements ClubService {
         .orElseThrow(() ->
           new BusinessException("Club not found with ID: " + name)
         );
-      List<ClubMember> members = clubNodeRepository.findClubMembers(name);
-
-      ClubDTO clubDTO = convertToDTO(club);
-
-      List<ClubMemberDTO> clubMemberDTOS = new ArrayList<>();
-      for(ClubMember member: members){
-          clubMemberDTOS.add(convertMemberToDTO(member));
-      }
-      clubDTO.setMembers(clubMemberDTOS);
-      return clubDTO;
+      return convertToDTO(club);
     } catch (BusinessException e) {
       throw e;
     } catch (Exception e) {
         System.out.println(e.getMessage());
       throw new BusinessException("Error fetching club", e);
     }
+  }
+
+  @Override
+  public List<ClubMemberDTO> getClubMembers(String name) throws BusinessException{
+      try {
+          List<ClubMember> members = clubNodeRepository.findClubMembers(name);
+          List<ClubMemberDTO> clubMemberDTOS = new ArrayList<>();
+          for(ClubMember member: members){
+              clubMemberDTOS.add(convertMemberToDTO(member));
+          }
+          return clubMemberDTOS;
+      }
+      catch (Exception e){
+          throw new BusinessException("Error fetching club", e);
+      }
+
   }
 
   @Override

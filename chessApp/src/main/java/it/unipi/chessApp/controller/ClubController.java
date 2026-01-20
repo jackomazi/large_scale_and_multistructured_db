@@ -1,6 +1,7 @@
 package it.unipi.chessApp.controller;
 
 import it.unipi.chessApp.dto.ClubDTO;
+import it.unipi.chessApp.dto.ClubMemberDTO;
 import it.unipi.chessApp.dto.PageDTO;
 import it.unipi.chessApp.dto.ResponseWrapper;
 import it.unipi.chessApp.service.ClubService;
@@ -9,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @RestController
 @RequestMapping("/clubs")
@@ -35,6 +37,16 @@ public class ClubController {
     return ResponseEntity.ok(
       new ResponseWrapper<>("Club retrieved successfully", club)
     );
+  }
+
+  @GetMapping("/{name}/members")
+  public ResponseEntity<ResponseWrapper<List<ClubMemberDTO>>> getClubMembers(
+          @PathVariable String name
+  ) throws BusinessException {
+      List<ClubMemberDTO> members = clubService.getClubMembers(name);
+      return ResponseEntity.ok(
+              new ResponseWrapper<List<ClubMemberDTO>>("Club retrieved successfully", members)
+      );
   }
 
   @GetMapping

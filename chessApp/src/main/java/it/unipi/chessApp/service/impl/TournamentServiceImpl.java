@@ -2,8 +2,11 @@ package it.unipi.chessApp.service.impl;
 
 import it.unipi.chessApp.dto.PageDTO;
 import it.unipi.chessApp.dto.TournamentDTO;
+import it.unipi.chessApp.dto.TournamentParticipantDTO;
 import it.unipi.chessApp.model.Tournament;
+import it.unipi.chessApp.model.neo4j.TournamentParticipant;
 import it.unipi.chessApp.repository.TournamentRepository;
+import it.unipi.chessApp.repository.neo4j.TournamentNodeRepository;
 import it.unipi.chessApp.service.TournamentService;
 import it.unipi.chessApp.service.exception.BusinessException;
 import it.unipi.chessApp.utils.Constants;
@@ -19,6 +22,7 @@ import org.springframework.stereotype.Service;
 public class TournamentServiceImpl implements TournamentService {
 
   private final TournamentRepository tournamentRepository;
+  private final TournamentNodeRepository tournamentNodeRepository;
 
   @Override
   public TournamentDTO createTournament(TournamentDTO tournamentDTO)
@@ -69,6 +73,22 @@ public class TournamentServiceImpl implements TournamentService {
   }
 
   @Override
+  public List<TournamentParticipantDTO> getTournamentParticipants(String name) throws BusinessException{
+      try {
+          List<TournamentParticipant> participants = tournamentNodeRepository.findTournamentParticipants(name);
+
+          return participants
+                  .stream()
+                  .map(this::convertoParticipantToDTO)
+                  .toList();
+      }
+      catch (Exception e){
+          System.out.println(e.getMessage());
+          throw new BusinessException("Error fetching tournament participant", e);
+      }
+  }
+
+  @Override
   public TournamentDTO updateTournament(String id, TournamentDTO tournamentDTO)
     throws BusinessException {
     try {
@@ -111,6 +131,16 @@ public class TournamentServiceImpl implements TournamentService {
     dto.setPlayers(tournament.getPlayers());
     dto.setGames(tournament.getGames());
     return dto;
+  }
+
+  private TournamentParticipantDTO convertoParticipantToDTO(TournamentParticipant participant){
+      TournamentParticipantDTO participantDTO = new TournamentParticipantDTO();
+      participantDTO.setName(participant.getName());
+      participantDTO.setWins(participant.getWins());
+      participantDTO.setDraws(participant.getDraws());
+      participantDTO.setLosses(participant.getLosses());
+      participantDTO.setPlacement(participant.getPlacement());
+      return participantDTO;
   }
 
   private Tournament convertToEntity(TournamentDTO dto) {

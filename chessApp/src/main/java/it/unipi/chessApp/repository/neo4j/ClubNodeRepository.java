@@ -16,7 +16,7 @@ public interface ClubNodeRepository extends Neo4jRepository<ClubNode, String> {
                 p.mongo_id AS id,
                 p.name AS name, 
                 r.country AS country,
-                r.butter AS bulletRating,
+                r.bullet AS bulletRating,
                 r.blitz AS blitzRating,
                 r.rapid AS rapidRating
             """)

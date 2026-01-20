@@ -2,7 +2,10 @@ package it.unipi.chessApp.service;
 
 import it.unipi.chessApp.dto.PageDTO;
 import it.unipi.chessApp.dto.TournamentDTO;
+import it.unipi.chessApp.dto.TournamentParticipantDTO;
 import it.unipi.chessApp.service.exception.BusinessException;
+
+import java.util.List;
 
 public interface TournamentService {
   TournamentDTO createTournament(TournamentDTO tournamentDTO)
@@ -12,4 +15,5 @@ public interface TournamentService {
   TournamentDTO updateTournament(String id, TournamentDTO tournamentDTO)
     throws BusinessException;
   void deleteTournament(String id) throws BusinessException;
+  List<TournamentParticipantDTO> getTournamentParticipants(String name) throws BusinessException;
 }

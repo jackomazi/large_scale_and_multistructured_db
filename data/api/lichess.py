@@ -7,6 +7,7 @@ from dateutil.parser import isoparse
 import time
 import random
 from requests.exceptions import ReadTimeout
+from typing import List, Dict
 
 COUNTRIES = [
     "AF","AX","AL","DZ","AS","AD","AO","AI","AQ","AG","AR","AM","AW","AU","AT","AZ",
@@ -214,7 +215,15 @@ class lichess_interface:
         else:
             end_time = None
         
-        eco = game.get("opening", {}).get("eco") if game.get("opening") else None
+        opening = game.get("opening")
+
+        if isinstance(opening, dict):
+            eco = opening.get("eco")
+            opening_name = opening.get("name")
+        else:
+            eco = None
+            opening_name = None
+
         eco_url = f"https://www.365chess.com/eco/{eco}" if eco else None
         return {
             "_id": game_url,
@@ -225,7 +234,7 @@ class lichess_interface:
             "result_white": result_white,
             "result_black": result_black,
             "eco_url": eco_url,
-            "opening": game.get("opening", {}).get("name") if game.get("opening") else None,
+            "opening": opening_name,
             "moves": game.get("moves"),
             "time_class": game.get("speed"),
             "end_time": end_time
@@ -260,6 +269,8 @@ class lichess_interface:
     
     @staticmethod
     def format_lichess_player_infos(user_info: dict) -> dict:
+        if user_info.get("disabled") is True:
+            return None
         # Useless data
         user_info.pop("id", None)
         user_info.pop("url", None)
@@ -275,7 +286,8 @@ class lichess_interface:
         except:
             user_info["country"] = random.choice(COUNTRIES)
 
-        # Date modification for MongoDB storage                 
+        # Date modification for MongoDB storage 
+                    
         date = user_info.get("seenAt") / 1000
         user_info["last_online"] =  datetime.fromtimestamp(date).strftime('%Y-%m-%d %H:%M:%S')
         date = user_info.get("createdAt") / 1000
@@ -453,65 +465,63 @@ class lichess_interface:
     
 
     @staticmethod
-    def get_lichess_tournament_games_all(tournament_id: str, total_games: int) -> list:
+    def get_lichess_tournament_games_all(
+        tournament_id: str,
+        total_games: int | None = None
+    ) -> List[Dict]:
         """
-        Fetch all games from a Lichess tournament safely.
-        Stops automatically after total_games or max_games, never blocks.
+        Fetch all games from a Lichess Arena tournament using NDJSON streaming.
+
+        :param tournament_id: Lichess tournament ID
+        :param total_games: Optional hard limit on number of games to fetch
+        :param oauth_token: Optional OAuth token (increases rate limit)
+        :return: List of game dicts
         """
 
         url = f"https://lichess.org/api/tournament/{tournament_id}/games"
+
+        oauth_token = "Noo" # Ask Andrea for token, soon it will be added an env file with it
+        
         headers = {
             "Accept": "application/x-ndjson",
-            "User-Agent": "Lichess Data Collector - academic"
+            "User-Agent": "Lichess Data Collector - academic purposes"
         }
-        max_games = None  # You can set a maximum number of games to fetch if desired
-        limit = total_games if max_games is None else min(total_games, max_games)
-        games = []
 
-        try:
-            response = requests.get(url, headers=headers, stream=True, timeout=(5, None))
+        if oauth_token:
+            headers["Authorization"] = f"Bearer {oauth_token}"
+
+        params = {
+            "player": "",
+            "moves": "true",
+            "pgnInJson": "false",
+            "tags": "true",
+            "clocks": "false",
+            "evals": "false",
+            "accuracy": "false",
+            "opening": "true",
+            "division": "false"
+        }
+
+        games: List[Dict] = []
+
+        with requests.get(url, headers=headers, params=params, stream=True, timeout=60) as response:
             response.raise_for_status()
 
-            buffer = ""
-            last_data_time = time.time()
-            INACTIVITY_TIMEOUT = 3  # stop if no data for 3 sec
+            for line in response.iter_lines():
+                if not line:
+                    continue
 
-            while True:
-                # leggi chunk dal socket
-                chunk = response.raw.read(1024)
-                if not chunk:
-                    # niente dati → controllo timeout
-                    if time.time() - last_data_time > INACTIVITY_TIMEOUT:
-                        break
-                    else:
-                        time.sleep(0.1)
-                        continue
-
-                last_data_time = time.time()
-                buffer += chunk.decode("utf-8")
-
-                while "\n" in buffer:
-                    line, buffer = buffer.split("\n", 1)
-                    if not line.strip():
-                        continue
-                    game = json.loads(line)
+                try:
+                    game = json.loads(line.decode("utf-8"))
                     games.append(game)
+                except json.JSONDecodeError:
+                    continue
 
-                    if len(games) >= limit:
-                        break
-
-                if len(games) >= limit:
-                    break
-
-        finally:
-            response.close()  # chiude la connessione
+                if total_games is not None and len(games) >= total_games:
+                    print(f"Reached total_games limit: {total_games}")
+                    return games
 
         return games
-
-
-
-
-
 
     @staticmethod
     def format_lichess_tournament_info(tournament_info: dict) -> dict:
@@ -565,6 +575,33 @@ class lichess_interface:
         tournament_info.pop("verdicts", None)
 
         tournament_info.pop("pairingsClosed", None)
+
+        tournament_info.pop("isRecentlyFinished", None)
+
+        tournament_info.pop("id", None)
+
+        tournament_info.pop("schedule", None)
+
+        tournament_info.pop("teamMember", None)
+        
+        tournament_info.pop("teamStanding", None)
+
+        tournament_info.pop("teamBattle", None)
+
+        tournament_info.pop("position", None)
+
+        tournament_info.pop("noStreak", None)
+
+        # format podium: keep only name, rating, score
+        if "podium" in tournament_info and isinstance(tournament_info["podium"], list):
+            tournament_info["podium"] = [
+                {
+                    "name": p.get("name"),
+                    "rating": p.get("rating"),
+                    "score": p.get("score"),
+                }
+                for p in tournament_info["podium"]
+            ]
 
         # for the app purposes, if the creator is lichess, we set it to admin
         if tournament_info["creator"] == "lichess":

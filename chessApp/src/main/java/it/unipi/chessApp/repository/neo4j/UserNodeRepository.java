@@ -1,11 +1,14 @@
 package it.unipi.chessApp.repository.neo4j;
 
+import it.unipi.chessApp.dto.Neo4jEntityDTO;
 import it.unipi.chessApp.model.neo4j.ClubMember;
+import it.unipi.chessApp.model.neo4j.FriendRecommendation;
 import it.unipi.chessApp.model.neo4j.UserNode;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -59,4 +62,32 @@ public interface UserNodeRepository extends Neo4jRepository<UserNode, String> {
             DELETE r
         """)
     void deleteFollowsRelationship(String SourceId, String TargetId);
+
+    @Query("""
+            MATCH (me:USER {mongo_id: $userID})
+            MATCH (me)-[:JOINED|PARTECIPATED]->(comune)
+            MATCH (consigliato:USER)-[:JOINED|PARTECIPATED]->(comune)
+            WHERE consigliato <> me
+              AND NOT (me)-[:FOLLOWS]->(consigliato)
+            RETURN
+                consigliato.mongo_id AS mongoID,
+                consigliato.name AS name,
+                collect(DISTINCT labels(comune)[0])[0] AS connectionType
+            LIMIT 10
+            """)
+    List<FriendRecommendation> suggestFriends(String userID);
+
+    @Query("""
+            MATCH (me:USER {mongo_id: $userID})-[:FOLLOWS]->(friend:USER)
+            RETURN
+                friend.mongo_id AS mongo_id,
+                friend.name AS name
+            """)
+    List<UserNode> findUserFollows(String userID);
+
+    @Query("""
+            MATCH (me:USER {mongo_id: $userID})<-[:FOLLOWS]-(friend:USER)
+            RETURN friend
+            """)
+    List<UserNode> findUserFollowers(String userID);
 }

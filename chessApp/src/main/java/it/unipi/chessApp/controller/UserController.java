@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
@@ -103,5 +105,29 @@ public class UserController {
             @PathVariable String tournamentId) {
         neo4jService.participateTournament(userId, tournamentId);
         return ResponseEntity.ok(new ResponseWrapper<>("User participation in tournament recorded successfully in Neo4j", null));
+    }
+
+    @GetMapping("/{userId}/follows/suggestions")
+    public ResponseEntity<ResponseWrapper<List<FriendRecommendationDTO>>> suggestFriends(
+            @RequestParam String userId)
+    {
+      List<FriendRecommendationDTO> suggestions = neo4jService.suggestFriends(userId);
+      return ResponseEntity.ok(new ResponseWrapper<>("User friends suggestions include", suggestions));
+    }
+
+    @GetMapping("/{userId}/follows")
+    public ResponseEntity<ResponseWrapper<List<Neo4jEntityDTO>>> findUserFollows(
+            @RequestParam String userId
+    ){
+      List<Neo4jEntityDTO> follows = neo4jService.findUserFollows(userId);
+      return ResponseEntity.ok(new ResponseWrapper<>("User follows", follows));
+    }
+
+    @GetMapping("/{userId}/followers")
+    public ResponseEntity<ResponseWrapper<List<Neo4jEntityDTO>>> findUserFollowers(
+            @RequestParam String userId
+    ){
+        List<Neo4jEntityDTO> follows = neo4jService.findUserFollowers(userId);
+        return ResponseEntity.ok(new ResponseWrapper<>("User followers", follows));
     }
 }

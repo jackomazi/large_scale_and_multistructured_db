@@ -1,11 +1,10 @@
 package it.unipi.chessApp.service.impl;
 
+import it.unipi.chessApp.dto.FriendRecommendationDTO;
+import it.unipi.chessApp.dto.Neo4jEntityDTO;
 import it.unipi.chessApp.dto.UserDTO;
 import it.unipi.chessApp.model.User;
-import it.unipi.chessApp.model.neo4j.ClubNode;
-import it.unipi.chessApp.model.neo4j.TournamentParticipant;
-import it.unipi.chessApp.model.neo4j.TournamentNode;
-import it.unipi.chessApp.model.neo4j.UserNode;
+import it.unipi.chessApp.model.neo4j.*;
 import it.unipi.chessApp.repository.UserRepository;
 import it.unipi.chessApp.repository.neo4j.ClubNodeRepository;
 import it.unipi.chessApp.repository.neo4j.TournamentNodeRepository;
@@ -14,8 +13,11 @@ import it.unipi.chessApp.service.Neo4jService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import it.unipi.chessApp.dto.FriendRecommendationDTO;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -76,23 +78,51 @@ public class Neo4jServiceImpl implements Neo4jService {
     @Override
     @Transactional
     public void participateTournament(String userMongoId, String tournamentMongoId) {
-
         tournamentNodeRepository.createParticipatedRelation(userMongoId, tournamentMongoId);
-
     }
 
     @Override
     @Transactional
     public void followUser(String SourceId, String TargetId) {
-
         userNodeRepository.follow(SourceId, TargetId);
     }
 
     @Override
     @Transactional
     public void unfollowUser(String SourceId, String TargetId) {
-
         userNodeRepository.deleteFollowsRelationship(SourceId, TargetId);
+    }
 
+    @Override
+    @Transactional
+    public List<FriendRecommendationDTO> suggestFriends(String userID){
+        List<FriendRecommendation> recomandations = userNodeRepository.suggestFriends(userID);
+        List<FriendRecommendationDTO> recomandationDTOS = recomandations
+                .stream()
+                .map(FriendRecommendationDTO::convertToDTO)
+                .toList();
+        return recomandationDTOS;
+    }
+
+    @Override
+    @Transactional
+    public List<Neo4jEntityDTO> findUserFollows(String userID){
+        List<UserNode> follows = userNodeRepository.findUserFollows(userID);
+        List<Neo4jEntityDTO> followDTOS = follows
+                .stream()
+                .map(Neo4jEntityDTO::convertToDTO)
+                .toList();
+        return followDTOS;
+    }
+
+    @Override
+    @Transactional
+    public List<Neo4jEntityDTO>  findUserFollowers(String userID){
+        List<UserNode> follows = userNodeRepository.findUserFollowers(userID);
+        List<Neo4jEntityDTO> followDTOS = follows
+                .stream()
+                .map(Neo4jEntityDTO::convertToDTO)
+                .toList();
+        return followDTOS;
     }
 }

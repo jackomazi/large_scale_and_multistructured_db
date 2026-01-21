@@ -51,19 +51,14 @@ public class Neo4jServiceImpl implements Neo4jService {
     @Transactional
     public void joinClub(String userName, String clubName) {
         try {
-            System.out.println("I'm at least heree");
             Optional<UserNode> userOPT = userNodeRepository.findByName(userName);
-            System.out.println("I'm at least heree");
             Optional<ClubNode> clubOPT = clubNodeRepository.findByName(clubName);
-            System.out.println("I'm at least heree");
 
             if (userOPT.isPresent() && clubOPT.isPresent()) {
                 //Getting user infos & stats
                 Optional<User> user = userRepository.findByUsername(userOPT.get().getName());
-                System.out.println("Ciaoo");
                 if (user.isPresent()) {
                     UserDTO userDTO = UserDTO.convertToDTO(user.get());
-                    System.out.println("I'm at least heree");
                     userNodeRepository.createJoinedRelation(userName,
                             clubName,
                             userDTO.getCountry(),
@@ -71,7 +66,6 @@ public class Neo4jServiceImpl implements Neo4jService {
                             userDTO.getStats().getBlitz(),
                             userDTO.getStats().getRapid());
                 }
-            System.out.println("Ciaooooooo");
             }
         }
         catch (Exception e){
@@ -81,38 +75,24 @@ public class Neo4jServiceImpl implements Neo4jService {
 
     @Override
     @Transactional
-    public void participateTournament(String userMongoId, String tournamentMongoId, int wins, int draws, int losses, int placement) {
-        Optional<UserNode> userOpt = userNodeRepository.findById(userMongoId);
-        Optional<TournamentNode> tournamentOpt = tournamentNodeRepository.findById(tournamentMongoId);
+    public void participateTournament(String userMongoId, String tournamentMongoId) {
 
-        if (userOpt.isPresent() && tournamentOpt.isPresent()) {
-            UserNode user = userOpt.get();
-            TournamentNode tournament = tournamentOpt.get();
+        tournamentNodeRepository.createParticipatedRelation(userMongoId, tournamentMongoId);
 
-            TournamentParticipant participated = new TournamentParticipant();
-            participated.setWins(wins);
-            participated.setDraws(draws);
-            participated.setLosses(losses);
-            participated.setPlacement(placement);
-            participated.setTournament(tournament);
-
-            user.getTournaments().add(participated);
-            userNodeRepository.save(user);
-        }
     }
 
     @Override
     @Transactional
-    public void followUser(String followerMongoId, String followedMongoId) {
-        Optional<UserNode> followerOpt = userNodeRepository.findById(followerMongoId);
-        Optional<UserNode> followedOpt = userNodeRepository.findById(followedMongoId);
+    public void followUser(String SourceId, String TargetId) {
 
-        if (followerOpt.isPresent() && followedOpt.isPresent()) {
-            UserNode follower = followerOpt.get();
-            UserNode followed = followedOpt.get();
+        userNodeRepository.follow(SourceId, TargetId);
+    }
 
-            follower.getFollowing().add(followed);
-            userNodeRepository.save(follower);
-        }
+    @Override
+    @Transactional
+    public void unfollowUser(String SourceId, String TargetId) {
+
+        userNodeRepository.deleteFollowsRelationship(SourceId, TargetId);
+
     }
 }

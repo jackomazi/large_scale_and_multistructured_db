@@ -61,10 +61,10 @@ public class TournamentController {
     );
   }
 
-  @GetMapping("/{name}/participants")
+  @GetMapping("/{id}/participants")
   public ResponseEntity<ResponseWrapper<List<TournamentParticipantDTO>>>
-  getTournamentParticipants(@RequestParam String name) throws BusinessException{
-      List<TournamentParticipantDTO> participants = tournamentService.getTournamentParticipants(name);
+  getTournamentParticipants(@RequestParam String id) throws BusinessException{
+      List<TournamentParticipantDTO> participants = tournamentService.getTournamentParticipants(id);
       return ResponseEntity.ok(
               new ResponseWrapper<>("Tournaments retrieved successfully", participants)
       );

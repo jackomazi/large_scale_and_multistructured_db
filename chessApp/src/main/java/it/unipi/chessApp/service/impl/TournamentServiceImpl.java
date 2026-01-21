@@ -73,9 +73,9 @@ public class TournamentServiceImpl implements TournamentService {
   }
 
   @Override
-  public List<TournamentParticipantDTO> getTournamentParticipants(String name) throws BusinessException{
+  public List<TournamentParticipantDTO> getTournamentParticipants(String id) throws BusinessException{
       try {
-          List<TournamentParticipant> participants = tournamentNodeRepository.findTournamentParticipants(name);
+          List<TournamentParticipant> participants = tournamentNodeRepository.findTournamentParticipants(id);
 
           return participants
                   .stream()

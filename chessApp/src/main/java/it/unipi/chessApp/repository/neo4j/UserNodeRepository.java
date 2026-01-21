@@ -46,4 +46,17 @@ public interface UserNodeRepository extends Neo4jRepository<UserNode, String> {
 
     @Query("MATCH (u:USER {name: $name}) RETURN u")
     Optional<UserNode> findByName(String name);
+
+    @Query("""
+        MATCH (a:USER {mongo_id: $SourceId})
+        MATCH (b:USER {mongo_id: $TargetId})
+        MERGE (a)-[:FOLLOWS]->(b)
+        """)
+    void follow(String SourceId, String TargetId);
+
+    @Query("""
+            MATCH (follower:USER {mongo_id: $SourceId})-[r:FOLLOWS]->(followed:USER {mongo_id: $TargetId})
+            DELETE r
+        """)
+    void deleteFollowsRelationship(String SourceId, String TargetId);
 }

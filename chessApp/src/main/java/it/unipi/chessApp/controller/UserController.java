@@ -1,9 +1,6 @@
 package it.unipi.chessApp.controller;
 
-import it.unipi.chessApp.dto.Neo4jJoinClubDTO;
-import it.unipi.chessApp.dto.PageDTO;
-import it.unipi.chessApp.dto.ResponseWrapper;
-import it.unipi.chessApp.dto.UserDTO;
+import it.unipi.chessApp.dto.*;
 import it.unipi.chessApp.service.Neo4jService;
 import it.unipi.chessApp.service.UserService;
 import it.unipi.chessApp.service.exception.BusinessException;
@@ -83,4 +80,28 @@ public class UserController {
       new ResponseWrapper<>("User deleted successfully", null)
     );
   }
+
+    @PostMapping("/{SourceId}/follows/{TargetId}")
+    public ResponseEntity<ResponseWrapper<Void>> followUser(
+            @PathVariable String SourceId,
+            @PathVariable String TargetId) {
+        neo4jService.followUser(SourceId, TargetId);
+        return ResponseEntity.ok(new ResponseWrapper<>("User follow relationship created successfully in Neo4j", null));
+    }
+
+    @PostMapping("/{SourceId}/unfollows/{TargetId}")
+    public ResponseEntity<ResponseWrapper<Void>> unfollowUser(
+            @PathVariable String SourceId,
+            @PathVariable String TargetId) {
+        neo4jService.unfollowUser(SourceId, TargetId);
+        return ResponseEntity.ok(new ResponseWrapper<>("User follow relationship created successfully in Neo4j", null));
+    }
+
+    @PostMapping("/{userId}/participates/{tournamentId}")
+    public ResponseEntity<ResponseWrapper<Void>> participateTournament(
+            @PathVariable String userId,
+            @PathVariable String tournamentId) {
+        neo4jService.participateTournament(userId, tournamentId);
+        return ResponseEntity.ok(new ResponseWrapper<>("User participation in tournament recorded successfully in Neo4j", null));
+    }
 }

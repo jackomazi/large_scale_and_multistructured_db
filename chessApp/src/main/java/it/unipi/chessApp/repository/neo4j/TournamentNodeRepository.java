@@ -14,7 +14,7 @@ public interface TournamentNodeRepository extends Neo4jRepository<TournamentNode
 
     @Query("""
             MATCH (p)-[r:PARTECIPATED]->(t)
-            WHERE t.name STARTS WITH $name
+            WHERE t.mongo_id STARTS WITH $id
                RETURN
                p.mongo_id AS id,
                p.name AS name,
@@ -23,6 +23,18 @@ public interface TournamentNodeRepository extends Neo4jRepository<TournamentNode
                r.draws AS draws,
                r.placement AS placement
             """)
-    List<TournamentParticipant> findTournamentParticipants(String name);
+    List<TournamentParticipant> findTournamentParticipants(String id);
+
+    @Query("""
+            MATCH (p: USER {mongo_id: $userID})
+            MATCH (t: TOURNAMENT {mongo_id: $tournamentID})
+            MERGE (p)-[r:PARTECIPATED]->(t)
+            ON CREATE SET
+                r.wins = 0,
+                r.draws = 0,
+                r.losses = 0,
+                r.placement = -1
+            """)
+    Void createParticipatedRelation(String userID, String tournamentID);
 
 }

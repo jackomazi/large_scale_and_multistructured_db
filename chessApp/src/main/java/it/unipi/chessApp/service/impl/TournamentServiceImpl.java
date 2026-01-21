@@ -73,9 +73,9 @@ public class TournamentServiceImpl implements TournamentService {
   }
 
   @Override
-  public List<TournamentParticipantDTO> getTournamentParticipants(String name) throws BusinessException{
+  public List<TournamentParticipantDTO> getTournamentParticipants(String id) throws BusinessException{
       try {
-          List<TournamentParticipant> participants = tournamentNodeRepository.findTournamentParticipants(name);
+          List<TournamentParticipant> participants = tournamentNodeRepository.findTournamentParticipants(id);
 
           return participants
                   .stream()
@@ -128,7 +128,6 @@ public class TournamentServiceImpl implements TournamentService {
     dto.setParticipants(tournament.getParticipants());
     dto.setMaxParticipants(tournament.getMaxParticipants());
     dto.setTimeControl(tournament.getTimeControl());
-    dto.setPlayers(tournament.getPlayers());
     dto.setGames(tournament.getGames());
     return dto;
   }
@@ -156,7 +155,6 @@ public class TournamentServiceImpl implements TournamentService {
     tournament.setParticipants(dto.getParticipants());
     tournament.setMaxParticipants(dto.getMaxParticipants());
     tournament.setTimeControl(dto.getTimeControl());
-    tournament.setPlayers(dto.getPlayers());
     tournament.setGames(dto.getGames());
     return tournament;
   }

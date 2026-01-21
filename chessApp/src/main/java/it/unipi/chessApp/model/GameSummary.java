@@ -17,5 +17,5 @@ public class GameSummary {
   private String black;
   private String opening;
   private String winner;
-  private long date;
+  private String date;
 }

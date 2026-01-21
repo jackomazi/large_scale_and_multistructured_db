@@ -326,7 +326,7 @@ class chess_com_interface:
                 "black": game.get("black_player"),
                 "opening": game.get("opening"),
                 "winner": game.get("white_player") if game.get("white_result") == game.get("white_player") else game.get("black_player"),
-                "date": game.get("end_time")
+                "date":  datetime.fromtimestamp(game.get("end_time")).strftime('%Y-%m-%d %H:%M:%S')
         }
     
     @staticmethod

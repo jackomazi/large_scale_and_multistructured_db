@@ -5,6 +5,7 @@ import it.unipi.chessApp.dto.ClubMemberDTO;
 import it.unipi.chessApp.dto.PageDTO;
 import it.unipi.chessApp.dto.ResponseWrapper;
 import it.unipi.chessApp.service.ClubService;
+import it.unipi.chessApp.service.Neo4jService;
 import it.unipi.chessApp.service.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,12 +19,14 @@ import java.util.List;
 public class ClubController {
 
   private final ClubService clubService;
+  private final Neo4jService neo4jService;
 
   @PostMapping
   public ResponseEntity<ResponseWrapper<ClubDTO>> createClub(
     @RequestBody ClubDTO clubDTO
   ) throws BusinessException {
     ClubDTO createdClub = clubService.createClub(clubDTO);
+    neo4jService.createClub(createdClub.getId(), createdClub.getName());
     return ResponseEntity.status(HttpStatus.CREATED).body(
       new ResponseWrapper<>("Club created successfully", createdClub)
     );

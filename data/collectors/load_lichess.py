@@ -150,8 +150,7 @@ if __name__ == "__main__":
                 # connect user to team in neo4j
                 player_essentials = lichess_interface.format_lichess_player_essentials(user_mongo_id, user_info_formatted)
                 neo4j_dr.connect_user_club(str(user_mongo_id), str(team_mongo_id), lichess_interface.format_lichess_player_essentials(user_mongo_id, user_info_formatted))
-                
-                
+
             # get n tournaments played by user
             tournaments = lichess_interface.get_n_lichess_player_tournaments(username, number_of_tournaments_per_user)
             # store tournaments to MongoDB

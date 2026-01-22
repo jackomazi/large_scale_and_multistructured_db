@@ -31,3 +31,5 @@ class mongo_db_interface:
             {"_id": user_mongo_id},
             {"$push": {"games": {"$each": games}}}
         )
+
+    

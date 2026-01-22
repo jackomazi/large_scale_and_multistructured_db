@@ -3,7 +3,7 @@
     "max_scrap_archives": 1,
     "max_scrap_games_per_archive": 3,
     "max_users_per_country": 20,
-    "max_tournament_per_user": 2,
+    "max_tournament_per_user": 3,
     "maximum_games_stored_per_user_document": 20,
     "maximum_user_stored_per_club": 60,
     "maximum_games_per_tournament": 20,
@@ -62,9 +62,9 @@
     ],
     "number_of_pages": 1, 
     "number_of_users_per_team": 4,
-    "number_of_games_per_user": 19,
+    "number_of_games_per_user": 20,
     "number_of_games_per_tournament_participant": 20,
     "max_games_per_user": 20,
-    "number_of_participant": 5,
+    "number_of_participant": 10,
     "openings": ["Caro-Kann Defense", "Italian Game: Giuoco Pianissimo, Italian Four Knights Variation", "London System", "Three Knights Opening"]
 }

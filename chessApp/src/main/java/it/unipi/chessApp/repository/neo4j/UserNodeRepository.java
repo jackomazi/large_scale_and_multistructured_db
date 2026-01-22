@@ -64,16 +64,31 @@ public interface UserNodeRepository extends Neo4jRepository<UserNode, String> {
     void deleteFollowsRelationship(String SourceId, String TargetId);
 
     @Query("""
-            MATCH (me:USER {mongo_id: $userID})
-            MATCH (me)-[:JOINED|PARTECIPATED]->(comune)
-            MATCH (consigliato:USER)-[:JOINED|PARTECIPATED]->(comune)
+            MATCH (me:USER {mongo_id: "6970a8eafdb64c9b443d55de"})
+            
+            MATCH (me)-[:FOLLOWS|JOINED|PARTECIPATED*2]-(consigliato:USER)
+            
             WHERE consigliato <> me
               AND NOT (me)-[:FOLLOWS]->(consigliato)
+            
+            WITH me, consigliato
+            OPTIONAL MATCH (me)-[:FOLLOWS]->(amico:USER)-[:FOLLOWS]->(consigliato)
+            WITH me, consigliato, collect(DISTINCT amico.name) AS amiciInComune
+            
+            OPTIONAL MATCH (me)-[:JOINED|PARTECIPATED]->(comune)<-[:JOINED|PARTECIPATED]-(consigliato)
+            WITH me, consigliato, amiciInComune, collect(DISTINCT labels(comune)[0]) AS interessiLabels
+            
             RETURN
                 consigliato.mongo_id AS mongoID,
                 consigliato.name AS name,
-                collect(DISTINCT labels(comune)[0])[0] AS connectionType
+                CASE
+                    WHEN size(amiciInComune) > 0 THEN "Seguito da " + amiciInComune[0] + (CASE WHEN size(amiciInComune) > 1 THEN " + altri" ELSE "" END)
+                    WHEN size(interessiLabels) > 0 THEN "Insieme in " + interessiLabels[0]
+                    ELSE "Suggerito per te"
+                END AS connectionType
+            ORDER BY size(amiciInComune) DESC, size(interessiLabels) DESC
             LIMIT 10
+            
             """)
     List<FriendRecommendation> suggestFriends(String userID);
 

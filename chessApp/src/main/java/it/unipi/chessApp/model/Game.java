@@ -41,5 +41,5 @@ public class Game {
     private String timeClass;
 
     @Field("end_time")
-    private long endTime;
+    private String endTime;
 }

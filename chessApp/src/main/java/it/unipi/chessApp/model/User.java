@@ -17,6 +17,8 @@ public class User {
     private String id;
     private String name;
     private String username;
+    @Field("buffered_games")
+    private int bufferedGames;
     private int followers;
     private String country;
     @Field("last_online")

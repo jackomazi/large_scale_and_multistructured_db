@@ -3,10 +3,16 @@ package it.unipi.chessApp.controller;
 import it.unipi.chessApp.dto.*;
 import it.unipi.chessApp.service.Neo4jService;
 import it.unipi.chessApp.service.UserService;
+import it.unipi.chessApp.service.exception.AuthenticationException;
 import it.unipi.chessApp.service.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,6 +35,38 @@ public class UserController {
     neo4jService.createUser(createdUser.getId(), createdUser.getName());
     return ResponseEntity.status(HttpStatus.CREATED).body(
       new ResponseWrapper<>("User created successfully", createdUser)
+    );
+  }
+
+  @PostMapping("/login")
+  public ResponseEntity<ResponseWrapper<String>> login(
+    @RequestBody LoginRequest loginRequest,
+    AuthenticationManager authenticationManager
+  ) throws AuthenticationException {
+    try {
+      Authentication authentication = authenticationManager.authenticate(
+        new UsernamePasswordAuthenticationToken(
+          loginRequest.getUsername(),
+          loginRequest.getPassword()
+        )
+      );
+      SecurityContextHolder.getContext().setAuthentication(authentication);
+      return ResponseEntity.ok(
+        new ResponseWrapper<>("Login successful", "Session established")
+      );
+    } catch (Exception e) {
+      throw new AuthenticationException("Invalid credentials");
+    }
+  }
+
+  @PostMapping("/promote")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<ResponseWrapper<Void>> promoteUser(
+    @RequestBody PromoteUserRequest promoteUserRequest
+  ) throws BusinessException {
+    userService.promoteToAdmin(promoteUserRequest.getUsername());
+    return ResponseEntity.ok(
+      new ResponseWrapper<>("User promoted to admin successfully", null)
     );
   }
 

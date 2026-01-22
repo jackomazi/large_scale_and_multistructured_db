@@ -75,6 +75,11 @@
             <artifactId>commons-lang3</artifactId>
             <version>3.19.0</version>
         </dependency>
+        <!-- Spring Security for authentication and authorization -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
 	</dependencies>
 
 	<build>

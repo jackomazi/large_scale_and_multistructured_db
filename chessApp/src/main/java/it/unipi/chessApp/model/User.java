@@ -32,4 +32,5 @@ public class User {
     private TournamentStats tournaments;
     private String mail;
     private String password;
+    private Role role = Role.USER;
 }

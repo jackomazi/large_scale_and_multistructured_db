@@ -3,6 +3,7 @@ package it.unipi.chessApp.controller;
 import it.unipi.chessApp.dto.GameDTO;
 import it.unipi.chessApp.dto.PageDTO;
 import it.unipi.chessApp.dto.ResponseWrapper;
+import it.unipi.chessApp.model.GameSummary;
 import it.unipi.chessApp.service.GameService;
 import it.unipi.chessApp.service.exception.BusinessException;
 import java.util.List;
@@ -18,11 +19,18 @@ public class GameController {
 
   private final GameService gameService;
 
-  @PostMapping
+  @PostMapping("/addGame/{whiteUserId}/{blackUserId}")
   public ResponseEntity<ResponseWrapper<GameDTO>> createGame(
+    @PathVariable String WhiteUserId,
+    @PathVariable String BlackUserId,
     @RequestBody GameDTO gameDTO
   ) throws BusinessException {
-    GameDTO createdGame = gameService.createGame(gameDTO);
+        //Insert into mongoDB collection
+        GameDTO createdGame = gameService.createGame(gameDTO);
+        //Digest creation
+
+        //Insert into mongoDB white user document
+
     return ResponseEntity.status(HttpStatus.CREATED).body(
       new ResponseWrapper<>("Game created successfully", createdGame)
     );

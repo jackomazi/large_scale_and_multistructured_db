@@ -127,7 +127,7 @@ class chess_com_interface:
         # Adding empty array/object to comply with MongoDB data structure constraints
         user_info["games"] = []
         user_info["stats"] = {}
-        user_info["club"] = ""
+        user_info["buffered_games"] = 0
 
         # Adding some basic fake informations
         fake = Faker()

@@ -29,10 +29,10 @@ if __name__ == "__main__":
         client = MongoClient("mongodb://localhost:27017/")
         client.server_info()
         db = client["chess_db_test"]
-        collection_users = db["users_isaia"]
-        collection_games = db["games_isaia"]
-        collection_clubs = db["clubs_isaia"]
-        collection_tournament = db["tournaments_isaia"]
+        collection_users = db["users"]
+        collection_games = db["games"]
+        collection_clubs = db["clubs"]
+        collection_tournament = db["tournaments"]
     except:
         sys.exit(1)
 
@@ -86,7 +86,8 @@ if __name__ == "__main__":
             user_archives = chess_com_interface.get_player_games_archives(user)
             # Storing user game stats
             user_info["stats"] = chess_com_interface.get_player_games_stats(user)
-            user_info["club"] = club
+            # Not needed anymore
+            #user_info["club"] = club
 
             # Archives scraping
             for i_archive, archive_url in enumerate(user_archives):
@@ -113,6 +114,7 @@ if __name__ == "__main__":
 
                     # Add id of game to user games
                     user_info["games"].append(chess_com_interface.format_chess_com_game_essentials(game_mongo_id,formatted_game,False))
+                    user_info["buffered_games"] += 1
 
                 if i_archive >= scraping_values.get("max_scrap_archives"):
                     break

@@ -11,6 +11,9 @@ from typing import List, Dict
 import math
 
 
+import math
+
+
 
 class lichess_interface:
     @staticmethod
@@ -220,11 +223,22 @@ class lichess_interface:
             opening_name = opening.get("name")
         else:
             opening_name = random.choice(openings)
+            opening_name = random.choice(openings)
 
         return {
             "_id": game_url,
             "white_player": white.get("user", {}).get("name"),
             "black_player": black.get("user", {}).get("name"),
+            "white_rating": (
+                math.floor(white.get("rating") * 0.75)
+                if white.get("rating") is not None
+                else None
+            ),
+            "black_rating": (
+                math.floor(black.get("rating") * 0.75)
+                if black.get("rating") is not None
+                else None
+            ),
             "white_rating": (
                 math.floor(white.get("rating") * 0.75)
                 if white.get("rating") is not None
@@ -288,6 +302,7 @@ class lichess_interface:
             user_info["country"] = user_info.get("profile").get("flag")
         except:
             user_info["country"] = random.choice(countries)
+            user_info["country"] = random.choice(countries)
 
         # Date modification for MongoDB storage 
                     
@@ -304,6 +319,7 @@ class lichess_interface:
         stats = {}
         for game_mod in game_mods_in_common:
             stat = user_info.get("perfs").get(game_mod)["rating"]
+            stats[game_mod] = math.floor(stat*0.75)
             stats[game_mod] = math.floor(stat*0.75)
 
         user_info["stats"] = stats
@@ -364,6 +380,7 @@ class lichess_interface:
                 continue
         return tournaments
 
+
     @staticmethod
     def get_lichess_tournament_infos(tournament_id: str) -> dict:
         """Fetches Lichess tournament information for a given tournament ID.
@@ -407,7 +424,7 @@ class lichess_interface:
                 break
             current_ids = [p.get("name") for p in players_page]
             if current_ids == last_page_ids:
-                break
+                break   
 
             for p in players_page:
                 pid = p.get("name")
@@ -418,6 +435,7 @@ class lichess_interface:
                         break
             if max_players is not None and len(all_participants) >= max_players:
                 break
+                    
 
             last_page_ids = current_ids
             page += 1
@@ -478,7 +496,7 @@ class lichess_interface:
 
         url = f"https://lichess.org/api/tournament/{tournament_id}/games"
 
-        oauth_token = "Nooo" # Ask Andrea for token, soon it will be added an env file with it
+        oauth_token = "Noo" # Ask Andrea for token, soon it will be added an env file with it
         
         headers = {
             "Accept": "application/x-ndjson",
@@ -534,10 +552,12 @@ class lichess_interface:
         except Exception as e:
             starts_at = None
         # tournament_info["started_at"] = starts_at
+        # tournament_info["started_at"] = starts_at
         if tournament_info.get("minutes"):
             finish_obj = starts_at + timedelta(minutes=tournament_info["minutes"])
             tournament_info["finish_time"] = finish_obj.strftime("%Y-%m-%d %H:%M:%S")
         else:
+            tournament_info["finish_time"] = None
             tournament_info["finish_time"] = None
         tournament_info.pop("startsAt")
         tournament_info.pop("minutes", None)
@@ -555,6 +575,10 @@ class lichess_interface:
 
         # max rating
         max_rating = tournament_info.pop("maxRating", None)
+        tournament_info["max_rating"] = math.floor(max_rating.get("rating")*0.75) if isinstance(max_rating, dict) else None
+
+        min_rating = tournament_info.pop("minRating", None)
+        tournament_info["min_rating"] = math.floor(min_rating.get("rating")*0.75) if isinstance(min_rating, dict) else None
         tournament_info["max_rating"] = math.floor(max_rating.get("rating")*0.75) if isinstance(max_rating, dict) else None
 
         min_rating = tournament_info.pop("minRating", None)
@@ -597,11 +621,11 @@ class lichess_interface:
         tournament_info.pop("noStreak", None)
 
         tournament_info.pop("podium", None)
+        tournament_info.pop("podium", None)
 
         # for the app purposes, if the creator is lichess, we set it to admin
         if tournament_info["creator"] == "lichess":
             tournament_info["creator"] = "admin"
-
         if tournament_info["isFinished"] == "true":
             tournament_info["status"] = "finished"
         else:
@@ -611,7 +635,6 @@ class lichess_interface:
         tournament_info.pop("system")
 
         tournament_info["description"] = tournament_info.get("description") or ""
-
 
         return tournament_info
     

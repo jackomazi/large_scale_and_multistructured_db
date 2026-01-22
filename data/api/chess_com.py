@@ -217,8 +217,9 @@ class chess_com_interface:
         # Formatting tournament settings
         tournament["max_rating"] = tournament.get("settings").get("max_rating")
         tournament["min_rating"] = 600
-        tournament["max_partecipants"] = random.uniform(10,20)
+        tournament["max_partecipants"] = 50
         tournament["time_control"] = tournament.get("settings").get("time_control")
+        tournament.pop("settings")
         return tournament
 
     @staticmethod
@@ -306,7 +307,7 @@ class chess_com_interface:
             "moves": chess_com_interface.extract_moves_from_pgn(game.get("pgn", "")),
             "time_class": game.get("time_class"),
             "rated": game.get("rated"),
-            "end_time": game.get("end_time"),
+            "end_time": datetime.fromtimestamp(game.get("end_time")).strftime('%Y-%m-%d %H:%M:%S'),
         }
     
     @staticmethod
@@ -326,7 +327,7 @@ class chess_com_interface:
                 "black": game.get("black_player"),
                 "opening": game.get("opening"),
                 "winner": game.get("white_player") if game.get("white_result") == game.get("white_player") else game.get("black_player"),
-                "date":  datetime.fromtimestamp(game.get("end_time")).strftime('%Y-%m-%d %H:%M:%S')
+                "date":  game.get("end_time")
         }
     
     @staticmethod

@@ -1,7 +1,7 @@
 {
     "max_scrap_users_per_club": 2,
     "max_scrap_archives": 1,
-    "max_scrap_games_per_archive": 3,
+    "max_scrap_games_per_archive": 10,
     "max_users_per_country": 20,
     "max_tournament_per_user": 2,
     "maximum_games_stored_per_user_document": 20,

@@ -64,8 +64,7 @@ if __name__ == "__main__":
         }
 
     for i_club, club in enumerate(scraping_values["clubs"]):
-        if i_club > 2:
-            break
+
         print(f"Scraping club: {i_club}")
         # Club scraping
         usernames = chess_com_interface.get_players_usernames(club)
@@ -123,6 +122,9 @@ if __name__ == "__main__":
             # Insert "blank" data into games array
             for i in range(0,scraping_values["maximum_games_stored_per_user_document"] - len(user_info.get("games"))):
                 user_info["games"].append(chess_com_interface.format_chess_com_game_essentials(None, None, True))
+
+            # user admin field
+            user_info["admin"] = False
 
             # Saving user to mongoDB
             user_mongo_id = mongo_db_interface.store_dict_to_MongoDB(user_info, collection_users)

@@ -144,7 +144,7 @@ public class UserServiceImpl implements UserService {
               .orElseThrow(() -> new RuntimeException("User not found"));
 
       int currentIndex = user.getBufferedGames();
-      int nextIndex = (currentIndex + 1)%20;
+      int nextIndex = (currentIndex + 1)%Constants.GAMES_BUFFER_NUMBER;
 
       Query query = new Query(Criteria.where("_id").is(userId));
       Update update = new Update()

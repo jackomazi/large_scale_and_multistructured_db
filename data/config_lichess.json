@@ -1,9 +1,0 @@
-{
-    "number_of_pages": 1,
-    "number_of_users_per_team": 10,
-    "number_of_games_per_user": 50,
-    "number_of_games_per_tournament": 30,
-    "number_of_games_per_tournament_participant": 5,
-    "number_of_tournaments_per_user": 3,
-    "max_games_per_user": 50
-}

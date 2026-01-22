@@ -8,25 +8,9 @@ import time
 import random
 from requests.exceptions import ReadTimeout
 from typing import List, Dict
+import math
 
-COUNTRIES = [
-    "AF","AX","AL","DZ","AS","AD","AO","AI","AQ","AG","AR","AM","AW","AU","AT","AZ",
-    "BS","BH","BD","BB","BY","BE","BZ","BJ","BM","BT","BO","BQ","BA","BW","BV","BR",
-    "IO","BN","BG","BF","BI","KH","CM","CA","CV","KY","CF","TD","CL","CN","CX","CC",
-    "CO","KM","CG","CD","CK","CR","CI","HR","CU","CW","CY","CZ","DK","DJ","DM","DO",
-    "EC","EG","SV","GQ","ER","EE","SZ","ET","FK","FO","FJ","FI","FR","GF","PF","TF",
-    "GA","GM","GE","DE","GH","GI","GR","GL","GD","GP","GU","GT","GG","GN","GW","GY",
-    "HT","HM","VA","HN","HK","HU","IS","IN","ID","IR","IQ","IE","IM","IL","IT","JM",
-    "JP","JE","JO","KZ","KE","KI","KP","KR","KW","KG","LA","LV","LB","LS","LR","LY",
-    "LI","LT","LU","MO","MG","MW","MY","MV","ML","MT","MH","MQ","MR","MU","YT","MX",
-    "FM","MD","MC","MN","ME","MS","MA","MZ","MM","NA","NR","NP","NL","NC","NZ","NI",
-    "NE","NG","NU","NF","MK","MP","NO","OM","PK","PW","PS","PA","PG","PY","PE","PH",
-    "PN","PL","PT","PR","QA","RE","RO","RU","RW","BL","SH","KN","LC","MF","PM","VC",
-    "WS","SM","ST","SA","SN","RS","SC","SL","SG","SX","SK","SI","SB","SO","ZA","GS",
-    "SS","ES","LK","SD","SR","SJ","SE","CH","SY","TW","TJ","TZ","TH","TL","TG","TK",
-    "TO","TT","TN","TR","TM","TC","TV","UG","UA","AE","GB","US","UM","UY","UZ","VU",
-    "VE","VN","VG","VI","WF","EH","YE","ZM","ZW"
-]
+
 
 class lichess_interface:
     @staticmethod
@@ -145,18 +129,31 @@ class lichess_interface:
         return response.json()
     
     @staticmethod
-    def format_team_infos(team_info: dict) -> dict:
+    def format_team_infos(team_info: dict, countries: list) -> dict:
         """Formats a Lichess team information dictionary into a structured format for MongoDB storage."""
         team_info.pop("id", None)
         team_info.pop("open", None)
-        team_info["number_members"] = team_info.pop("nbMembers", None)
+        team_info.pop("nbMembers", None)
         team_info.pop("leaders", None)
         team_info.pop("joined", None)
         team_info.pop("requested", None)
         team_info.pop("flair", None)
-        team_info["leader"] = team_info["leader"]["name"] if team_info.get("leader") else None
+        team_info["admin"] = team_info["leader"]["name"] if team_info.get("leader") else None
+        team_info["country"] = random.choice(countries)
+        if team_info["admin"] == "Lichess":
+            team_info["admin"] = "admin"
+        team_info.pop("leader", None)
         
-
+        
+        start_date = datetime(2006, 1, 1)
+        end_date = datetime(2010, 12, 31, 23, 59, 59)
+        
+        delta_seconds = int((end_date - start_date).total_seconds())
+        random_seconds = random.randint(0, delta_seconds)
+        random_date = start_date + timedelta(seconds=random_seconds)
+        
+        team_info["creation_date"] = random_date.strftime('%Y-%m-%d %H:%M:%S')
+        
         return team_info
 
     @staticmethod
@@ -200,7 +197,7 @@ class lichess_interface:
         return ids
 
     @staticmethod
-    def format_lichess_game(game: dict) -> dict:
+    def format_lichess_game(game: dict, openings: list) -> dict:
         """Formats a Lichess game dictionary into a structured format for MongoDB storage."""
         white = game.get("players", {}).get("white", {})
         black = game.get("players", {}).get("black", {})
@@ -211,7 +208,8 @@ class lichess_interface:
         result_black = "win" if winner == "black" else "loss" if winner == "white" else "draw"
 
         if game.get("lastMoveAt"):
-            end_time = datetime.fromtimestamp(game.get("lastMoveAt")/1000)
+            time = datetime.fromtimestamp(game.get("lastMoveAt")/1000)
+            end_time = time.strftime("%Y-%m-%d %H:%M:%S")
         else:
             end_time = None
         
@@ -221,19 +219,24 @@ class lichess_interface:
             eco = opening.get("eco")
             opening_name = opening.get("name")
         else:
-            eco = None
-            opening_name = None
+            opening_name = random.choice(openings)
 
-        eco_url = f"https://www.365chess.com/eco/{eco}" if eco else None
         return {
             "_id": game_url,
             "white_player": white.get("user", {}).get("name"),
             "black_player": black.get("user", {}).get("name"),
-            "white_rating": white.get("rating"),
-            "black_rating": black.get("rating"),
+            "white_rating": (
+                math.floor(white.get("rating") * 0.75)
+                if white.get("rating") is not None
+                else None
+            ),
+            "black_rating": (
+                math.floor(black.get("rating") * 0.75)
+                if black.get("rating") is not None
+                else None
+            ),
             "result_white": result_white,
             "result_black": result_black,
-            "eco_url": eco_url,
             "opening": opening_name,
             "moves": game.get("moves"),
             "time_class": game.get("speed"),
@@ -249,7 +252,7 @@ class lichess_interface:
                     "black": "name",
                     "opening": "name",
                     "winner": "name",
-                    "date": "date"
+                    "date": "2026-01-22 15:50:41"
                     }
         # if result_white is win then winner is white, else if result_black is win then winner is black, else draw
         if formatted_game.get("result_white") == "win":
@@ -264,11 +267,11 @@ class lichess_interface:
             "black": formatted_game.get("black_player"),
             "opening": formatted_game.get("opening"),
             "winner": winner,
-            "date": formatted_game.get("end_time").strftime('%Y-%m-%d %H:%M:%S') if formatted_game.get("end_time") else None
+            "date": formatted_game.get("end_time")
         }
     
     @staticmethod
-    def format_lichess_player_infos(user_info: dict) -> dict:
+    def format_lichess_player_infos(user_info: dict, countries: list) -> dict:
         if user_info.get("disabled") is True:
             return None
         # Useless data
@@ -284,7 +287,7 @@ class lichess_interface:
             # Location fetching
             user_info["country"] = user_info.get("profile").get("flag")
         except:
-            user_info["country"] = random.choice(COUNTRIES)
+            user_info["country"] = random.choice(countries)
 
         # Date modification for MongoDB storage 
                     
@@ -301,7 +304,7 @@ class lichess_interface:
         stats = {}
         for game_mod in game_mods_in_common:
             stat = user_info.get("perfs").get(game_mod)["rating"]
-            stats[game_mod] = stat
+            stats[game_mod] = math.floor(stat*0.75)
 
         user_info["stats"] = stats
 
@@ -321,6 +324,8 @@ class lichess_interface:
         user_info.pop("flair", None)
         user_info.pop("seenAt", None)
         user_info.pop("createdAt", None)
+
+        user_info["admin"] = "false"
 
         return user_info
     
@@ -359,17 +364,6 @@ class lichess_interface:
                 continue
         return tournaments
 
-    #@staticmethod
-    #def format_lichess_player_tournament(tournament: dict) -> dict:
-    #    """Formats a Lichess tournament dictionary into a structured format for MongoDB storage."""
-    #    tournament["id"] = tournament["tournament"]["id"]
-    #    tournament["name"] = tournament["tournament"]["fullName"]
-    #    tournament["max_players"] = tournament["tournament"]["nbPlayers"]
-    #    tournament["started_at"] = datetime.fromtimestamp(tournament["tournament"]["startsAt"]/1000)
-    #    tournament["finished_at"] = datetime.fromtimestamp(tournament["tournament"]["finishesAt"]/1000) if tournament["tournament"].get("finishesAt") else None
-    #    tournament["creator"] = tournament["tournament"]["createdBy"]
-    #    return tournament
-    
     @staticmethod
     def get_lichess_tournament_infos(tournament_id: str) -> dict:
         """Fetches Lichess tournament information for a given tournament ID.
@@ -384,7 +378,7 @@ class lichess_interface:
         return response.json()
 
     @staticmethod
-    def get_lichess_tournament_infos_with_players(tournament_id: str) -> dict:
+    def get_lichess_tournament_infos_with_players(tournament_id: str, max_players: int) -> dict:
         """Fetches Lichess tournament information for a given tournament ID.
         url example: https://lichess.org/api/tournament/{tournament_id}
         """
@@ -420,6 +414,10 @@ class lichess_interface:
                 if pid and pid not in seen_ids:
                     seen_ids.add(pid)
                     all_participants.append(p)
+                    if max_players is not None and len(all_participants) >= max_players:
+                        break
+            if max_players is not None and len(all_participants) >= max_players:
+                break
 
             last_page_ids = current_ids
             page += 1
@@ -480,7 +478,7 @@ class lichess_interface:
 
         url = f"https://lichess.org/api/tournament/{tournament_id}/games"
 
-        oauth_token = "Noo" # Ask Andrea for token, soon it will be added an env file with it
+        oauth_token = "Nooo" # Ask Andrea for token, soon it will be added an env file with it
         
         headers = {
             "Accept": "application/x-ndjson",
@@ -518,7 +516,6 @@ class lichess_interface:
                     continue
 
                 if total_games is not None and len(games) >= total_games:
-                    print(f"Reached total_games limit: {total_games}")
                     return games
 
         return games
@@ -536,11 +533,12 @@ class lichess_interface:
             starts_at = isoparse(tournament_info["startsAt"])
         except Exception as e:
             starts_at = None
-        tournament_info["started_at"] = starts_at
+        # tournament_info["started_at"] = starts_at
         if tournament_info.get("minutes"):
-            tournament_info["finished_at"] = starts_at + timedelta(minutes=tournament_info["minutes"])
+            finish_obj = starts_at + timedelta(minutes=tournament_info["minutes"])
+            tournament_info["finish_time"] = finish_obj.strftime("%Y-%m-%d %H:%M:%S")
         else:
-            tournament_info["finished_at"] = None
+            tournament_info["finish_time"] = None
         tournament_info.pop("startsAt")
         tournament_info.pop("minutes", None)
 
@@ -557,7 +555,10 @@ class lichess_interface:
 
         # max rating
         max_rating = tournament_info.pop("maxRating", None)
-        tournament_info["max_rating"] = max_rating.get("rating") if isinstance(max_rating, dict) else None
+        tournament_info["max_rating"] = math.floor(max_rating.get("rating")*0.75) if isinstance(max_rating, dict) else None
+
+        min_rating = tournament_info.pop("minRating", None)
+        tournament_info["min_rating"] = math.floor(min_rating.get("rating")*0.75) if isinstance(min_rating, dict) else None
 
         # remove unnecessary fields
         tournament_info.pop("minRatedGames", None)
@@ -570,6 +571,9 @@ class lichess_interface:
 
         tournament_info.pop("rated", None)
 
+        tournament_info["total_games"] = tournament_info.get("stats", {}).get("games", 0)
+        tournament_info["whiteWins"] = tournament_info.get("stats", {}).get("whiteWins", 0)
+        tournament_info["blackWins"] = tournament_info.get("stats", {}).get("blackWins", 0)
         tournament_info.pop("stats", None)
 
         tournament_info.pop("verdicts", None)
@@ -592,23 +596,73 @@ class lichess_interface:
 
         tournament_info.pop("noStreak", None)
 
-        # format podium: keep only name, rating, score
-        if "podium" in tournament_info and isinstance(tournament_info["podium"], list):
-            tournament_info["podium"] = [
-                {
-                    "name": p.get("name"),
-                    "rating": p.get("rating"),
-                    "score": p.get("score"),
-                }
-                for p in tournament_info["podium"]
-            ]
+        tournament_info.pop("podium", None)
 
         # for the app purposes, if the creator is lichess, we set it to admin
         if tournament_info["creator"] == "lichess":
             tournament_info["creator"] = "admin"
 
+        if tournament_info["isFinished"] == "true":
+            tournament_info["status"] = "finished"
+        else:
+            tournament_info["status"] = "not finished"
+        tournament_info.pop("isFinished", None)
+
+        tournament_info.pop("system")
+
+        tournament_info["description"] = tournament_info.get("description") or ""
+
+
         return tournament_info
     
+    @staticmethod
+    def estimate_player_stats(total_games: int, total_players: int, white_wins: int, black_wins: int, placement: int) -> tuple:
+        """
+        Stima le statistiche di un singolo giocatore basandosi sui dati globali del torneo.
+        """
+        if total_players <= 0:
+            return {"played": 0, "wins": 0, "draws": 0, "losses": 0}
+
+        # 1. Calcolo della media partite per giocatore (ogni partita ha 2 giocatori)
+        avg_games_per_player = (total_games * 2) / total_players
+
+        # 2. Stima partite giocate (chi sta in alto in classifica di solito ha giocato di più)
+        # Se placement è piccolo (es. 1, 2, 3), il moltiplicatore è più alto
+        if placement <= 10:
+            play_factor = random.uniform(1.2, 1.6)
+        elif placement <= 50:
+            play_factor = random.uniform(0.9, 1.3)
+        else:
+            play_factor = random.uniform(0.4, 1.0)
+        
+        played = max(1, int(avg_games_per_player * play_factor))
+
+        # 3. Calcolo Win Rate basato sul placement
+        # Più il placement è basso (vicino a 1), più la win_rate è alta
+        # Una formula semplice: i top player hanno 70-90% win rate, gli ultimi 10-20%
+        base_win_rate = (white_wins + black_wins) / (total_games * 2) if total_games > 0 else 0.45
+        
+        # Modificatore basato sulla posizione (più sei in alto, più vinci rispetto alla media)
+        if placement <= 10:
+            win_rate = random.uniform(0.70, 0.85)
+        elif placement <= 100:
+            win_rate = random.uniform(0.45, 0.65)
+        else:
+            win_rate = random.uniform(0.15, 0.40)
+
+        # 4. Generazione numeri finali
+        wins = int(played * win_rate)
+        
+        # Le patte (draws) sono meno comuni nei tornei online, diciamo tra 2% e 8%
+        draw_rate = random.uniform(0.02, 0.08)
+        draws = int(played * draw_rate)
+        
+        # Il resto sono sconfitte
+        losses = max(0, played - wins - draws)
+
+        return wins, losses, draws
+
+
     @staticmethod
     def format_lichess_tournament_essentials(tournament_id: str, tournament_info: dict) -> dict:
         """Formats essential information of a Lichess tournament for user document storage."""

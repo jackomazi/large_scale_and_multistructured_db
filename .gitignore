@@ -5,8 +5,8 @@ __pycache__/
 images/
 dumps/
 .DS_store
-.idea/
 target/
+.idea/
 
 # .venv config for IDE
 pyrightconfig.json

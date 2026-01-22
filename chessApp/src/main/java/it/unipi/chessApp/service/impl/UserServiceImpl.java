@@ -1,5 +1,6 @@
 package it.unipi.chessApp.service.impl;
 
+import it.unipi.chessApp.dto.GameSummaryDTO;
 import it.unipi.chessApp.dto.PageDTO;
 import it.unipi.chessApp.dto.UserDTO;
 import it.unipi.chessApp.model.User;
@@ -12,6 +13,10 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,6 +24,8 @@ import org.springframework.stereotype.Service;
 public class UserServiceImpl implements UserService {
 
   private final UserRepository userRepository;
+
+  private final MongoTemplate mongoTemplate;
 
   @Override
   public UserDTO createUser(UserDTO userDTO) throws BusinessException {
@@ -128,5 +135,23 @@ public class UserServiceImpl implements UserService {
     user.setMail(dto.getMail());
     user.setPassword(dto.getPassword());
     return user;
+  }
+
+  public void bufferGame(String userId, GameSummaryDTO summary){
+
+
+      User user = userRepository.findById(userId)
+              .orElseThrow(() -> new RuntimeException("User not found"));
+
+      int currentIndex = user.getBufferedGames();
+      int nextIndex = (currentIndex + 1)%20;
+
+      Query query = new Query(Criteria.where("_id").is(userId));
+      Update update = new Update()
+              .set("games." + currentIndex, summary)
+              .set("buffered_games", nextIndex);
+
+      mongoTemplate.updateFirst(query, update, User.class);
+
   }
 }

@@ -1,5 +1,7 @@
 package it.unipi.chessApp.dto;
 
+import it.unipi.chessApp.model.GameSummary;
+
 public class GameSummaryDTO {
     private String id;
 
@@ -55,5 +57,19 @@ public class GameSummaryDTO {
 
     public void setDate(String date) {
         this.date = date;
+    }
+
+    public static GameSummaryDTO summarize(GameDTO game){
+        GameSummaryDTO dto = new GameSummaryDTO();
+        dto.setId(game.getId());
+        dto.setWhite(game.getWhitePlayer());
+        dto.setBlack(game.getBlackPlayer());
+        dto.setOpening(game.getOpening());
+        dto.setDate(game.getEndTime());
+        if(game.getResultWhite().equals("win"))
+            dto.setWinner(game.getWhitePlayer());
+        else
+            dto.setWinner(game.getBlackPlayer());
+        return dto;
     }
 }

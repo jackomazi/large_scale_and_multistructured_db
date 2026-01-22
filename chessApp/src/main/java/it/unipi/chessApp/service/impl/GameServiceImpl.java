@@ -1,5 +1,6 @@
 package it.unipi.chessApp.service.impl;
 
+import it.unipi.chessApp.dto.AverageEloResult;
 import it.unipi.chessApp.dto.GameDTO;
 import it.unipi.chessApp.dto.MonthlyOpeningStatDTO;
 import it.unipi.chessApp.dto.PageDTO;
@@ -13,7 +14,6 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.bson.Document;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -140,11 +140,11 @@ public class GameServiceImpl implements GameService {
         long startEpoch = LocalDate.of(targetYear, targetMonth, 1).atStartOfDay(ZoneOffset.UTC).toEpochSecond();
         long endEpoch = LocalDate.of(targetYear, targetMonth, 1).plusMonths(1).atStartOfDay(ZoneOffset.UTC).toEpochSecond();
 
-        Document result = gameRepository.getAverageEloForOpening(opening, startEpoch, endEpoch);
-        if (result == null || !result.containsKey("final_average_elo")) {
+        AverageEloResult result = gameRepository.getAverageEloForOpening(opening, startEpoch, endEpoch);
+        if (result == null || result.getFinalAverageElo() == null) {
             return 0.0;
         }
-        return result.getDouble("final_average_elo");
+        return result.getFinalAverageElo();
     } catch (Exception e) {
         throw new BusinessException("Error fetching average elo for opening", e);
     }

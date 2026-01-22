@@ -1,8 +1,8 @@
 package it.unipi.chessApp.repository;
 
+import it.unipi.chessApp.dto.AverageEloResult;
 import it.unipi.chessApp.dto.MonthlyOpeningStatDTO;
 import it.unipi.chessApp.model.Game;
-import org.bson.Document;
 import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
@@ -13,6 +13,7 @@ import java.util.List;
 @Repository
 public interface GameRepository extends MongoRepository<Game, String> {
 
+    // Note: only one opening is selected per month/year, in case of ex-equo a random one is selected
     @Aggregation(pipeline = {
         "{ '$match': { '$and': [ { 'end_time': { '$gte': ?2, '$lt': ?3 } }, { '$or': [ { 'white_rating': { '$gte': ?0 } }, { 'black_rating': { '$gte': ?1 } } ] } ] } }",
         "{ '$group': { '_id': { 'month': { '$month': { '$toDate': { '$multiply': ['$end_time', 1000] } } }, 'year': { '$year': { '$toDate': { '$multiply': ['$end_time', 1000] } } }, 'opening': '$opening' }, 'count': { '$sum': 1 } } }",
@@ -25,9 +26,9 @@ public interface GameRepository extends MongoRepository<Game, String> {
     @Aggregation(pipeline = {
         "{ '$match': { 'opening': ?0, 'end_time': { '$gte': ?1, '$lt': ?2 } } }",
         "{ '$project': { 'avg_game_rating': { '$avg': ['$white_rating', '$black_rating'] } } }",
-        "{ '$group': { '_id': null, 'final_average_elo': { '$avg': '$avg_game_rating' } } }"
+        "{ '$group': { '_id': null, 'finalAverageElo': { '$avg': '$avg_game_rating' } } }"
     })
-    Document getAverageEloForOpening(String opening, long startEpoch, long endEpoch);
+    AverageEloResult getAverageEloForOpening(String opening, long startEpoch, long endEpoch);
 
     @Query("{'$or': [{'white_player': ?0}, {'black_player': ?0}]}")
     List<Game> findByPlayer(String username);

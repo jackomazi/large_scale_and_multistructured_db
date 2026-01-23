@@ -164,14 +164,6 @@ if __name__ == "__main__":
                     # get infos
                     tour_infos = lichess_interface.get_lichess_tournament_infos_with_players(tournament_id, number_of_participant)
 
-                    games = lichess_interface.get_lichess_tournament_games(tournament_id, username)
-                    for game in games:
-                        game_formatted = lichess_interface.format_lichess_game(game, openings)
-                        game_mongo_id = mongo_db_interface.store_dict_to_MongoDB(game_formatted, collection_games)
-                        tour_games.append(lichess_interface.format_lichess_game_essentials(game_mongo_id, game_formatted, False))
-
-                    
-                    
                     # get all games played in the tournament
                     tour_games = lichess_interface.get_lichess_tournament_games_all(tournament_id, number_of_games_per_tournament)
                     formatted_games = []
@@ -199,6 +191,9 @@ if __name__ == "__main__":
                     number_partecipants = infos_formatted["number_partecipants"]
                     whiteWins = infos_formatted["whiteWins"]
                     blackWins = infos_formatted["blackWins"]
+                    infos_formatted.pop("total_games")
+                    infos_formatted.pop("whiteWins")
+                    infos_formatted.pop("blackWins")
                     wins, losses, draws = lichess_interface.estimate_player_stats(total_games,number_partecipants , whiteWins,blackWins, player_rank)
                     # connect user to tournament in neo4j
                     neo4j_dr.connect_user_tournament(str(user_mongo_id), str(tournament_mongo_id), tournament_user_stats={"placement": player_rank, "wins": wins, "losses": losses, "draws": draws})

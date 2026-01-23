@@ -11,8 +11,6 @@ from typing import List, Dict
 import math
 
 
-import math
-
 
 
 class lichess_interface:
@@ -219,26 +217,14 @@ class lichess_interface:
         opening = game.get("opening")
 
         if isinstance(opening, dict):
-            eco = opening.get("eco")
             opening_name = opening.get("name")
         else:
-            opening_name = random.choice(openings)
             opening_name = random.choice(openings)
 
         return {
             "_id": game_url,
             "white_player": white.get("user", {}).get("name"),
             "black_player": black.get("user", {}).get("name"),
-            "white_rating": (
-                math.floor(white.get("rating") * 0.75)
-                if white.get("rating") is not None
-                else None
-            ),
-            "black_rating": (
-                math.floor(black.get("rating") * 0.75)
-                if black.get("rating") is not None
-                else None
-            ),
             "white_rating": (
                 math.floor(white.get("rating") * 0.75)
                 if white.get("rating") is not None
@@ -302,7 +288,6 @@ class lichess_interface:
             user_info["country"] = user_info.get("profile").get("flag")
         except:
             user_info["country"] = random.choice(countries)
-            user_info["country"] = random.choice(countries)
 
         # Date modification for MongoDB storage 
                     
@@ -319,7 +304,6 @@ class lichess_interface:
         stats = {}
         for game_mod in game_mods_in_common:
             stat = user_info.get("perfs").get(game_mod)["rating"]
-            stats[game_mod] = math.floor(stat*0.75)
             stats[game_mod] = math.floor(stat*0.75)
 
         user_info["stats"] = stats
@@ -558,7 +542,6 @@ class lichess_interface:
             tournament_info["finish_time"] = finish_obj.strftime("%Y-%m-%d %H:%M:%S")
         else:
             tournament_info["finish_time"] = None
-            tournament_info["finish_time"] = None
         tournament_info.pop("startsAt")
         tournament_info.pop("minutes", None)
 
@@ -573,12 +556,8 @@ class lichess_interface:
         # chess variant, possible values: standard, chess960 (Fischer Random)
         tournament_info["chess_variant"] = tournament_info.pop("variant")
 
-        # max rating
+        # max rating - min rating
         max_rating = tournament_info.pop("maxRating", None)
-        tournament_info["max_rating"] = math.floor(max_rating.get("rating")*0.75) if isinstance(max_rating, dict) else None
-
-        min_rating = tournament_info.pop("minRating", None)
-        tournament_info["min_rating"] = math.floor(min_rating.get("rating")*0.75) if isinstance(min_rating, dict) else None
         tournament_info["max_rating"] = math.floor(max_rating.get("rating")*0.75) if isinstance(max_rating, dict) else None
 
         min_rating = tournament_info.pop("minRating", None)
@@ -621,12 +600,11 @@ class lichess_interface:
         tournament_info.pop("noStreak", None)
 
         tournament_info.pop("podium", None)
-        tournament_info.pop("podium", None)
 
         # for the app purposes, if the creator is lichess, we set it to admin
         if tournament_info["creator"] == "lichess":
             tournament_info["creator"] = "admin"
-        if tournament_info["isFinished"] == "true":
+        if tournament_info["isFinished"] is True:
             tournament_info["status"] = "finished"
         else:
             tournament_info["status"] = "not finished"

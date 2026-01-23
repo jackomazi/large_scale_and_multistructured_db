@@ -2,6 +2,7 @@ package it.unipi.chessApp.controller;
 
 import it.unipi.chessApp.dto.GameDTO;
 import it.unipi.chessApp.dto.GameSummaryDTO;
+import it.unipi.chessApp.dto.MonthlyOpeningStatDTO;
 import it.unipi.chessApp.dto.PageDTO;
 import it.unipi.chessApp.dto.ResponseWrapper;
 import it.unipi.chessApp.model.GameSummary;
@@ -92,5 +93,30 @@ public class GameController {
     return ResponseEntity.ok(
       new ResponseWrapper<>("Game deleted successfully", null)
     );
+  }
+
+  @GetMapping("/stats/top-openings")
+  public ResponseEntity<ResponseWrapper<List<MonthlyOpeningStatDTO>>> getMonthlyTopOpenings(
+          @RequestParam(required = false) Integer minWhite,
+          @RequestParam(required = false) Integer minBlack,
+          @RequestParam(required = false) Integer year,
+          @RequestParam(required = false) Integer month
+  ) throws BusinessException {
+    List<MonthlyOpeningStatDTO> stats = gameService.getMonthlyTopOpenings(minWhite, minBlack, year, month);
+    return ResponseEntity.ok(
+      new ResponseWrapper<>("Monthly top openings retrieved successfully", stats)
+    );
+  }
+
+  @GetMapping("/stats/average-elo")
+  public ResponseEntity<ResponseWrapper<Double>> getAverageEloForOpening(
+          @RequestParam String opening,
+          @RequestParam(required = false) Integer year,
+          @RequestParam(required = false) Integer month
+  ) throws BusinessException {
+      Double avgElo = gameService.getAverageEloForOpening(opening, year, month);
+      return ResponseEntity.ok(
+              new ResponseWrapper<>("Average Elo retrieved successfully", avgElo)
+      );
   }
 }

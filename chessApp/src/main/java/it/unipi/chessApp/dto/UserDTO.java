@@ -1,6 +1,7 @@
 package it.unipi.chessApp.dto;
 
 import it.unipi.chessApp.model.GameSummary;
+import it.unipi.chessApp.model.Role;
 import it.unipi.chessApp.model.Stats;
 import it.unipi.chessApp.model.TournamentStats;
 import java.util.List;
@@ -30,6 +31,7 @@ public class UserDTO {
   private TournamentStats tournaments;
   private String mail;
   private String password;
+  private Role role;
 
     public String getId() {
         return id;
@@ -168,6 +170,7 @@ public class UserDTO {
         dto.setTournaments(user.getTournaments());
         dto.setMail(user.getMail());
         dto.setPassword(user.getPassword());
+        dto.setRole(user.getRole());
         return dto;
     }
 }

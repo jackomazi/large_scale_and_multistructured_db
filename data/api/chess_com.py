@@ -320,7 +320,7 @@ class chess_com_interface:
                     "black": "name",
                     "opening": "name",
                     "winner": "name",
-                    "date": "date"
+                    "date": "3033-04-08 21:41:56"
                     }
         return {"_id": id,
                 "white": game.get("white_player"),

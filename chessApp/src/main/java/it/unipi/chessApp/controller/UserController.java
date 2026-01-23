@@ -1,6 +1,7 @@
 package it.unipi.chessApp.controller;
 
 import it.unipi.chessApp.dto.*;
+import it.unipi.chessApp.service.AuthenticationService;
 import it.unipi.chessApp.service.Neo4jService;
 import it.unipi.chessApp.service.UserService;
 import it.unipi.chessApp.service.exception.AuthenticationException;
@@ -9,10 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import it.unipi.chessApp.security.JwtService;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,6 +23,8 @@ public class UserController {
 
   private final UserService userService;
   private final Neo4jService neo4jService;
+  private final AuthenticationService authenticationService;
+  private final JwtService jwtService;
 
   @PostMapping
   public ResponseEntity<ResponseWrapper<UserDTO>> createUser(
@@ -40,19 +41,25 @@ public class UserController {
 
   @PostMapping("/login")
   public ResponseEntity<ResponseWrapper<String>> login(
-    @RequestBody LoginRequest loginRequest,
-    AuthenticationManager authenticationManager
+    @RequestBody LoginRequest loginRequest
   ) throws AuthenticationException {
     try {
-      Authentication authentication = authenticationManager.authenticate(
-        new UsernamePasswordAuthenticationToken(
-          loginRequest.getUsername(),
-          loginRequest.getPassword()
-        )
+      UserDetails userDetails = authenticationService.loadUserByUsername(
+        loginRequest.getUsername()
       );
-      SecurityContextHolder.getContext().setAuthentication(authentication);
+      if (
+        !authenticationService.matchesPassword(
+          loginRequest.getPassword(),
+          userDetails.getPassword()
+        )
+      ) {
+        throw new AuthenticationException("Invalid credentials");
+      }
+
+      String token = jwtService.generateToken(userDetails);
+
       return ResponseEntity.ok(
-        new ResponseWrapper<>("Login successful", "Session established")
+        new ResponseWrapper<>("Login successful", token)
       );
     } catch (Exception e) {
       throw new AuthenticationException("Invalid credentials");

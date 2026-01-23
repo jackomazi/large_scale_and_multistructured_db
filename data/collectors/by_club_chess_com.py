@@ -29,10 +29,10 @@ if __name__ == "__main__":
         client = MongoClient("mongodb://localhost:27017/")
         client.server_info()
         db = client["chess_db_test"]
-        collection_users = db["users_isaia"]
-        collection_games = db["games_isaia"]
-        collection_clubs = db["clubs_isaia"]
-        collection_tournament = db["tournaments_isaia"]
+        collection_users = db["users"]
+        collection_games = db["games"]
+        collection_clubs = db["clubs"]
+        collection_tournament = db["tournaments"]
     except:
         sys.exit(1)
 
@@ -64,8 +64,7 @@ if __name__ == "__main__":
         }
 
     for i_club, club in enumerate(scraping_values["clubs"]):
-        if i_club > 2:
-            break
+
         print(f"Scraping club: {i_club}")
         # Club scraping
         usernames = chess_com_interface.get_players_usernames(club)
@@ -86,7 +85,8 @@ if __name__ == "__main__":
             user_archives = chess_com_interface.get_player_games_archives(user)
             # Storing user game stats
             user_info["stats"] = chess_com_interface.get_player_games_stats(user)
-            user_info["club"] = club
+            # Not needed anymore
+            #user_info["club"] = club
 
             # Archives scraping
             for i_archive, archive_url in enumerate(user_archives):
@@ -113,6 +113,7 @@ if __name__ == "__main__":
 
                     # Add id of game to user games
                     user_info["games"].append(chess_com_interface.format_chess_com_game_essentials(game_mongo_id,formatted_game,False))
+                    user_info["buffered_games"] += 1
 
                 if i_archive >= scraping_values.get("max_scrap_archives"):
                     break
@@ -121,6 +122,9 @@ if __name__ == "__main__":
             # Insert "blank" data into games array
             for i in range(0,scraping_values["maximum_games_stored_per_user_document"] - len(user_info.get("games"))):
                 user_info["games"].append(chess_com_interface.format_chess_com_game_essentials(None, None, True))
+
+            # user admin field
+            user_info["admin"] = False
 
             # Saving user to mongoDB
             user_mongo_id = mongo_db_interface.store_dict_to_MongoDB(user_info, collection_users)

@@ -1,10 +1,13 @@
 package it.unipi.chessApp.controller;
 
 import it.unipi.chessApp.dto.GameDTO;
+import it.unipi.chessApp.dto.GameSummaryDTO;
 import it.unipi.chessApp.dto.MonthlyOpeningStatDTO;
 import it.unipi.chessApp.dto.PageDTO;
 import it.unipi.chessApp.dto.ResponseWrapper;
+import it.unipi.chessApp.model.GameSummary;
 import it.unipi.chessApp.service.GameService;
+import it.unipi.chessApp.service.UserService;
 import it.unipi.chessApp.service.exception.BusinessException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -12,18 +15,30 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import static it.unipi.chessApp.dto.GameSummaryDTO.summarize;
+
 @RestController
 @RequestMapping("/games")
 @RequiredArgsConstructor
 public class GameController {
 
   private final GameService gameService;
+  private final UserService userService;
 
-  @PostMapping
+  @PostMapping("/addGame/{whiteUserId}/{blackUserId}")
   public ResponseEntity<ResponseWrapper<GameDTO>> createGame(
+    @PathVariable String whiteUserId,
+    @PathVariable String blackUserId,
     @RequestBody GameDTO gameDTO
   ) throws BusinessException {
-    GameDTO createdGame = gameService.createGame(gameDTO);
+        //Insert into mongoDB collection
+        GameDTO createdGame = gameService.createGame(gameDTO);
+        //Digest creation
+        GameSummaryDTO gameSummary = GameSummaryDTO.summarize(createdGame);
+        //Insert into mongoDB white user document
+        userService.bufferGame(whiteUserId,gameSummary);
+        //Insert into mongoDB black user document
+        userService.bufferGame(blackUserId,gameSummary);
     return ResponseEntity.status(HttpStatus.CREATED).body(
       new ResponseWrapper<>("Game created successfully", createdGame)
     );

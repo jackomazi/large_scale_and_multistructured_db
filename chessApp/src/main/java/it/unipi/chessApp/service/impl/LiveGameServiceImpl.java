@@ -5,11 +5,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.bhlangonijr.chesslib.Board;
 import com.github.bhlangonijr.chesslib.Side;
 import com.github.bhlangonijr.chesslib.move.Move;
+import it.unipi.chessApp.dto.GameDTO;
 import it.unipi.chessApp.dto.GameStatusDTO;
 import it.unipi.chessApp.dto.MatchmakingResultDTO;
 import it.unipi.chessApp.dto.MoveResultDTO;
+import it.unipi.chessApp.model.ChessOpening;
 import it.unipi.chessApp.model.LiveGameState;
+import it.unipi.chessApp.service.GameService;
 import it.unipi.chessApp.service.LiveGameService;
+import it.unipi.chessApp.service.OpeningService;
 import it.unipi.chessApp.service.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +31,8 @@ public class LiveGameServiceImpl implements LiveGameService {
 
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
+    private final OpeningService openingService;
+    private final GameService gameService;
 
     private static final String MATCHMAKING_QUEUE_KEY = "chess:matchmaking:queue";
     private static final String TOURNAMENT_QUEUE_PREFIX = "chess:matchmaking:tournament:";
@@ -42,6 +48,9 @@ public class LiveGameServiceImpl implements LiveGameService {
 
     @Value("${live-game.matchmaking-timeout-seconds:60}")
     private int matchmakingTimeoutSeconds;
+
+    @Value("${chess.openings.max-move-check:30}")
+    private int maxMoveCheckForOpening;
 
     private static final int POLL_INTERVAL_MS = 500;
 
@@ -232,6 +241,14 @@ public class LiveGameServiceImpl implements LiveGameService {
             gameState.setFen(board.getFen());
             gameState.setLastMove(move);
             gameState.setLastMoveAt(System.currentTimeMillis());
+            
+            // Track move history
+            gameState.addMove(move);
+            
+            // Check for opening detection (only in the first N moves)
+            if (gameState.getMoveCount() <= maxMoveCheckForOpening) {
+                detectOpening(gameState, board.getFen());
+            }
 
             String outcome = MoveResultDTO.OUTCOME_MOVE_MADE;
             String gameStatus = LiveGameState.STATUS_IN_PROGRESS;
@@ -253,13 +270,15 @@ public class LiveGameServiceImpl implements LiveGameService {
             saveGameState(gameState);
 
             if (!LiveGameState.STATUS_IN_PROGRESS.equals(gameStatus)) {
+                // Game ended - save to MongoDB and cleanup
+                saveCompletedGameToMongoDB(gameState);
                 redisTemplate.delete(PLAYER_GAME_PREFIX + gameState.getWhitePlayer());
                 redisTemplate.delete(PLAYER_GAME_PREFIX + gameState.getBlackPlayer());
             }
 
             String nextTurn = board.getSideToMove() == Side.WHITE ? "WHITE" : "BLACK";
 
-            return MoveResultDTO.success(outcome, board.getFen(), nextTurn, gameStatus);
+            return MoveResultDTO.success(outcome, board.getFen(), nextTurn, gameStatus, gameState.getDetectedOpening());
 
         } catch (BusinessException e) {
             throw e;
@@ -289,7 +308,9 @@ public class LiveGameServiceImpl implements LiveGameService {
                 gameState.getStatus(),
                 gameState.getLastMove(),
                 gameState.getTournamentId(),
-                gameState.getLastMoveAt()
+                gameState.getLastMoveAt(),
+                gameState.getDetectedOpening(),
+                gameState.getDetectedOpeningEco()
             );
 
         } catch (BusinessException e) {
@@ -324,6 +345,9 @@ public class LiveGameServiceImpl implements LiveGameService {
             gameState.setLastMoveAt(System.currentTimeMillis());
             saveGameState(gameState);
 
+            // Save to MongoDB before cleanup
+            saveCompletedGameToMongoDB(gameState);
+
             redisTemplate.delete(PLAYER_GAME_PREFIX + gameState.getWhitePlayer());
             redisTemplate.delete(PLAYER_GAME_PREFIX + gameState.getBlackPlayer());
 
@@ -334,6 +358,62 @@ public class LiveGameServiceImpl implements LiveGameService {
         } catch (Exception e) {
             log.error("Error resigning game {}: {}", gameId, username, e);
             throw new BusinessException("Error resigning game");
+        }
+    }
+
+    /**
+     * Detect and update the opening based on the current board position.
+     */
+    private void detectOpening(LiveGameState gameState, String fen) {
+        try {
+            ChessOpening opening = openingService.findOpeningByFen(fen);
+            if (opening != null) {
+                gameState.setDetectedOpening(opening.getName());
+                gameState.setDetectedOpeningEco(opening.getEco());
+                log.debug("Opening detected for game {}: {} ({})", 
+                         gameState.getGameId(), opening.getName(), opening.getEco());
+            }
+        } catch (Exception e) {
+            log.warn("Error detecting opening for game {}: {}", gameState.getGameId(), e.getMessage());
+        }
+    }
+
+    /**
+     * Save a completed game to MongoDB.
+     */
+    private void saveCompletedGameToMongoDB(LiveGameState gameState) {
+        try {
+            GameDTO gameDTO = new GameDTO();
+            gameDTO.setId(gameState.getGameId());
+            gameDTO.setWhitePlayer(gameState.getWhitePlayer());
+            gameDTO.setBlackPlayer(gameState.getBlackPlayer());
+            gameDTO.setOpening(gameState.getDetectedOpening());
+            gameDTO.setMoves(gameState.getMovesPgn());
+            gameDTO.setEndTime(String.valueOf(gameState.getLastMoveAt()));
+            gameDTO.setTimeClass("live");
+
+            // Set results based on game status
+            switch (gameState.getStatus()) {
+                case LiveGameState.STATUS_WHITE_WINS:
+                    gameDTO.setResultWhite("win");
+                    gameDTO.setResultBlack("loss");
+                    break;
+                case LiveGameState.STATUS_BLACK_WINS:
+                    gameDTO.setResultWhite("loss");
+                    gameDTO.setResultBlack("win");
+                    break;
+                default:
+                    gameDTO.setResultWhite("draw");
+                    gameDTO.setResultBlack("draw");
+                    break;
+            }
+
+            gameService.createGame(gameDTO);
+            log.info("Saved completed game {} to MongoDB with opening: {}", 
+                     gameState.getGameId(), gameState.getDetectedOpening());
+
+        } catch (Exception e) {
+            log.error("Failed to save game {} to MongoDB: {}", gameState.getGameId(), e.getMessage(), e);
         }
     }
 

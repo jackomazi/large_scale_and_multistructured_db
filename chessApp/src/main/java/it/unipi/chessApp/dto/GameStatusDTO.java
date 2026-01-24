@@ -17,4 +17,6 @@ public class GameStatusDTO {
     private String lastMove;
     private String tournamentId;
     private long lastMoveAt;
+    private String detectedOpening;
+    private String detectedOpeningEco;
 }

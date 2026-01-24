@@ -1,26 +1,34 @@
-import requests
-import re
-from datetime import datetime, timedelta
+# standard
 import json
-from faker import Faker
-from dateutil.parser import isoparse
 import time
 import random
-from requests.exceptions import ReadTimeout
-from typing import List, Dict
 import math
+from datetime import datetime, timedelta
+from typing import List, Dict
 
+# third-party
+import requests
+from faker import Faker
+from dateutil.parser import isoparse
 
+class LichessInterface:
+    """
+    Interface layer for interacting with the Lichess public API.
 
+    Responsibilities:
+    - Fetch data from Lichess endpoints (users, teams, games, tournaments)
+    - Normalize and format data for MongoDB storage
+    - Generate synthetic or estimated fields when real data is missing
+    """
+    # ==============================================================
+    # API FETCH METHODS
+    # ==============================================================
 
-class lichess_interface:
     @staticmethod
-    # Scraping player usernames from teams
     def get_players_usernames(team : str) -> list:
         """ Fetches player usernames from a given Lichess team.
         url example: https://lichess.org/api/team/lichess-swis/users
         """
-        # Endpoint URL
         url = f"https://lichess.org/api/team/{team}/users"
         headers = {"Accept": "application/x-ndjson",
                    "User-Agent": "Lichess Data Collector - for academic purposes - contact: andreagiacomazzi202@gmail.com"}
@@ -35,28 +43,6 @@ class lichess_interface:
                 user = json.loads(line)
                 usernames.append(user["name"]) # extract username
         return usernames
-    
-    @staticmethod
-    def get_players_ids(team : str) -> list:
-        """ Fetches player IDs from a given Lichess team.
-        url example: https://lichess.org/api/team/lichess-swis/users
-        """
-        # Endpoint URL
-        url = f"https://lichess.org/api/team/{team}/users"
-        headers = {"Accept": "application/x-ndjson",
-                   "User-Agent": "Lichess Data Collector - for academic purposes - contact: andreagiacomazzi202@gmail.com"}
-        response = requests.get(url, headers=headers)
-        # Handle non-200 responses
-        if response.status_code != 200:
-            return []
-        ids = []
-        # Parse NDJSON response
-        for line in response.iter_lines():
-            if line:
-                user = json.loads(line)
-                ids.append(user["id"]) # extract id
-        return ids
-
 
     @staticmethod
     def get_player_infos(username: str) -> dict:
@@ -68,7 +54,6 @@ class lichess_interface:
         headers = {"Accept": "application/json",
                    "User-Agent": "Lichess Data Collector - for academic purposes - contact: andreagiacomazzi202@gmail.com"}
         response = requests.get(url,headers=headers)
-        
         if response.status_code == 429:
             print("\nRate limit exceeded.")
             return {}
@@ -129,34 +114,7 @@ class lichess_interface:
             return {}
         return response.json()
     
-    @staticmethod
-    def format_team_infos(team_info: dict, countries: list) -> dict:
-        """Formats a Lichess team information dictionary into a structured format for MongoDB storage."""
-        team_info.pop("id", None)
-        team_info.pop("open", None)
-        team_info.pop("nbMembers", None)
-        team_info.pop("leaders", None)
-        team_info.pop("joined", None)
-        team_info.pop("requested", None)
-        team_info.pop("flair", None)
-        team_info["admin"] = team_info["leader"]["name"] if team_info.get("leader") else None
-        team_info["country"] = random.choice(countries)
-        if team_info["admin"] == "Lichess":
-            team_info["admin"] = "admin"
-        team_info.pop("leader", None)
-        
-        
-        start_date = datetime(2006, 1, 1)
-        end_date = datetime(2010, 12, 31, 23, 59, 59)
-        
-        delta_seconds = int((end_date - start_date).total_seconds())
-        random_seconds = random.randint(0, delta_seconds)
-        random_date = start_date + timedelta(seconds=random_seconds)
-        
-        team_info["creation_date"] = random_date.strftime('%Y-%m-%d %H:%M:%S')
-        
-        return team_info
-
+   
     @staticmethod
     def get_n_users_from_team(team: str, n: int) -> list:
         """Fetches up to n player usernames from a given Lichess team.
@@ -196,6 +154,241 @@ class lichess_interface:
                 user = json.loads(line)
                 ids.append(user["id"]) # extract id
         return ids
+
+    
+    @staticmethod
+    def get_n_lichess_player_tournaments(username: str, n: int) -> list:
+        """ Fetches n player tournaments from a given Lichess username.
+        url example: https://lichess.org/api/user/{username}/tournament/played
+        url example: https://lichess.org/api/user/senukRandidu/tournament/played?nb=1
+        """
+        url = f"https://lichess.org/api/user/{username}/tournament/played?nb={n}"
+        headers = {"Accept": "application/x-ndjson",
+                   "User-Agent": "Lichess Data Collector - for academic purposes - contact: andreagiacomazzi202@gmail.com"}
+        response = requests.get(url, headers=headers)
+        if response.status_code != 200:
+            return []
+        tournaments = []
+        for line in response.text.splitlines():
+            try:
+                tournaments.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+        return tournaments
+
+
+    @staticmethod
+    def get_lichess_tournament_infos(tournament_id: str) -> dict:
+        """Fetches Lichess tournament information for a given tournament ID.
+        url example: https://lichess.org/api/tournament/{tournament_id}
+        """
+        url = f"https://lichess.org/api/tournament/{tournament_id}"
+        headers = {"Accept": "application/json",
+                   "User-Agent": "Lichess Data Collector - for academic purposes - contact: andreagiacomazzi202@gmail.com"}
+        response = requests.get(url, headers=headers)
+        if response.status_code != 200:
+            return {}
+        return response.json()
+
+    @staticmethod
+    def get_lichess_tournament_infos_with_players(tournament_id: str, max_players: int) -> dict:
+        """Fetches Lichess tournament information for a given tournament ID.
+        url example: https://lichess.org/api/tournament/{tournament_id}
+        """
+        url = f"https://lichess.org/api/tournament/{tournament_id}"
+        headers = {"Accept": "application/json",
+                   "User-Agent": "Lichess Data Collector - for academic purposes - contact: andreagiacomazzi202@gmail.com"}
+        page = 1
+        all_participants = []
+        seen_ids = set()
+        last_page_ids = None
+        tournament = None
+        while True:
+            response = requests.get(
+                url,
+                headers=headers,
+                params={"page": page}
+            )
+            if response.status_code != 200:
+                break
+            data = response.json()
+            if tournament is None:
+                tournament = {k: v for k, v in data.items() if k != "standing"}
+            players_page = data.get("standing", {}).get("players", [])
+            if not players_page:
+                break
+            current_ids = [p.get("name") for p in players_page]
+            if current_ids == last_page_ids:
+                break   
+
+            for p in players_page:
+                pid = p.get("name")
+                if pid and pid not in seen_ids:
+                    seen_ids.add(pid)
+                    all_participants.append(p)
+                    if max_players is not None and len(all_participants) >= max_players:
+                        break
+            if max_players is not None and len(all_participants) >= max_players:
+                break
+                    
+            last_page_ids = current_ids
+            page += 1
+            time.sleep(0.3)  # rate limit
+        if tournament is None:
+            return {}
+
+        tournament["players"] = all_participants
+
+        return tournament
+    
+
+    @staticmethod
+    def get_n_participants_in_tournament(tournament_info: dict) -> list:
+        """Returns the list of participants in a tournament given its info dictionary."""
+        players = [player['name'] for player in tournament_info['standing']['players']]
+
+        return players
+
+    @staticmethod
+    def get_lichess_tournament_games(tournament_id: str, username: str) -> list:
+        """Fetches Lichess tournament games for a given tournament ID in NDJSON format.
+        url example: https://lichess.org/api/tournament/{tournament_id}/games
+        """
+        url = f"https://lichess.org/api/tournament/{tournament_id}/games?player={username}&opening=true"
+        
+        headers = {"Accept": "application/x-ndjson",
+                   "User-Agent": "Lichess Data Collector - for academic purposes - contact: andreagiacomazzi202@gmail.com"}
+        games = []
+        response = requests.get(url, headers=headers, stream =True)
+        if response.status_code == 200:
+            # Parse NDJSON response
+            for line in response.iter_lines():
+                # For each line in the response, parse it as JSON
+                if line:
+                    game = json.loads(line)
+                    # Append the parsed game to the list
+                    games.append(game)
+            return games
+        else:
+            return []
+
+    
+
+    @staticmethod
+    def get_lichess_tournament_games_all(tournament_id: str, total_games: int | None = None) -> List[Dict]:
+        """
+        Fetch all games from a Lichess Arena tournament using NDJSON streaming.
+
+        :param tournament_id: Lichess tournament ID
+        :param total_games: Optional hard limit on number of games to fetch
+        :param oauth_token: Optional OAuth token (increases rate limit)
+        :return: List of game dicts
+        """
+
+        url = f"https://lichess.org/api/tournament/{tournament_id}/games"
+
+        oauth_token = "Noo" # Ask Andrea for token
+        
+        headers = {
+            "Accept": "application/x-ndjson",
+            "User-Agent": "Lichess Data Collector - academic purposes"
+        }
+
+        if oauth_token:
+            headers["Authorization"] = f"Bearer {oauth_token}"
+
+        params = {
+            "player": "",
+            "moves": "true",
+            "pgnInJson": "false",
+            "tags": "true",
+            "clocks": "false",
+            "evals": "false",
+            "accuracy": "false",
+            "opening": "true",
+            "division": "false"
+        }
+
+        games: List[Dict] = []
+
+        with requests.get(url, headers=headers, params=params, stream=True, timeout=60) as response:
+            response.raise_for_status()
+
+            for line in response.iter_lines():
+                if not line:
+                    continue
+
+                try:
+                    game = json.loads(line.decode("utf-8"))
+                    games.append(game)
+                except json.JSONDecodeError:
+                    continue
+
+                if total_games is not None and len(games) >= total_games:
+                    return games
+
+        return games
+    
+    
+    @staticmethod
+    def get_lichess_player_infos_by_list_ids(user_ids: list) -> list:
+        """Uses POST endpoint to fetch multiple user infos by list of IDs.
+        url example: curl -k 'https://lichess.org/api/users?profile=true' \
+                                -H 'Authorization: Bearer lip_xxxxxxxxxxxxx' \
+                                -H 'Content-Type: text/plain' \
+                                --data 'thibault,maia1'
+        """
+        url = "https://lichess.org/api/users?profile=true&rank=true"
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "text/plain",
+            "User-Agent": "Lichess Data Collector - for academic purposes - contact: andreagiacomazzi202@gmail.com"
+        }
+        data = ",".join(user_ids)
+        response = requests.post(url, headers=headers, data=data)
+        if response.status_code != 200:
+            return []
+        return response.json()
+
+    # ==============================================================
+    # FORMATTERS
+    # ==============================================================
+
+    @staticmethod
+    def format_lichess_tournament_essentials(tournament_id: str, tournament_info: dict) -> dict:
+        """Formats essential information of a Lichess tournament for user document storage."""
+        return {
+            "_id": tournament_id,
+            "placement": tournament_info["player"]["rank"]
+            }
+    
+    @staticmethod
+    def format_team_infos(team_info: dict, countries: list) -> dict:
+        """Formats a Lichess team information dictionary into a structured format for MongoDB storage."""
+        team_info.pop("id", None)
+        team_info.pop("open", None)
+        team_info.pop("nbMembers", None)
+        team_info.pop("leaders", None)
+        team_info.pop("joined", None)
+        team_info.pop("requested", None)
+        team_info.pop("flair", None)
+        team_info["admin"] = team_info["leader"]["name"] if team_info.get("leader") else None
+        team_info["country"] = random.choice(countries)
+        if team_info["admin"] == "Lichess":
+            team_info["admin"] = "admin"
+        team_info.pop("leader", None)
+        
+        
+        start_date = datetime(2006, 1, 1)
+        end_date = datetime(2010, 12, 31, 23, 59, 59)
+        
+        delta_seconds = int((end_date - start_date).total_seconds())
+        random_seconds = random.randint(0, delta_seconds)
+        random_date = start_date + timedelta(seconds=random_seconds)
+        
+        team_info["creation_date"] = random_date.strftime('%Y-%m-%d %H:%M:%S')
+        
+        return team_info
 
     @staticmethod
     def format_lichess_game(game: dict, openings: list) -> dict:
@@ -252,7 +445,7 @@ class lichess_interface:
                     "black": "name",
                     "opening": "name",
                     "winner": "name",
-                    "date": "2026-01-22 15:50:41"
+                    "date": "2033-04-08 00:00:00"
                     }
         # if result_white is win then winner is white, else if result_black is win then winner is black, else draw
         if formatted_game.get("result_white") == "win":
@@ -272,6 +465,7 @@ class lichess_interface:
     
     @staticmethod
     def format_lichess_player_infos(user_info: dict, countries: list) -> dict:
+        """Formats essential information of a player for user document storage."""
         if user_info.get("disabled") is True:
             return None
         # Useless data
@@ -325,12 +519,14 @@ class lichess_interface:
         user_info.pop("seenAt", None)
         user_info.pop("createdAt", None)
 
-        user_info["admin"] = "false"
+        user_info["isStreamer"] = False
+
+        user_info["admin"] = False
 
         return user_info
     
     @staticmethod
-    def format_lichess_player_essentials(id: str, user:dict) -> dict:
+    def format_lichess_player_essentials(user:dict) -> dict:
         """Formats essential information of a Lichess player for user document storage."""
         return {
             "country": user.get("country", ""),
@@ -341,192 +537,25 @@ class lichess_interface:
                 "rapid": user.get("stats", {}).get("rapid", {})
             }
         }
-        
 
-    @staticmethod
-    # Scraping user tournaments
-    def get_n_lichess_player_tournaments(username: str, n: int) -> list:
-        """ Fetches n player tournaments from a given Lichess username.
-        url example: https://lichess.org/api/user/{username}/tournament/played
-        url example: https://lichess.org/api/user/senukRandidu/tournament/played?nb=1
-        """
-        url = f"https://lichess.org/api/user/{username}/tournament/played?nb={n}"
-        headers = {"Accept": "application/x-ndjson",
-                   "User-Agent": "Lichess Data Collector - for academic purposes - contact: andreagiacomazzi202@gmail.com"}
-        response = requests.get(url, headers=headers)
-        if response.status_code != 200:
-            return []
-        tournaments = []
-        for line in response.text.splitlines():
-            try:
-                tournaments.append(json.loads(line))
-            except json.JSONDecodeError:
-                continue
-        return tournaments
-
-
-    @staticmethod
-    def get_lichess_tournament_infos(tournament_id: str) -> dict:
-        """Fetches Lichess tournament information for a given tournament ID.
-        url example: https://lichess.org/api/tournament/{tournament_id}
-        """
-        url = f"https://lichess.org/api/tournament/{tournament_id}"
-        headers = {"Accept": "application/json",
-                   "User-Agent": "Lichess Data Collector - for academic purposes - contact: andreagiacomazzi202@gmail.com"}
-        response = requests.get(url, headers=headers)
-        if response.status_code != 200:
-            return {}
-        return response.json()
-
-    @staticmethod
-    def get_lichess_tournament_infos_with_players(tournament_id: str, max_players: int) -> dict:
-        """Fetches Lichess tournament information for a given tournament ID.
-        url example: https://lichess.org/api/tournament/{tournament_id}
-        """
-        url = f"https://lichess.org/api/tournament/{tournament_id}"
-        headers = {"Accept": "application/json",
-                   "User-Agent": "Lichess Data Collector - for academic purposes - contact: andreagiacomazzi202@gmail.com"}
-        page = 1
-        all_participants = []
-        seen_ids = set()
-        last_page_ids = None
-        tournament = None
-        while True:
-            response = requests.get(
-                url,
-                headers=headers,
-                params={"page": page}
-            )
-            if response.status_code != 200:
-                break
-            data = response.json()
-            # salva i metadata solo una volta
-            if tournament is None:
-                tournament = {k: v for k, v in data.items() if k != "standing"}
-            players_page = data.get("standing", {}).get("players", [])
-            if not players_page:
-                break
-            current_ids = [p.get("name") for p in players_page]
-            if current_ids == last_page_ids:
-                break   
-
-            for p in players_page:
-                pid = p.get("name")
-                if pid and pid not in seen_ids:
-                    seen_ids.add(pid)
-                    all_participants.append(p)
-                    if max_players is not None and len(all_participants) >= max_players:
-                        break
-            if max_players is not None and len(all_participants) >= max_players:
-                break
-                    
-
-            last_page_ids = current_ids
-            page += 1
-            time.sleep(0.3)  # rate limit
-        if tournament is None:
-            return {}
-
-        tournament["players"] = all_participants
-
-        return tournament
-    
-
-    @staticmethod
-    def get_n_participants_in_tournament(tournament_info: dict) -> list:
-        """Returns the list of participants in a tournament given its info dictionary."""
-        players = [player['name'] for player in tournament_info['standing']['players']]
-
-        return players
-
-    @staticmethod
-    def get_lichess_tournament_games(tournament_id: str, username: str) -> list:
-        """Fetches Lichess tournament games for a given tournament ID in NDJSON format.
-        url example: https://lichess.org/api/tournament/{tournament_id}/games
-        """
-        url = f"https://lichess.org/api/tournament/{tournament_id}/games?player={username}&opening=true"
-        
-        headers = {"Accept": "application/x-ndjson",
-                   "User-Agent": "Lichess Data Collector - for academic purposes - contact: andreagiacomazzi202@gmail.com"}
-        games = []
-        response = requests.get(url, headers=headers, stream =True)
-        if response.status_code == 200:
-            # Parse NDJSON response
-            for line in response.iter_lines():
-                # For each line in the response, parse it as JSON
-                if line:
-                    game = json.loads(line)
-                    # Append the parsed game to the list
-                    games.append(game)
-            return games
-        else:
-            return []
-
-    
-
-    @staticmethod
-    def get_lichess_tournament_games_all(
-        tournament_id: str,
-        total_games: int | None = None
-    ) -> List[Dict]:
-        """
-        Fetch all games from a Lichess Arena tournament using NDJSON streaming.
-
-        :param tournament_id: Lichess tournament ID
-        :param total_games: Optional hard limit on number of games to fetch
-        :param oauth_token: Optional OAuth token (increases rate limit)
-        :return: List of game dicts
-        """
-
-        url = f"https://lichess.org/api/tournament/{tournament_id}/games"
-
-        oauth_token = "Noo" # Ask Andrea for token, soon it will be added an env file with it
-        
-        headers = {
-            "Accept": "application/x-ndjson",
-            "User-Agent": "Lichess Data Collector - academic purposes"
-        }
-
-        if oauth_token:
-            headers["Authorization"] = f"Bearer {oauth_token}"
-
-        params = {
-            "player": "",
-            "moves": "true",
-            "pgnInJson": "false",
-            "tags": "true",
-            "clocks": "false",
-            "evals": "false",
-            "accuracy": "false",
-            "opening": "true",
-            "division": "false"
-        }
-
-        games: List[Dict] = []
-
-        with requests.get(url, headers=headers, params=params, stream=True, timeout=60) as response:
-            response.raise_for_status()
-
-            for line in response.iter_lines():
-                if not line:
-                    continue
-
-                try:
-                    game = json.loads(line.decode("utf-8"))
-                    games.append(game)
-                except json.JSONDecodeError:
-                    continue
-
-                if total_games is not None and len(games) >= total_games:
-                    return games
-
-        return games
 
     @staticmethod
     def format_lichess_tournament_info(tournament_info: dict) -> dict:
         """Formats a Lichess tournament information dictionary into a structured format for MongoDB storage."""
         # rename fields
         tournament_info["number_partecipants"] = tournament_info.pop("nbPlayers")
+        # estimate max partecipants
+        current = tournament_info["number_partecipants"]
+
+        # between 10% e 30% margin
+        factor = random.uniform(1, 1.3)
+        estimated_max = math.ceil(current * factor)
+
+        # round
+        estimated_max = int(math.ceil(estimated_max / 10) * 10)
+
+        tournament_info["max_partecipants"] = estimated_max
+
         tournament_info["creator"] = tournament_info.pop("createdBy")
         tournament_info["name"] = tournament_info.pop("fullName")
 
@@ -535,14 +564,13 @@ class lichess_interface:
             starts_at = isoparse(tournament_info["startsAt"])
         except Exception as e:
             starts_at = None
-        # tournament_info["started_at"] = starts_at
-        # tournament_info["started_at"] = starts_at
+            
         if tournament_info.get("minutes"):
             finish_obj = starts_at + timedelta(minutes=tournament_info["minutes"])
             tournament_info["finish_time"] = finish_obj.strftime("%Y-%m-%d %H:%M:%S")
         else:
             tournament_info["finish_time"] = None
-        tournament_info.pop("startsAt")
+            
         tournament_info.pop("minutes", None)
 
         # time control and clock limit
@@ -568,8 +596,6 @@ class lichess_interface:
 
         tournament_info.pop("duels", None)
 
-
-        ## da valutare
         tournament_info.pop("berserkable", None)
 
         tournament_info.pop("rated", None)
@@ -615,20 +641,23 @@ class lichess_interface:
         tournament_info["description"] = tournament_info.get("description") or ""
 
         return tournament_info
-    
+
+    # ==============================================================
+    # ESTIMATIONS
+    # ==============================================================
+
     @staticmethod
     def estimate_player_stats(total_games: int, total_players: int, white_wins: int, black_wins: int, placement: int) -> tuple:
         """
-        Stima le statistiche di un singolo giocatore basandosi sui dati globali del torneo.
+        Estimate player stats in a tournament
         """
         if total_players <= 0:
-            return {"played": 0, "wins": 0, "draws": 0, "losses": 0}
+            return 0, 0, 0
 
-        # 1. Calcolo della media partite per giocatore (ogni partita ha 2 giocatori)
+        # calculate avg number of games played by a player
         avg_games_per_player = (total_games * 2) / total_players
 
-        # 2. Stima partite giocate (chi sta in alto in classifica di solito ha giocato di più)
-        # Se placement è piccolo (es. 1, 2, 3), il moltiplicatore è più alto
+        # estimate number of games played by a player, higher placement usually means more games
         if placement <= 10:
             play_factor = random.uniform(1.2, 1.6)
         elif placement <= 50:
@@ -638,12 +667,7 @@ class lichess_interface:
         
         played = max(1, int(avg_games_per_player * play_factor))
 
-        # 3. Calcolo Win Rate basato sul placement
-        # Più il placement è basso (vicino a 1), più la win_rate è alta
-        # Una formula semplice: i top player hanno 70-90% win rate, gli ultimi 10-20%
-        base_win_rate = (white_wins + black_wins) / (total_games * 2) if total_games > 0 else 0.45
-        
-        # Modificatore basato sulla posizione (più sei in alto, più vinci rispetto alla media)
+        # win rate based on placement
         if placement <= 10:
             win_rate = random.uniform(0.70, 0.85)
         elif placement <= 100:
@@ -654,47 +678,13 @@ class lichess_interface:
         # 4. Generazione numeri finali
         wins = int(played * win_rate)
         
-        # Le patte (draws) sono meno comuni nei tornei online, diciamo tra 2% e 8%
+        # draws (online tournaments → low draw rate)
         draw_rate = random.uniform(0.02, 0.08)
         draws = int(played * draw_rate)
         
-        # Il resto sono sconfitte
+        # clamp values
+        wins = min(wins, played)
+        draws = min(draws, played - wins)
         losses = max(0, played - wins - draws)
 
         return wins, losses, draws
-
-
-    @staticmethod
-    def format_lichess_tournament_essentials(tournament_id: str, tournament_info: dict) -> dict:
-        """Formats essential information of a Lichess tournament for user document storage."""
-        return {
-            "_id": tournament_id,
-            "placement": tournament_info["player"]["rank"]
-            }
-
-    @staticmethod
-    def get_lichess_player_infos_by_list_ids(user_ids: list) -> list:
-        """Uses POST endpoint to fetch multiple user infos by list of IDs.
-        url example: curl -k 'https://lichess.org/api/users?profile=true' \
-                                -H 'Authorization: Bearer lip_xxxxxxxxxxxxx' \
-                                -H 'Content-Type: text/plain' \
-                                --data 'thibault,maia1'
-        """
-        url = "https://lichess.org/api/users?profile=true&rank=true"
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "text/plain",
-            "User-Agent": "Lichess Data Collector - for academic purposes - contact: andreagiacomazzi202@gmail.com"
-        }
-        data = ",".join(user_ids)
-        response = requests.post(url, headers=headers, data=data)
-        if response.status_code != 200:
-            return []
-        return response.json()
-
-        
-
-
-
-
-

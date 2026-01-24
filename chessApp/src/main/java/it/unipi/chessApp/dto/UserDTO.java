@@ -25,7 +25,7 @@ public class UserDTO {
   private boolean isStreamer;
   private List<String> streamingPlatforms;
   private String club;
-  private List<GameSummary> games;
+  private List<GameSummaryDTO> games;
   private Stats stats;
   private TournamentStats tournaments;
   private String mail;
@@ -111,11 +111,11 @@ public class UserDTO {
         this.club = club;
     }
 
-    public List<GameSummary> getGames() {
+    public List<GameSummaryDTO> getGames() {
         return games;
     }
 
-    public void setGames(List<GameSummary> games) {
+    public void setGames(List<GameSummaryDTO> games) {
         this.games = games;
     }
 
@@ -163,7 +163,11 @@ public class UserDTO {
         dto.setStreamer(user.isStreamer());
         dto.setStreamingPlatforms(user.getStreamingPlatforms());
         dto.setClub(user.getClub());
-        dto.setGames(user.getGames());
+        List<GameSummaryDTO> summaries = user.getGames()
+                .stream()
+                .map(GameSummaryDTO::convertToDTO)
+                .toList();
+        dto.setGames(summaries);
         dto.setStats(user.getStats());
         dto.setTournaments(user.getTournaments());
         dto.setMail(user.getMail());

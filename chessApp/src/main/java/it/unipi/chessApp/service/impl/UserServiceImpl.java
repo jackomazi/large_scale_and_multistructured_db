@@ -1,13 +1,18 @@
 package it.unipi.chessApp.service.impl;
 
+import it.unipi.chessApp.dto.GameDTO;
 import it.unipi.chessApp.dto.GameSummaryDTO;
 import it.unipi.chessApp.dto.PageDTO;
 import it.unipi.chessApp.dto.UserDTO;
+import it.unipi.chessApp.model.GameSummary;
 import it.unipi.chessApp.model.User;
 import it.unipi.chessApp.repository.UserRepository;
+import it.unipi.chessApp.repository.neo4j.UserNodeRepository;
 import it.unipi.chessApp.service.UserService;
 import it.unipi.chessApp.service.exception.BusinessException;
 import it.unipi.chessApp.utils.Constants;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -27,12 +32,19 @@ public class UserServiceImpl implements UserService {
 
   private final MongoTemplate mongoTemplate;
 
+  private final UserNodeRepository userNodeRepository;
+
   @Override
   public UserDTO createUser(UserDTO userDTO) throws BusinessException {
     try {
-      User user = convertToEntity(userDTO);
-      User createdUser = userRepository.save(user);
-      return convertToDTO(createdUser);
+        //Adding placeholders to tournament document
+        List<GameSummaryDTO> placeholders = new ArrayList<>();
+        for(int i = 0; i < Constants.GAMES_BUFFER_NUMBER; i++)
+            placeholders.add(new GameSummaryDTO());
+        userDTO.setGames(placeholders);
+        User user = convertToEntity(userDTO);
+        User createdUser = userRepository.save(user);
+        return convertToDTO(createdUser);
     } catch (Exception e) {
       throw new BusinessException("Error creating user", e);
     }
@@ -109,7 +121,11 @@ public class UserServiceImpl implements UserService {
     dto.setStreamer(user.isStreamer());
     dto.setStreamingPlatforms(user.getStreamingPlatforms());
     dto.setClub(user.getClub());
-    dto.setGames(user.getGames());
+    List<GameSummaryDTO> summaryDTO = user.getGames()
+            .stream()
+            .map(GameSummaryDTO::convertToDTO)
+            .toList();
+    dto.setGames(summaryDTO);
     dto.setStats(user.getStats());
     dto.setTournaments(user.getTournaments());
     dto.setMail(user.getMail());
@@ -129,7 +145,11 @@ public class UserServiceImpl implements UserService {
     user.setStreamer(dto.isStreamer());
     user.setStreamingPlatforms(dto.getStreamingPlatforms());
     user.setClub(dto.getClub());
-    user.setGames(dto.getGames());
+    List<GameSummary> summaries =dto.getGames()
+            .stream()
+            .map(GameSummary::convertToEntity)
+            .toList();
+    user.setGames(summaries);
     user.setStats(dto.getStats());
     user.setTournaments(dto.getTournaments());
     user.setMail(dto.getMail());
@@ -137,11 +157,30 @@ public class UserServiceImpl implements UserService {
     return user;
   }
 
-  public void bufferGame(String userId, GameSummaryDTO summary){
+  public void bufferGame(String userId, GameSummaryDTO summary, String timeClass){
 
-
+      //MongoDB user update
       User user = userRepository.findById(userId)
               .orElseThrow(() -> new RuntimeException("User not found"));
+
+      //Calculate elo gain/loss
+      int eloDiff = this.calculateEloChange(summary, user.getUsername());
+      int oldElo = 0;
+      int eloRapid = user.getStats().getRapid();
+      int eloBlitz = user.getStats().getBlitz();
+      int eloBullet = user.getStats().getBullet();
+      if(timeClass.equals("rapid")) {
+          oldElo = user.getStats().getRapid();
+          eloRapid += eloDiff;
+      }
+      if(timeClass.equals("blitz")) {
+          oldElo = user.getStats().getBlitz();
+          eloBlitz += eloDiff;
+      }
+      if(timeClass.equals("bullet")) {
+          oldElo = user.getStats().getBullet();
+          eloBullet += eloDiff;
+      }
 
       int currentIndex = user.getBufferedGames();
       int nextIndex = (currentIndex + 1)%Constants.GAMES_BUFFER_NUMBER;
@@ -149,9 +188,20 @@ public class UserServiceImpl implements UserService {
       Query query = new Query(Criteria.where("_id").is(userId));
       Update update = new Update()
               .set("games." + currentIndex, summary)
-              .set("buffered_games", nextIndex);
+              .set("buffered_games", nextIndex)
+              .set("stats." + timeClass, oldElo + eloDiff);
 
       mongoTemplate.updateFirst(query, update, User.class);
 
+      //Neo4j redundancy update
+      userNodeRepository.updateJoinedRelation(userId,eloBullet,eloBlitz,eloRapid);
+
+  }
+
+  private int calculateEloChange(GameSummaryDTO game, String nameUser){
+      if(game.getWinner().equals(nameUser))
+          return 20;
+      else
+          return -20;
   }
 }

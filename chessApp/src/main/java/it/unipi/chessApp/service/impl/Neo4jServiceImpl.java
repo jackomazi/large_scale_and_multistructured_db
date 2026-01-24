@@ -1,8 +1,7 @@
 package it.unipi.chessApp.service.impl;
 
-import it.unipi.chessApp.dto.FriendRecommendationDTO;
-import it.unipi.chessApp.dto.Neo4jEntityDTO;
-import it.unipi.chessApp.dto.UserDTO;
+import it.unipi.chessApp.dto.*;
+import it.unipi.chessApp.model.TournamentPlayer;
 import it.unipi.chessApp.model.User;
 import it.unipi.chessApp.model.neo4j.*;
 import it.unipi.chessApp.repository.UserRepository;
@@ -124,5 +123,15 @@ public class Neo4jServiceImpl implements Neo4jService {
                 .map(Neo4jEntityDTO::convertToDTO)
                 .toList();
         return followDTOS;
+    }
+
+    @Override
+    public List<TournamentParticipantDTO> findUserTournaments(String userId){
+        List<TournamentParticipant> userTournaments = userNodeRepository.findUserTournaments(userId);
+        List<TournamentParticipantDTO> tournamentsDTO = userTournaments
+                .stream()
+                .map(TournamentParticipantDTO::convertToDTO)
+                .toList();
+        return tournamentsDTO;
     }
 }

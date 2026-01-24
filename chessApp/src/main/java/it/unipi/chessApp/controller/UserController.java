@@ -130,4 +130,12 @@ public class UserController {
         List<Neo4jEntityDTO> follows = neo4jService.findUserFollowers(userId);
         return ResponseEntity.ok(new ResponseWrapper<>("User followers", follows));
     }
+
+    @GetMapping("/{userId}/tournament")
+    public ResponseEntity<ResponseWrapper<List<TournamentParticipantDTO>>> findUserTournaments(
+            @PathVariable String userId
+    ){
+      List<TournamentParticipantDTO> userTournaments = neo4jService.findUserTournaments(userId);
+      return ResponseEntity.ok(new ResponseWrapper<>("User tournaments",userTournaments));
+    }
 }

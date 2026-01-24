@@ -1,8 +1,6 @@
 package it.unipi.chessApp.service;
 
-import it.unipi.chessApp.dto.PageDTO;
-import it.unipi.chessApp.dto.TournamentDTO;
-import it.unipi.chessApp.dto.TournamentParticipantDTO;
+import it.unipi.chessApp.dto.*;
 import it.unipi.chessApp.service.exception.BusinessException;
 
 import java.util.List;
@@ -16,4 +14,5 @@ public interface TournamentService {
     throws BusinessException;
   void deleteTournament(String id) throws BusinessException;
   List<TournamentParticipantDTO> getTournamentParticipants(String name) throws BusinessException;
+  String bufferTournamentGame(String tournamentId, GameDTO summary, String whiteId, String blackId);
 }

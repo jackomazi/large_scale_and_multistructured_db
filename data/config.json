@@ -6,7 +6,7 @@
     "max_tournament_per_user": 2,
     "maximum_games_stored_per_user_document": 20,
     "maximum_user_stored_per_club": 60,
-    "maximum_games_per_tournament": 20,
+    "maximum_games_per_tournament": 10,
     "countries": [
         "FR",
         "IT",

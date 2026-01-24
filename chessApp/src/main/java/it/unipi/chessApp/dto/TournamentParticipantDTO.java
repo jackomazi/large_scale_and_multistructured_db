@@ -1,5 +1,6 @@
 package it.unipi.chessApp.dto;
 
+import it.unipi.chessApp.model.neo4j.TournamentParticipant;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,6 +14,25 @@ public class TournamentParticipantDTO {
     private int draws;
     private int losses;
     private int placement;
+    private String toutamentName;
+
+    public String getToutamentName() {
+        return toutamentName;
+    }
+
+    public void setToutamentName(String toutamentName) {
+        this.toutamentName = toutamentName;
+    }
+
+    public String getTournamentId() {
+        return tournamentId;
+    }
+
+    public void setTournamentId(String tournamentId) {
+        this.tournamentId = tournamentId;
+    }
+
+    private String tournamentId;
 
     public String getName() {
         return name;
@@ -52,5 +72,17 @@ public class TournamentParticipantDTO {
 
     public void setPlacement(int placement) {
         this.placement = placement;
+    }
+
+    public static TournamentParticipantDTO convertToDTO(TournamentParticipant model){
+        TournamentParticipantDTO dto = new TournamentParticipantDTO();
+        dto.setPlacement(model.getPlacement());
+        dto.setName(model.getName());
+        dto.setLosses(model.getLosses());
+        dto.setWins(model.getWins());
+        dto.setDraws(model.getDraws());
+        dto.setTournamentId(model.getTournament().getId());
+        dto.setToutamentName(model.getTournament().getName());
+        return dto;
     }
 }

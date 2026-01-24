@@ -1,5 +1,6 @@
 package it.unipi.chessApp.model;
 
+import it.unipi.chessApp.dto.GameSummaryDTO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,4 +19,15 @@ public class GameSummary {
   private String opening;
   private String winner;
   private String date;
+
+  public static GameSummary convertToEntity(GameSummaryDTO dto){
+      GameSummary summary = new GameSummary();
+      summary.setWinner(dto.getWinner());
+      summary.setWhite(dto.getWhite());
+      summary.setBlack(dto.getBlack());
+      summary.setDate(dto.getDate());
+      summary.setId(dto.getId());
+      summary.setOpening(dto.getOpening());
+      return summary;
+  }
 }

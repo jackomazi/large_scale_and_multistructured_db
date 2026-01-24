@@ -22,7 +22,8 @@ public class TournamentDTO {
     private int participants;
     private int maxParticipants;
     private String timeControl;
-    private List<GameSummary> games;
+    private List<GameSummaryDTO> games;
+    private int bufferedGames;
 
     public String getId() {
         return id;
@@ -112,11 +113,19 @@ public class TournamentDTO {
         this.timeControl = timeControl;
     }
 
-    public List<GameSummary> getGames() {
+    public List<GameSummaryDTO> getGames() {
         return games;
     }
 
-    public void setGames(List<GameSummary> games) {
+    public void setGames(List<GameSummaryDTO> games) {
         this.games = games;
+    }
+
+    public int getBufferedGames() {
+        return bufferedGames;
+    }
+
+    public void setBufferedGames(int bufferedGames) {
+        this.bufferedGames = bufferedGames;
     }
 }

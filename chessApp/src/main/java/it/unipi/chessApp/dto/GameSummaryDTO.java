@@ -1,5 +1,6 @@
 package it.unipi.chessApp.dto;
 
+import it.unipi.chessApp.model.Game;
 import it.unipi.chessApp.model.GameSummary;
 
 public class GameSummaryDTO {
@@ -10,6 +11,16 @@ public class GameSummaryDTO {
     private String opening;
     private String winner;
     private String date;
+
+    public GameSummaryDTO(){
+        //Initializates as a placeholder
+        this.id = null;
+        this.white = "name";
+        this.black = "name";
+        this.date = "3033-04-08 00:00:00";
+        this.opening = "name";
+        this.winner = "name";
+    }
 
     public String getId() {
         return id;
@@ -70,6 +81,17 @@ public class GameSummaryDTO {
             dto.setWinner(game.getWhitePlayer());
         else
             dto.setWinner(game.getBlackPlayer());
+        return dto;
+    }
+
+    public static GameSummaryDTO convertToDTO(GameSummary summary){
+        GameSummaryDTO dto = new GameSummaryDTO();
+        dto.setWinner(summary.getWinner());
+        dto.setWhite(summary.getWhite());
+        dto.setBlack(summary.getBlack());
+        dto.setDate(summary.getDate());
+        dto.setId(summary.getId());
+        dto.setOpening(summary.getOpening());
         return dto;
     }
 }

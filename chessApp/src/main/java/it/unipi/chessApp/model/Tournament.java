@@ -26,10 +26,12 @@ public class Tournament {
     @Field("max_rating")
     private int maxRating;
     private int participants;
-    @Field("max_participants")
+    @Field("max_partecipants")
     private int maxParticipants;
     @Field("time_control")
     private String timeControl;
     private List<TournamentPlayer> players;
     private List<GameSummary> games;
+    @Field("buffered_games")
+    private int bufferedGames;
 }

@@ -8,14 +8,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import lombok.extern.slf4j.Slf4j;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
   @ExceptionHandler(BusinessException.class)
   public ResponseEntity<ResponseWrapper<String>> handleBusinessException(
     BusinessException ex
   ) {
+    log.error("BusinessException occurred", ex);
     ResponseWrapper<String> errorResponse = new ResponseWrapper<>(
       "Operation failed",
       ex.getMessage()
@@ -49,6 +52,7 @@ public class GlobalExceptionHandler {
   public ResponseEntity<Map<String, String>> handleGenericException(
     Exception ex
   ) {
+    log.error("Unexpected error occurred", ex);
     Map<String, String> response = new HashMap<>();
     response.put("error", "Unexpected Error");
     response.put("details", ex.getMessage());

@@ -65,6 +65,6 @@
     "number_of_games_per_user": 20,
     "number_of_games_per_tournament_participant": 20,
     "max_games_per_user": 20,
-    "number_of_participant": 10,
+    "number_of_participant": 2,
     "openings": ["Caro-Kann Defense", "Italian Game", "London System", "Three Knights Opening"]
 }

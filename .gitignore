@@ -16,3 +16,6 @@ pyproject.toml
 
 # .env config for Neo4j passwords
 .env
+
+# kaggle_data
+data/kaggle_chess_data

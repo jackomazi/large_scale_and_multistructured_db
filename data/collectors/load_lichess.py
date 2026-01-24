@@ -1,20 +1,23 @@
+# standard library
 import json
 import sys
 import os
+import time
+import random
+
+# third-party
 from pymongo import MongoClient
 from tqdm import tqdm
 
-from api.lichess import lichess_interface
+# project
+from api.lichess import LichessInterface
 from storage.mongo_interface import mongo_db_interface
-
 from storage.neo4j_interface import neo4j_interface
-import time
-import random
-from bson import ObjectId
 
 if __name__ == "__main__":
 
     neo4j_dr = neo4j_interface()
+    # mongodb connection
     try:
         client = MongoClient("mongodb://localhost:27017/")
         client.server_info()
@@ -23,15 +26,15 @@ if __name__ == "__main__":
         db = client["chess_db_test_3"]
 
         ## Uncomment to clear collections
-        db["games_isaia"].drop()
-        db["users_isaia"].drop()
-        db["tournaments_isaia"].drop()
-        db["teams_isaia"].drop()
+        db["games"].drop()
+        db["users"].drop()
+        db["tournaments"].drop()
+        db["clubs"].drop()
 
-        collection_users = db["users_isaia"]
-        collection_games = db["games_isaia"]
-        collection_tournament = db["tournaments_isaia"]
-        collection_team = db["teams_isaia"]
+        collection_users = db["users"]
+        collection_games = db["games"]
+        collection_tournament = db["tournaments"]
+        collection_team = db["clubs"]
 
         print("MongoDB connection successful")
     except:
@@ -45,54 +48,55 @@ if __name__ == "__main__":
     with open(config_path, "r") as config_file:
         config_data = json.load(config_file)
 
-    # number of pages to fetch teams from, each page has 15 teams, default 5
-    number_of_pages = config_data.get("number_of_pages", 5)
-    # number of users to fetch from each team, default 10
-    number_of_users_per_team = config_data.get("number_of_users_per_team", 10)
-    # number of games to fetch from each user, default 20
-    number_of_games_per_user = config_data.get("number_of_games_per_user", 20)
-    # number of tournaments to fetch from each user, default 5
-    number_of_tournaments_per_user = config_data.get("max_tournament_per_user", 5)
-    # max games per user to store in document, default 100
-    max_games_per_user = config_data.get("max_games_per_user", 100)
-    # number of games per tournament
-    number_of_games_per_tournament = config_data.get("maximum_games_per_tournament", 10)
-    # number of participant
-    number_of_participant = config_data.get("number_of_participant")
-    # countries
-    countries = config_data.get("countries")
-    # openings
-    openings = config_data.get("openings")
+    # CONFIG
+    NUM_PAGES = config_data.get("number_of_pages", 5)
+    USERS_PER_TEAM = config_data.get("number_of_users_per_team", 10)
+    GAMES_PER_USER = config_data.get("number_of_games_per_user", 20)
+    TOURNAMENTS_PER_USER = config_data.get("max_tournament_per_user", 5)
+    MAX_GAMES_PER_USER = config_data.get("max_games_per_user", 100)
+    GAMES_PER_TOURNAMENT = config_data.get("maximum_games_per_tournament", 10)
+    NUM_PARTICIPANTS = config_data.get("number_of_participant")
+    COUNTRIES = config_data.get("countries")
+    OPENINGS = config_data.get("openings")
 
+    # this part purpose is to have 15 real teams, taken from page 25, stored in mongodb and neo4j
+    # this allow to connect randomly users to teams
+    # the reason is because when extracting participants's infos from tournament, the club is not available
     teams = []
-    random_teams = lichess_interface.get_teams_list(25)
+    print("Fetching team infos...")
+    random_teams = LichessInterface.get_teams_list(25)
     for team in random_teams:
         teams.append(team["id"])
         
-    random_teams_dict = {}
+    random_teams_dict = {} # this will store "mongo_team_id" : "team_name"
     for team in teams:
-        team_info = lichess_interface.get_team_infos(team)
-        team_info = lichess_interface.format_team_infos(team_info, countries)
+        team_info = LichessInterface.get_team_infos(team)
+        team_info = LichessInterface.format_team_infos(team_info, COUNTRIES)
         team_mongo_id = mongo_db_interface.store_dict_to_MongoDB(team_info, collection_team)
         neo4j_dr.insert_club_entity(str(team_mongo_id), team_info.get("name"))
         random_teams_dict[str(team_mongo_id)] = team_info.get("name")
     
+    # add none club
+    team_keys = list(random_teams_dict.keys())
+
+    team_keys.extend([None] * 5)
 
     teams = []
 
-    for page in range(1, number_of_pages + 1): # fetch teams from pages
-        teams_on_page = lichess_interface.get_teams_list(page)
+    for page in range(1, NUM_PAGES + 1): # fetch teams from page 1 to number of pages
+        teams_on_page = LichessInterface.get_teams_list(page)
         for team in teams_on_page:
             teams.append(team["id"])
 
     # after obtaining all teams (could be up to 15 * number_of_pages), we get n users from each team
-    print(f"Total teams fetched: {len(teams)}")
-
+    total_team_fetched = len(teams)
+    print(f"Total teams fetched: {total_team_fetched}")
+    
     for i_team, team in tqdm(enumerate(teams), total= len(teams), desc=f"Scraping teams"):
-        print(f"Scraping team: {i_team} - {team}")
-        # team infos
-        team_info = lichess_interface.get_team_infos(team)
-        team_info = lichess_interface.format_team_infos(team_info, countries)
+        print(f"Scraping team: {i_team}/{total_team_fetched - 1} - {team}")
+        # team infos + format
+        team_info = LichessInterface.get_team_infos(team)
+        team_info = LichessInterface.format_team_infos(team_info, COUNTRIES)
         # save team info to MongoDB
         team_mongo_id = mongo_db_interface.store_dict_to_MongoDB(team_info, collection_team)
         # insert in neo4j
@@ -100,59 +104,59 @@ if __name__ == "__main__":
         # add each team to the random_teams_dict
         random_teams_dict[str(team_mongo_id)] = team_info.get("name")
 
-        # get n users from team
-        ids = lichess_interface.get_n_ids_from_team(team, number_of_users_per_team)
+        # get n users's id from team
+        ids = LichessInterface.get_n_ids_from_team(team, USERS_PER_TEAM)
         # get their infos
-        infos = lichess_interface.get_lichess_player_infos_by_list_ids(ids)
+        infos = LichessInterface.get_lichess_player_infos_by_list_ids(ids)
         for user_info in infos:
-            time.sleep(1)
             if not user_info:
                 print(f"  No data for user id: {user_info}, skipping...")
+                continue
+            
+            user_info["games"] = [] # games array
+            user_info["club"] = team
+            username = user_info.get("username")
+
+            # get n games from user
+            games = LichessInterface.get_lichess_games(username, GAMES_PER_USER)
+            
+            # format and store games
+            for i_game, game in tqdm(
+                enumerate(games), total=len(games), desc=f"  Scraping games for user {username}"
+            ):
+                if len(user_info["games"]) >= MAX_GAMES_PER_USER:
+                    break
+                formatted_game = LichessInterface.format_lichess_game(game, OPENINGS)
+                # saving games to mongodb
+                game_mongo_id = mongo_db_interface.store_dict_to_MongoDB(
+                    formatted_game, collection_games
+                )
+                # add essential game info to player data list
+                user_info["games"].append(LichessInterface.format_lichess_game_essentials(game_mongo_id, formatted_game, False))
+
+            # placeholders to reach max document size
+            if len(user_info["games"]) < MAX_GAMES_PER_USER:
+                user_info["buffered_games"] = len(user_info["games"])
+                for i in range(0, MAX_GAMES_PER_USER - len(user_info.get("games"))):
+                    user_info["games"].append(LichessInterface.format_lichess_game_essentials(None, None, True))
             else:
-                user_info["games"] = []
-                user_info["team"] = team
-                username = user_info.get("username")
+                user_info["buffered_games"] = MAX_GAMES_PER_USER
 
-                # get n games from user
-                games = lichess_interface.get_lichess_games(username, number_of_games_per_user)
-                
-                # format and store games
-                for i_game, game in tqdm(
-                    enumerate(games), total=len(games), desc=f"  Scraping games for user {username}"
-                ):
-                    if len(user_info["games"]) >= max_games_per_user:
-                        break
-                    formatted_game = lichess_interface.format_lichess_game(game, openings)
-                    # saving games to mongodb
-                    game_mongo_id = mongo_db_interface.store_dict_to_MongoDB(
-                        formatted_game, collection_games
-                    )
-                    # add essential game info to player data list
-                    user_info["games"].append(lichess_interface.format_lichess_game_essentials(game_mongo_id, formatted_game, False))
+            # format player info
+            # store player info to MongoDB
+            user_info_formatted = LichessInterface.format_lichess_player_infos(user_info, COUNTRIES)
+            if user_info_formatted is None:
+                continue
 
-                # placeholders to reach max document size
-                if len(user_info["games"]) < max_games_per_user:
-                    user_info["buffered_games"] = len(user_info["games"])
-                    for i in range(0, max_games_per_user - len(user_info.get("games"))):
-                        user_info["games"].append(lichess_interface.format_lichess_game_essentials(None, None, True))
-                else:
-                    user_info["buffered_games"] = max_games_per_user
-
-                # format player info
-                # store player info to MongoDB
-                user_info_formatted = lichess_interface.format_lichess_player_infos(user_info, countries)
-                if user_info_formatted is None:
-                    continue
-
-                user_mongo_id = mongo_db_interface.store_dict_to_MongoDB(user_info_formatted, collection_users)
-                # insert user in neo4j
-                neo4j_dr.insert_user_entity(str(user_mongo_id), user_info_formatted.get("username"))
-                # connect user to team in neo4j
-                player_essentials = lichess_interface.format_lichess_player_essentials(user_mongo_id, user_info_formatted)
-                neo4j_dr.connect_user_club(str(user_mongo_id), str(team_mongo_id), lichess_interface.format_lichess_player_essentials(user_mongo_id, user_info_formatted))
+            user_mongo_id = mongo_db_interface.store_dict_to_MongoDB(user_info_formatted, collection_users)
+            # insert user in neo4j
+            neo4j_dr.insert_user_entity(str(user_mongo_id), user_info_formatted.get("username"))
+            # connect user to team in neo4j
+            player_essentials = LichessInterface.format_lichess_player_essentials(user_info_formatted)
+            neo4j_dr.connect_user_club(str(user_mongo_id), str(team_mongo_id), player_essentials)
 
             # get n tournaments played by user
-            tournaments = lichess_interface.get_n_lichess_player_tournaments(username, number_of_tournaments_per_user)
+            tournaments = LichessInterface.get_n_lichess_player_tournaments(username, TOURNAMENTS_PER_USER)
             # store tournaments to MongoDB
             print(f"  Tournaments found for user {username}: {len(tournaments)}")
             for tournament in tournaments:
@@ -162,31 +166,24 @@ if __name__ == "__main__":
                 tournament_id = tournament["tournament"]["id"]
                 if tournament_id:
                     # get infos
-                    tour_infos = lichess_interface.get_lichess_tournament_infos_with_players(tournament_id, number_of_participant)
-
+                    tour_infos = LichessInterface.get_lichess_tournament_infos_with_players(tournament_id, NUM_PARTICIPANTS)
                     # get all games played in the tournament
-                    tour_games = lichess_interface.get_lichess_tournament_games_all(tournament_id, number_of_games_per_tournament)
+                    tour_games = LichessInterface.get_lichess_tournament_games_all(tournament_id, GAMES_PER_TOURNAMENT)
                     formatted_games = []
                     for i, game in enumerate(tqdm(tour_games, desc=f"    Scraping all games for tournament {tournament_id}")):
-                        game_formatted = lichess_interface.format_lichess_game(game, openings)
+                        game_formatted = LichessInterface.format_lichess_game(game, OPENINGS)
                         game_mongo_id = mongo_db_interface.store_dict_to_MongoDB(game_formatted, collection_games)
-                        formatted_games.append(lichess_interface.format_lichess_game_essentials(game_mongo_id, game_formatted, False))
+                        formatted_games.append(LichessInterface.format_lichess_game_essentials(game_mongo_id, game_formatted, False))
 
-                    #print(f"    Total games fetched for tournament {tournament_id}: {len(tour_games)}")
                     # get formatted infos
-                    infos_formatted = lichess_interface.format_lichess_tournament_info(tour_infos)
+                    infos_formatted = LichessInterface.format_lichess_tournament_info(tour_infos)
                     infos_formatted["games"] = formatted_games
-                    if len(infos_formatted["games"]) < number_of_games_per_tournament:
-                        for i in range(0, number_of_games_per_tournament - len(infos_formatted["games"])):
-                            infos_formatted["games"].append(lichess_interface.format_lichess_game_essentials(None, None, True))
+                    if len(infos_formatted["games"]) < GAMES_PER_TOURNAMENT:
+                        for i in range(0, GAMES_PER_TOURNAMENT - len(infos_formatted["games"])):
+                            infos_formatted["games"].append(LichessInterface.format_lichess_game_essentials(None, None, True))
 
                     player_names = tour_infos["players"]
                     infos_formatted.pop("players")
-                    # store tournament to MongoDB
-                    tournament_mongo_id = mongo_db_interface.store_dict_to_MongoDB(infos_formatted, collection_tournament)
-                    # insert tournament in neo4j
-                    neo4j_dr.insert_tournament_entity(str(tournament_mongo_id), infos_formatted.get("name"))
-                    # estimate wins, losses, draws
                     total_games = infos_formatted["total_games"]
                     number_partecipants = infos_formatted["number_partecipants"]
                     whiteWins = infos_formatted["whiteWins"]
@@ -194,57 +191,65 @@ if __name__ == "__main__":
                     infos_formatted.pop("total_games")
                     infos_formatted.pop("whiteWins")
                     infos_formatted.pop("blackWins")
-                    wins, losses, draws = lichess_interface.estimate_player_stats(total_games,number_partecipants , whiteWins,blackWins, player_rank)
+                    # store tournament to MongoDB
+                    tournament_mongo_id = mongo_db_interface.store_dict_to_MongoDB(infos_formatted, collection_tournament)
+                    # insert tournament in neo4j
+                    neo4j_dr.insert_tournament_entity(str(tournament_mongo_id), infos_formatted.get("name"))
+                    # estimate wins, losses, draws
+                    
+                    wins, losses, draws = LichessInterface.estimate_player_stats(total_games,number_partecipants , whiteWins,blackWins, player_rank)
                     # connect user to tournament in neo4j
                     neo4j_dr.connect_user_tournament(str(user_mongo_id), str(tournament_mongo_id), tournament_user_stats={"placement": player_rank, "wins": wins, "losses": losses, "draws": draws})
 
                     ## here it's possible to fetch and store also other participants of the tournament, but you would need to 
                     ## use the url https://lichess.org/api/tournament/{tournament_id} and set a new page number, look at
-                    ## the get_lichess_tournament_infos_with_players method in lichess_interface.py for reference
+                    ## the get_lichess_tournament_infos_with_players method in LichessInterface.py for reference
                     # get a list of participants
                     #player_names = tour_infos["players"]
                     simplified_players = [{"name": p["name"], "rank": p["rank"]} for p in player_names]
                     
-                    # otteniamo solo i nomi diversi da username
+                    # get only 
                     participant_names = [p["name"] for p in simplified_players if p["name"] != username]
 
                     # get infos
-                    participants_infos = lichess_interface.get_lichess_player_infos_by_list_ids(participant_names)
+                    participants_infos = LichessInterface.get_lichess_player_infos_by_list_ids(participant_names)
                     
                     # get infos about each participant using get_lichess_player_infos_by_list_ids
                     for p_info in participants_infos:
                         p_tour_games = []
-                        time.sleep(1)
                         if not p_info:
                             print(f"    No data for user id: {p_info}, skipping...")
                         else:
-                            p_info_formatted = lichess_interface.format_lichess_player_infos(p_info, countries)
+                            p_info_formatted = LichessInterface.format_lichess_player_infos(p_info, COUNTRIES)
                             if p_info_formatted is None:
                                 continue
-                            games = lichess_interface.get_lichess_games(p_info_formatted.get("username"), number_of_games_per_user)
+                            games = LichessInterface.get_lichess_games(p_info_formatted.get("username"), GAMES_PER_USER)
                             p_info_formatted["games"] = []
                             for i_game, game in tqdm(enumerate(games), total=len(games), desc=f"    Scraping games for tournament participant {p_info_formatted.get('username')}"):
-                                if len(p_info_formatted["games"]) >= max_games_per_user:
+                                if len(p_info_formatted["games"]) >= MAX_GAMES_PER_USER:
                                     break
-                                formatted_game = lichess_interface.format_lichess_game(game, openings)
+                                formatted_game = LichessInterface.format_lichess_game(game, OPENINGS)
                                 # saving games to mongodb
                                 game_mongo_id = mongo_db_interface.store_dict_to_MongoDB(
                                     formatted_game, collection_games
                                 )
                                 # add essential game info to player data list
-                                p_info_formatted["games"].append(lichess_interface.format_lichess_game_essentials(game_mongo_id, formatted_game, False))
+                                p_info_formatted["games"].append(LichessInterface.format_lichess_game_essentials(game_mongo_id, formatted_game, False))
                             
-                            p_team_mongo_id, p_team_name = random.choice(list(random_teams_dict.items()))
+                            # user can also not be in a team
+                            p_team_mongo_id = random.choice(team_keys)
+                            p_team_name = random_teams_dict.get(p_team_mongo_id)
 
-                            p_info_formatted["team"] = p_team_name
+                            p_info_formatted["club"] = p_team_name
 
                             # placeholders to reach max document size
-                            if len(p_info_formatted["games"]) < max_games_per_user:
+                            if len(p_info_formatted["games"]) < MAX_GAMES_PER_USER:
                                 p_info_formatted["buffered_games"] = len(p_info_formatted["games"])
-                                for i in range(0, max_games_per_user - len(p_info_formatted.get("games"))):
-                                    p_info_formatted["games"].append(lichess_interface.format_lichess_game_essentials(None, None, True))
+                                for i in range(0, MAX_GAMES_PER_USER - len(p_info_formatted.get("games"))):
+                                    p_info_formatted["games"].append(LichessInterface.format_lichess_game_essentials(None, None, True))
                             else:
-                                p_info_formatted["buffered_games"] = max_games_per_user
+                                p_info_formatted["buffered_games"] = MAX_GAMES_PER_USER
+
                             current_username= p_info_formatted.get("username")
                             placement = None
                             for p in simplified_players:
@@ -257,18 +262,16 @@ if __name__ == "__main__":
                             # insert user in neo4j
                             neo4j_dr.insert_user_entity(str(p_user_mongo_id), p_info_formatted.get("username"))
                             # estimate wins, losses, draws
-                            wins, losses, draws = lichess_interface.estimate_player_stats(total_games,number_partecipants , whiteWins, blackWins, placement)
+                            wins, losses, draws = LichessInterface.estimate_player_stats(total_games,number_partecipants , whiteWins, blackWins, placement)
                             # connect user to tournament in neo4j
                             neo4j_dr.connect_user_tournament(str(p_user_mongo_id), str(tournament_mongo_id), tournament_user_stats={"placement": placement, "wins": wins, "losses": losses, "draws": draws})
                             
-                            
                             # connect user to team in neo4j
-                            player_essentials = lichess_interface.format_lichess_player_essentials(p_team_mongo_id, p_info_formatted)
-                            neo4j_dr.connect_user_club(str(p_user_mongo_id), str(p_team_mongo_id), lichess_interface.format_lichess_player_essentials(p_user_mongo_id, p_info_formatted))
-                            
+                            player_essentials = LichessInterface.format_lichess_player_essentials(p_info_formatted)
+                            if p_team_mongo_id is not None:
+                                neo4j_dr.connect_user_club(str(p_user_mongo_id), str(p_team_mongo_id), player_essentials)
+
+        # TEMP: stop after first team (debug / test mode)            
         break
-        
-
-
 
     print("Finished processing all teams.")

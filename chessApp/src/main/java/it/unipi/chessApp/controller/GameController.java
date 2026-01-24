@@ -47,12 +47,12 @@ public class GameController {
           @PathVariable String blackUserId,
           @RequestBody GameDTO gameDTO
   ) throws BusinessException{
+      //Insert into mongoDB tournament & updates neo4j redundancy
+      String outcome = tournamentService.bufferTournamentGame(tournamentId, gameDTO, whiteUserId, blackUserId);
       //Insert into mongoDB collection
       GameDTO createdGame = gameService.createGame(gameDTO);
-      //Insert into mongoDB tournament
-      String outcome = tournamentService.bufferTournamentGame(tournamentId, createdGame, whiteUserId, blackUserId);
       return ResponseEntity.status(HttpStatus.CREATED).body(
-              new ResponseWrapper<>(outcome, gameDTO)
+              new ResponseWrapper<>(outcome, createdGame)
       );
   }
 

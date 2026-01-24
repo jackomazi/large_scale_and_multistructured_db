@@ -8,6 +8,10 @@ import it.unipi.chessApp.model.GameSummary;
 import it.unipi.chessApp.model.User;
 import it.unipi.chessApp.repository.UserRepository;
 import it.unipi.chessApp.repository.neo4j.UserNodeRepository;
+import it.unipi.chessApp.model.Role;
+import it.unipi.chessApp.model.User;
+import it.unipi.chessApp.repository.UserRepository;
+import it.unipi.chessApp.service.AuthenticationService;
 import it.unipi.chessApp.service.UserService;
 import it.unipi.chessApp.service.exception.BusinessException;
 import it.unipi.chessApp.utils.Constants;
@@ -29,6 +33,7 @@ import org.springframework.stereotype.Service;
 public class UserServiceImpl implements UserService {
 
   private final UserRepository userRepository;
+  private final AuthenticationService authenticationService;
 
   private final MongoTemplate mongoTemplate;
 
@@ -37,14 +42,16 @@ public class UserServiceImpl implements UserService {
   @Override
   public UserDTO createUser(UserDTO userDTO) throws BusinessException {
     try {
-        //Adding placeholders to tournament document
-        List<GameSummaryDTO> placeholders = new ArrayList<>();
-        for(int i = 0; i < Constants.GAMES_BUFFER_NUMBER; i++)
-            placeholders.add(new GameSummaryDTO());
-        userDTO.setGames(placeholders);
-        User user = convertToEntity(userDTO);
-        User createdUser = userRepository.save(user);
-        return convertToDTO(createdUser);
+      //Adding placeholders to tournament document
+      List<GameSummaryDTO> placeholders = new ArrayList<>();
+      for(int i = 0; i < Constants.GAMES_BUFFER_NUMBER; i++)
+          placeholders.add(new GameSummaryDTO());
+      userDTO.setGames(placeholders);
+      User user = convertToEntity(userDTO);
+      user.setPassword(authenticationService.encodePassword(user.getPassword()));
+      user.setRole(Role.USER);
+      User createdUser = userRepository.save(user);
+      return convertToDTO(createdUser);
     } catch (Exception e) {
       throw new BusinessException("Error creating user", e);
     }
@@ -133,6 +140,21 @@ public class UserServiceImpl implements UserService {
     return dto;
   }
 
+  @Override
+  public void promoteToAdmin(String username) throws BusinessException {
+    try {
+      User user = userRepository.findByUsername(username)
+              .orElseThrow(() -> new BusinessException("User not found"));
+
+      user.setRole(Role.ADMIN);
+      userRepository.save(user);
+    } catch (BusinessException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new BusinessException("Error promoting user", e);
+    }
+  }
+
   private User convertToEntity(UserDTO dto) {
     User user = new User();
     user.setId(dto.getId());
@@ -154,6 +176,7 @@ public class UserServiceImpl implements UserService {
     user.setTournaments(dto.getTournaments());
     user.setMail(dto.getMail());
     user.setPassword(dto.getPassword());
+    user.setRole(dto.getRole());
     return user;
   }
 

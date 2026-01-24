@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -20,6 +21,28 @@ public class GlobalExceptionHandler {
       ex.getMessage()
     );
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+  }
+
+  @ExceptionHandler(AuthenticationException.class)
+  public ResponseEntity<ResponseWrapper<String>> handleAuthenticationException(
+    AuthenticationException ex
+  ) {
+    ResponseWrapper<String> errorResponse = new ResponseWrapper<>(
+      "Authentication failed",
+      "Invalid credentials"
+    );
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+  }
+
+  @ExceptionHandler(AccessDeniedException.class)
+  public ResponseEntity<ResponseWrapper<String>> handleAccessDeniedException(
+    AccessDeniedException ex
+  ) {
+    ResponseWrapper<String> errorResponse = new ResponseWrapper<>(
+      "Access denied",
+      "Insufficient permissions"
+    );
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
   }
 
   @ExceptionHandler(Exception.class)

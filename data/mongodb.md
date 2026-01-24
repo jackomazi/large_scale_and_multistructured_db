@@ -102,33 +102,7 @@
   "description": "<p>We invite Indians and all chess lovers to join group 'INDIA-11'. Our club represents India in all official International team matches at chess.com. We play serious chess to have good fun. We play team and vote chess matches as well. And, If you're looking to chat with other friends and chess players, then India 11 is best group for you. India 11, has the second most active chat room on Chess.com and the best for chatting, socializing and networking, where you can meet and discuss with great chess players all over the world. To access the instant chat room, &gt;&gt; STEP 1: Log into live chess. STEP 2: Go to the \"Chat\" tab located under the graph seek, STEP 3: Select \"Rooms\". STEP 4: Finally click \"Join\" which is next to 'India 11'. Please, invite your all Indian friends to join India 11. So enjoy and have nonstop 24/7 fun.</p>",
   "country": "IN",
   "creation_date": "2016-04-25 12:55:03",
-  "admin": "cool64chess",
-  "members": [
-    {
-      "_id": {
-        "$oid": "694ac4149f2506330229c5a7"
-      },
-      "name": "00sonal1234",
-      "stats": {
-        "bullet": 1800,
-        "blitz": 1429,
-        "rapid": 1054
-      },
-      "country": "IN"
-    },
-    {
-      "_id": {
-        "$oid": "694ac46e9f2506330229c5c5"
-      },
-      "name": "01990saurabh",
-      "stats": {
-        "bullet": 1425,
-        "blitz": 1989,
-        "rapid": 1829
-      },
-      "country": "IN"
-    }
-  ]
+  "admin": "cool64chess"
 }
 ```
 

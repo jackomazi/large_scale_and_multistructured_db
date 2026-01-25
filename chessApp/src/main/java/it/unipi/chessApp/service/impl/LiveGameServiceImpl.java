@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.bhlangonijr.chesslib.Board;
 import com.github.bhlangonijr.chesslib.Side;
 import com.github.bhlangonijr.chesslib.move.Move;
+import com.github.bhlangonijr.chesslib.move.MoveList;
 import it.unipi.chessApp.dto.GameDTO;
 import it.unipi.chessApp.dto.GameStatusDTO;
 import it.unipi.chessApp.dto.MatchmakingResultDTO;
@@ -74,8 +75,12 @@ public class LiveGameServiceImpl implements LiveGameService {
                     throw new BusinessException("Tournament not found: " + tournamentId);
                 }
 
-                // TODO: Check if player is subscribed to the tournament
-                // This should verify that the player is in Tournament.players list
+                // Check if player is subscribed to the tournament
+                String subscribersKey = "chess:tournament:" + tournamentId + ":subscribers";
+                Boolean isSubscribed = redisTemplate.opsForSet().isMember(subscribersKey, username);
+                if (!Boolean.TRUE.equals(isSubscribed)) {
+                    throw new BusinessException("You are not subscribed to this tournament");
+                }
 
                 int gameCount = getTournamentGameCount(tournamentId, username);
                 if (gameCount >= maxTournamentGames) {
@@ -250,7 +255,7 @@ public class LiveGameServiceImpl implements LiveGameService {
             gameState.setLastMove(move);
             gameState.setLastMoveAt(System.currentTimeMillis());
             
-            // Track move history
+            // Track move history in UCI notation (will be converted to SAN when saving)
             gameState.addMove(move);
             
             // Check for opening detection (only in the first N moves)
@@ -396,25 +401,32 @@ public class LiveGameServiceImpl implements LiveGameService {
             gameDTO.setWhitePlayer(gameState.getWhitePlayer());
             gameDTO.setBlackPlayer(gameState.getBlackPlayer());
             gameDTO.setOpening(gameState.getDetectedOpening());
-            gameDTO.setMoves(gameState.getMovesPgn());
             gameDTO.setEndTime(String.valueOf(gameState.getLastMoveAt()));
             gameDTO.setTimeClass("live");
 
             // Set results based on game status
+            String resultString;
             switch (gameState.getStatus()) {
                 case LiveGameState.STATUS_WHITE_WINS:
                     gameDTO.setResultWhite("win");
                     gameDTO.setResultBlack("loss");
+                    resultString = "1-0";
                     break;
                 case LiveGameState.STATUS_BLACK_WINS:
                     gameDTO.setResultWhite("loss");
                     gameDTO.setResultBlack("win");
+                    resultString = "0-1";
                     break;
                 default:
                     gameDTO.setResultWhite("draw");
                     gameDTO.setResultBlack("draw");
+                    resultString = "1/2-1/2";
                     break;
             }
+
+            // Format moves as space-separated SAN notation with result at the end
+            String movesFormatted = formatMovesForStorage(gameState, resultString);
+            gameDTO.setMoves(movesFormatted);
 
             gameService.createGame(gameDTO);
             log.info("Saved completed game {} to MongoDB with opening: {}", 
@@ -422,6 +434,30 @@ public class LiveGameServiceImpl implements LiveGameService {
 
         } catch (Exception e) {
             log.error("Failed to save game {} to MongoDB: {}", gameState.getGameId(), e.getMessage(), e);
+        }
+    }
+
+    private String formatMovesForStorage(LiveGameState gameState, String result) {
+        if (gameState.getMoveHistory() == null || gameState.getMoveHistory().isEmpty()) {
+            return result;
+        }
+        
+        try {
+            // Create a MoveList starting from the initial position
+            MoveList moveList = new MoveList();
+            
+            // Add all UCI moves to the MoveList
+            for (String uciMove : gameState.getMoveHistory()) {
+                moveList.add(new Move(uciMove, Side.WHITE)); // Side doesn't matter for UCI parsing
+            }
+            
+            // Convert to SAN notation (space-separated, no move numbers)
+            String sanMoves = moveList.toSan();
+            return sanMoves + " " + result;
+        } catch (Exception e) {
+            log.warn("Failed to convert moves to SAN for game {}, using raw moves: {}", 
+                     gameState.getGameId(), e.getMessage());
+            return String.join(" ", gameState.getMoveHistory()) + " " + result;
         }
     }
 

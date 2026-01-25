@@ -10,6 +10,8 @@ import it.unipi.chessApp.service.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,7 +31,7 @@ public class TournamentController {
     TournamentDTO createdTournamentDTO = tournamentService.createTournament(
       tournamentDTO
     );
-      neo4jService.createTournament(tournamentDTO.getId(), tournamentDTO.getName());
+    neo4jService.createTournament(createdTournamentDTO.getId(), createdTournamentDTO.getName());
     return ResponseEntity.status(HttpStatus.CREATED).body(
       new ResponseWrapper<>(
         "Tournament created successfully",
@@ -94,6 +96,30 @@ public class TournamentController {
     tournamentService.deleteTournament(id);
     return ResponseEntity.ok(
       new ResponseWrapper<>("Tournament deleted successfully", null)
+    );
+  }
+
+  @PostMapping("/{id}/subscribe")
+  public ResponseEntity<ResponseWrapper<Void>> subscribeTournament(
+    @PathVariable String id
+  ) throws BusinessException {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String username = authentication.getName();
+    tournamentService.subscribeTournament(id, username);
+    return ResponseEntity.ok(
+      new ResponseWrapper<>("Successfully subscribed to tournament", null)
+    );
+  }
+
+  @PostMapping("/{id}/unsubscribe")
+  public ResponseEntity<ResponseWrapper<Void>> unsubscribeTournament(
+    @PathVariable String id
+  ) throws BusinessException {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String username = authentication.getName();
+    tournamentService.unsubscribeTournament(id, username);
+    return ResponseEntity.ok(
+      new ResponseWrapper<>("Successfully unsubscribed from tournament", null)
     );
   }
 }

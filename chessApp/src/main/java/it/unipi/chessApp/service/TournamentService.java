@@ -16,4 +16,6 @@ public interface TournamentService {
     throws BusinessException;
   void deleteTournament(String id) throws BusinessException;
   List<TournamentParticipantDTO> getTournamentParticipants(String name) throws BusinessException;
+  void subscribeTournament(String tournamentId, String username) throws BusinessException;
+  void unsubscribeTournament(String tournamentId, String username) throws BusinessException;
 }

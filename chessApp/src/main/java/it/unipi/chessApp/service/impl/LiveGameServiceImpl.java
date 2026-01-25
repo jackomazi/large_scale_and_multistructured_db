@@ -11,6 +11,7 @@ import it.unipi.chessApp.dto.MatchmakingResultDTO;
 import it.unipi.chessApp.dto.MoveResultDTO;
 import it.unipi.chessApp.model.ChessOpening;
 import it.unipi.chessApp.model.LiveGameState;
+import it.unipi.chessApp.repository.TournamentRepository;
 import it.unipi.chessApp.service.GameService;
 import it.unipi.chessApp.service.LiveGameService;
 import it.unipi.chessApp.service.OpeningService;
@@ -21,8 +22,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import org.bson.types.ObjectId;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +34,7 @@ public class LiveGameServiceImpl implements LiveGameService {
     private final ObjectMapper objectMapper;
     private final OpeningService openingService;
     private final GameService gameService;
+    private final TournamentRepository tournamentRepository;
 
     private static final String MATCHMAKING_QUEUE_KEY = "chess:matchmaking:queue";
     private static final String TOURNAMENT_QUEUE_PREFIX = "chess:matchmaking:tournament:";
@@ -68,9 +70,12 @@ public class LiveGameServiceImpl implements LiveGameService {
             boolean isTournament = tournamentId != null && !tournamentId.isEmpty();
 
             if (isTournament) {
+                if (!tournamentRepository.existsById(tournamentId)) {
+                    throw new BusinessException("Tournament not found: " + tournamentId);
+                }
+
                 // TODO: Check if player is subscribed to the tournament
                 // This should verify that the player is in Tournament.players list
-                // For now, we assume the player is subscribed
 
                 int gameCount = getTournamentGameCount(tournamentId, username);
                 if (gameCount >= maxTournamentGames) {
@@ -126,14 +131,17 @@ public class LiveGameServiceImpl implements LiveGameService {
                     }
                 }
 
-                // Timeout expired - still waiting
+                // Timeout expired - remove from queue
+                redisTemplate.opsForList().remove(queueKey, 0, username);
+                log.info("Matchmaking timeout for user {}. Removed from queue.", username);
+                
                 return new MatchmakingResultDTO(
                     null,
                     null,
                     null,
                     tournamentId,
                     false,
-                    "No opponent found. Still in queue."
+                    "No opponent found. Removed from queue."
                 );
             }
         } catch (BusinessException e) {
@@ -147,7 +155,7 @@ public class LiveGameServiceImpl implements LiveGameService {
     private MatchmakingResultDTO createGameForMatch(String username, String opponent, String tournamentId, String queueKey) throws BusinessException {
         boolean isTournament = tournamentId != null && !tournamentId.isEmpty();
         
-        String gameId = UUID.randomUUID().toString();
+        String gameId = new ObjectId().toHexString();
         LiveGameState gameState = LiveGameState.createNew(gameId, opponent, username, tournamentId);
         saveGameState(gameState);
 

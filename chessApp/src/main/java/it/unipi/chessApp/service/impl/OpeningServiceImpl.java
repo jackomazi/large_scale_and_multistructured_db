@@ -1,6 +1,6 @@
 package it.unipi.chessApp.service.impl;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.unipi.chessApp.model.ChessOpening;
 import it.unipi.chessApp.service.OpeningService;
@@ -12,8 +12,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -23,12 +21,11 @@ public class OpeningServiceImpl implements OpeningService {
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
 
-    @Value("${chess.openings.data-path:data/api/opening_json_data}")
+    @Value("${chess.openings.data-path}")
     private String openingsDataPath;
 
-    @Value("${chess.openings.redis-key:chess:openings}")
-    private String redisKey;
-
+    private static final String KEY_PREFIX = "chess:opening:";
+    private static final String LOADED_FLAG_KEY = "chess:openings:loaded";
     private static final String[] ECO_FILES = {"ecoA.json", "ecoB.json", "ecoC.json", "ecoD.json", "ecoE.json"};
 
     @Override
@@ -36,7 +33,6 @@ public class OpeningServiceImpl implements OpeningService {
         log.info("Starting to load chess openings into Redis...");
         
         int totalLoaded = 0;
-        Map<String, String> openingsToLoad = new HashMap<>();
 
         for (String fileName : ECO_FILES) {
             try {
@@ -46,39 +42,38 @@ public class OpeningServiceImpl implements OpeningService {
                     continue;
                 }
 
-                Map<String, Map<String, Object>> fileOpenings = objectMapper.readValue(
-                    file, 
-                    new TypeReference<Map<String, Map<String, Object>>>() {}
-                );
-
-                for (Map.Entry<String, Map<String, Object>> entry : fileOpenings.entrySet()) {
+                JsonNode root = objectMapper.readTree(file);
+                int fileCount = 0;
+                var fields = root.fields();
+                
+                while (fields.hasNext()) {
+                    var entry = fields.next();
                     String fen = entry.getKey();
-                    Map<String, Object> openingData = entry.getValue();
+                    JsonNode data = entry.getValue();
 
-                    ChessOpening opening = new ChessOpening();
-                    opening.setFen(fen);
-                    opening.setEco((String) openingData.get("eco"));
-                    opening.setName((String) openingData.get("name"));
-                    opening.setMoves((String) openingData.get("moves"));
+                    ChessOpening opening = new ChessOpening(
+                        data.path("eco").asText(),
+                        data.path("name").asText(),
+                        data.path("moves").asText(),
+                        fen
+                    );
 
-                    // Normalize FEN for lookup (position + side to move only)
                     String normalizedFen = normalizeFen(fen);
-                    
                     String openingJson = objectMapper.writeValueAsString(opening);
-                    openingsToLoad.put(normalizedFen, openingJson);
-                    totalLoaded++;
+                    redisTemplate.opsForValue().set(KEY_PREFIX + normalizedFen, openingJson);
+                    fileCount++;
                 }
 
-                log.info("Loaded {} openings from {}", fileOpenings.size(), fileName);
+                totalLoaded += fileCount;
+                log.info("Loaded {} openings from {}", fileCount, fileName);
 
             } catch (IOException e) {
                 log.error("Error loading opening file {}: {}", fileName, e.getMessage());
             }
         }
 
-        // Bulk load all openings into Redis Hash
-        if (!openingsToLoad.isEmpty()) {
-            redisTemplate.opsForHash().putAll(redisKey, openingsToLoad);
+        if (totalLoaded > 0) {
+            redisTemplate.opsForValue().set(LOADED_FLAG_KEY, String.valueOf(totalLoaded));
             log.info("Successfully loaded {} chess openings into Redis", totalLoaded);
         } else {
             log.warn("No openings were loaded into Redis");
@@ -93,10 +88,10 @@ public class OpeningServiceImpl implements OpeningService {
 
         try {
             String normalizedFen = normalizeFen(fen);
-            Object result = redisTemplate.opsForHash().get(redisKey, normalizedFen);
+            String result = redisTemplate.opsForValue().get(KEY_PREFIX + normalizedFen);
             
             if (result != null) {
-                return objectMapper.readValue(result.toString(), ChessOpening.class);
+                return objectMapper.readValue(result, ChessOpening.class);
             }
         } catch (Exception e) {
             log.error("Error looking up opening for FEN {}: {}", fen, e.getMessage());
@@ -107,19 +102,17 @@ public class OpeningServiceImpl implements OpeningService {
 
     @Override
     public boolean isOpeningsLoaded() {
-        return redisTemplate.hasKey(redisKey) && getOpeningsCount() > 0;
+        return redisTemplate.hasKey(LOADED_FLAG_KEY);
     }
 
     @Override
     public long getOpeningsCount() {
-        Long size = redisTemplate.opsForHash().size(redisKey);
-        return size != null ? size : 0;
+        String count = redisTemplate.opsForValue().get(LOADED_FLAG_KEY);
+        return count != null ? Long.parseLong(count) : 0;
     }
 
     /**
      * Normalize FEN to only include position and side to move.
-     * This handles transpositions (same position reached via different move orders).
-     * 
      * Full FEN: "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"
      * Normalized: "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b"
      */

@@ -62,17 +62,6 @@ public class ClubController {
     );
   }
 
-  @PutMapping("/{id}")
-  public ResponseEntity<ResponseWrapper<ClubDTO>> updateClub(
-    @PathVariable String id,
-    @RequestBody ClubDTO clubDTO
-  ) throws BusinessException {
-    ClubDTO updatedClub = clubService.updateClub(id, clubDTO);
-    return ResponseEntity.ok(
-      new ResponseWrapper<>("Club updated successfully", updatedClub)
-    );
-  }
-
   @DeleteMapping("/{id}")
   public ResponseEntity<ResponseWrapper<Void>> deleteClub(
     @PathVariable String id

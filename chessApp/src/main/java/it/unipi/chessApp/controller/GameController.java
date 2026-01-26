@@ -86,17 +86,6 @@ public class GameController {
     );
   }
 
-  @PutMapping("/{id}")
-  public ResponseEntity<ResponseWrapper<GameDTO>> updateGame(
-    @PathVariable String id,
-    @RequestBody GameDTO gameDTO
-  ) throws BusinessException {
-    GameDTO updatedGame = gameService.updateGame(id, gameDTO);
-    return ResponseEntity.ok(
-      new ResponseWrapper<>("Game updated successfully", updatedGame)
-    );
-  }
-
   @DeleteMapping("/{id}")
   public ResponseEntity<ResponseWrapper<Void>> deleteGame(
     @PathVariable String id

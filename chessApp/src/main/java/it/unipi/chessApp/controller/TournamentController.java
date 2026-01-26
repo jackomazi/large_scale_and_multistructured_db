@@ -13,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RestController
@@ -70,23 +69,6 @@ public class TournamentController {
       return ResponseEntity.ok(
               new ResponseWrapper<>("Tournaments retrieved successfully", participants)
       );
-  }
-
-  @PutMapping("/{id}")
-  public ResponseEntity<ResponseWrapper<TournamentDTO>> updateTournament(
-    @PathVariable String id,
-    @RequestBody TournamentDTO tournamentDTO
-  ) throws BusinessException {
-    TournamentDTO updatedTournament = tournamentService.updateTournament(
-      id,
-      tournamentDTO
-    );
-    return ResponseEntity.ok(
-      new ResponseWrapper<>(
-        "Tournament updated successfully",
-        updatedTournament
-      )
-    );
   }
 
   @DeleteMapping("/{id}")

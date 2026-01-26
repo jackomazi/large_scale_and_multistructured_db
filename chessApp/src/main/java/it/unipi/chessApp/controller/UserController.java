@@ -13,7 +13,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import it.unipi.chessApp.security.JwtService;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RestController
@@ -104,17 +103,6 @@ public class UserController {
     PageDTO<UserDTO> users = userService.getAllUsers(page);
     return ResponseEntity.ok(
       new ResponseWrapper<>("Users retrieved successfully", users)
-    );
-  }
-
-  @PutMapping("/{id}")
-  public ResponseEntity<ResponseWrapper<UserDTO>> updateUser(
-    @PathVariable String id,
-    @RequestBody UserDTO userDTO
-  ) throws BusinessException {
-    UserDTO updatedUser = userService.updateUser(id, userDTO);
-    return ResponseEntity.ok(
-      new ResponseWrapper<>("User updated successfully", updatedUser)
     );
   }
 

@@ -2,6 +2,7 @@ package it.unipi.chessApp.service;
 
 import it.unipi.chessApp.dto.FriendRecommendationDTO;
 import it.unipi.chessApp.dto.Neo4jEntityDTO;
+import it.unipi.chessApp.dto.TournamentParticipantDTO;
 
 import java.util.List;
 
@@ -15,5 +16,6 @@ public interface Neo4jService {
     void unfollowUser(String followerMongoId, String followedMongoId);
     List<FriendRecommendationDTO> suggestFriends(String userID);
     List<Neo4jEntityDTO> findUserFollows(String userID);
-    List<Neo4jEntityDTO>  findUserFollowers(String userID);
+    List<Neo4jEntityDTO> findUserFollowers(String userID);
+    List<TournamentParticipantDTO> findUserTournaments(String userID);
 }

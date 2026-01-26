@@ -146,6 +146,7 @@ if __name__ == "__main__":
 
                 #Create tournament document for mongoDB
                 tournament_doc = chess_com_interface.get_chess_com_tournament(tournament_url)
+                tournament_doc["buffered_games"] = 0
                 if "Error" in tournament_doc:
                     print("Jumping")
                     continue
@@ -153,11 +154,10 @@ if __name__ == "__main__":
                 #Fetching games from tournaments and mongoDB memorization and cached inside tournament document
                 games = chess_com_interface.get_games_from_tournament(tournament_url)
                 if games is None:
-                    print("Jumping")
-                    continue
+                    games = []
 
                 for i_game, game in tqdm(enumerate(games), total=len(games), desc="Scraping games tournaments"):
-                    if i_game >= scraping_values.get("maximum_games_per_tournament"):
+                    if i_game >= scraping_values.get("maximum_games_per_tournament")*tournament_doc.get("max_partecipants"):
                         break
                     formatted_game = chess_com_interface.format_chess_com_game(game)
                     if formatted_game["opening"] is None:
@@ -166,6 +166,12 @@ if __name__ == "__main__":
                         formatted_game, collection_games
                     )
                     tournament_doc["games"].append(chess_com_interface.format_chess_com_game_essentials(game_mongo_id,formatted_game,False))
+                    tournament_doc["buffered_games"] += 1
+
+
+                #Inserting placeholders into tournament games field
+                for i in range(0,scraping_values["maximum_games_per_tournament"]*tournament_doc.get("max_partecipants") - len(tournament_doc.get("games"))):
+                    tournament_doc["games"].append(chess_com_interface.format_chess_com_game_essentials(None, None, True))
 
                 #MongoDB tournament memorization
                 tournament_mongo_id = mongo_db_interface.store_dict_to_MongoDB(tournament_doc, collection_tournament)

@@ -209,8 +209,11 @@ class chess_com_interface:
         except:
             pass
         date = tournament.get("finish_time")
+        date1 = tournament.get("start_time")
         if date is not None:
             tournament["finish_time"] = datetime.fromtimestamp(date).strftime('%Y-%m-%d %H:%M:%S')
+        if date1 is not None:
+            tournament["start_time"] = datetime.fromtimestamp(date1).strftime('%Y-%m-%d %H:%M:%S')
         tournament.pop("rounds")
         tournament.pop("players")
         tournament["games"] = []

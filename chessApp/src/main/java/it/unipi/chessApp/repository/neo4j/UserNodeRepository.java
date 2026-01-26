@@ -1,8 +1,8 @@
 package it.unipi.chessApp.repository.neo4j;
 
-import it.unipi.chessApp.dto.Neo4jEntityDTO;
 import it.unipi.chessApp.model.neo4j.ClubMember;
 import it.unipi.chessApp.model.neo4j.FriendRecommendation;
+import it.unipi.chessApp.model.neo4j.TournamentParticipant;
 import it.unipi.chessApp.model.neo4j.UserNode;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
@@ -40,12 +40,71 @@ public interface UserNodeRepository extends Neo4jRepository<UserNode, String> {
                 r.blitz = $blitz,
                 r.rapid = $rapid
             """)
-    Optional<Void> createJoinedRelation(String userName,
+    void createJoinedRelation(String userName,
                                         String newClubName,
                                         String country,
                                         int bullet,
                                         int blitz,
                                         int rapid);
+
+    @Query("""
+            MATCH (p:USER {mongo_id: $userId})
+            MATCH (p)-[r:PARTECIPATED]->(t:TOURNAMENT)
+            RETURN
+               p.mongo_id AS id,
+               p.name AS name,
+               r.wins AS wins,
+               r.losses AS losses,
+               r.draws AS draws,
+               r.placement AS placement,
+               t AS tournament
+            """)
+    List<TournamentParticipant> findUserTournaments(String userId);
+
+    @Query("""
+            MATCH (p:USER {mongo_id: $userId})
+            MATCH (p)-[r:JOINED]->(c:CLUB)
+            SET
+                r.bullet = $bullet,
+                r.blitz = $blitz,
+                r.rapid = $rapid
+            """)
+    void updateJoinedRelation(String userId,
+                                        int bullet,
+                                        int blitz,
+                                        int rapid);
+
+    @Query("""
+            MATCH (p:USER {mongo_id: $userId})
+            MATCH (t:TOURNAMENT {mongo_id: $tournamentId})
+            MATCH (p)-[r:PARTECIPATED]->(t)
+            SET
+               r.wins = $wins,
+               r.losses = $losses,
+               r.draws = $draws,
+               r.placement = $placement
+            """)
+    Optional<Void> updateUserTournamentStats(String userId,
+                                             String tournamentId,
+                                             int wins,
+                                             int losses,
+                                             int draws,
+                                             int placement);
+
+    @Query("""
+            MATCH (p:USER {mongo_id: $userId})
+            MATCH (t:TOURNAMENT {mongo_id: $tournamentId})
+            MATCH (p)-[r:PARTECIPATED]->(t)
+               RETURN
+               p.mongo_id AS id,
+               p.name AS name,
+               r.wins AS wins,
+               r.losses AS losses,
+               r.draws AS draws,
+               r.placement AS placement,
+               t AS tournament
+            """)
+    TournamentParticipant findUserTournamentStats(String tournamentId, String userId);
 
     @Query("MATCH (u:USER {name: $name}) RETURN u")
     Optional<UserNode> findByName(String name);

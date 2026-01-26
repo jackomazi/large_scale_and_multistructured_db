@@ -4,7 +4,6 @@ import it.unipi.chessApp.dto.*;
 import it.unipi.chessApp.model.GameSummary;
 import it.unipi.chessApp.model.Tournament;
 import it.unipi.chessApp.model.TournamentPlayer;
-import it.unipi.chessApp.model.User;
 import it.unipi.chessApp.dto.GameDTO;
 import it.unipi.chessApp.model.neo4j.TournamentParticipant;
 import it.unipi.chessApp.repository.TournamentRepository;
@@ -15,12 +14,8 @@ import it.unipi.chessApp.service.exception.BusinessException;
 import it.unipi.chessApp.utils.Constants;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
-
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import it.unipi.chessApp.utils.Outcomes;
@@ -46,7 +41,7 @@ public class TournamentServiceImpl implements TournamentService {
 
   private static final String TOURNAMENT_SUBSCRIBERS_PREFIX = "chess:tournament:";
   private static final String TOURNAMENT_SUBSCRIBERS_SUFFIX = ":subscribers";
-  private static final DateTimeFormatter DATE_TIME_FORMATTER = 
+  private static final DateTimeFormatter DATE_TIME_FORMATTER =
       DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
   private final MongoTemplate mongoTemplate;
   private final UserNodeRepository userNodeRepository;
@@ -294,7 +289,8 @@ public class TournamentServiceImpl implements TournamentService {
     if (now.isAfter(subscriptionEnd)) {
       throw new BusinessException("Subscription window has closed");
     }
-    
+  }
+
   public String bufferTournamentGame(String tournamentId, GameDTO game, String whiteId, String blackId){
 
       //Summarises game

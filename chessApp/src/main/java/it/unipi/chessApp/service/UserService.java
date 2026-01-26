@@ -12,4 +12,5 @@ public interface UserService {
   UserDTO updateUser(String id, UserDTO userDTO) throws BusinessException;
   void deleteUser(String id) throws BusinessException;
   void bufferGame(String userId, GameSummaryDTO summary, String timeClass);
+  void promoteToAdmin(String username) throws BusinessException;
 }

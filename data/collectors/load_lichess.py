@@ -26,7 +26,7 @@ if __name__ == "__main__":
         db = client["chess_db_test_3"]
 
         ## Uncomment to clear collections
-        db["games"].drop()
+        #db["games"].drop()
         db["users"].drop()
         db["tournaments"].drop()
         db["clubs"].drop()
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     # add none club
     team_keys = list(random_teams_dict.keys())
 
-    team_keys.extend([None] * 5)
+    team_keys.extend([None] * 5)  # adding None values to have some users without a team
 
     teams = []
 
@@ -93,6 +93,11 @@ if __name__ == "__main__":
     print(f"Total teams fetched: {total_team_fetched}")
     
     for i_team, team in tqdm(enumerate(teams), total= len(teams), desc=f"Scraping teams"):
+        # max tournaments per team
+        max_tournaments_per_team = 40
+
+        count_tournaments_team = 0
+
         print(f"Scraping team: {i_team}/{total_team_fetched - 1} - {team}")
         # team infos + format
         team_info = LichessInterface.get_team_infos(team)
@@ -114,7 +119,7 @@ if __name__ == "__main__":
                 continue
             
             user_info["games"] = [] # games array
-            user_info["club"] = team
+            
             username = user_info.get("username")
 
             # get n games from user
@@ -152,8 +157,14 @@ if __name__ == "__main__":
             # insert user in neo4j
             neo4j_dr.insert_user_entity(str(user_mongo_id), user_info_formatted.get("username"))
             # connect user to team in neo4j
+            user_info_formatted["club"] = team_info.get("name")
             player_essentials = LichessInterface.format_lichess_player_essentials(user_info_formatted)
             neo4j_dr.connect_user_club(str(user_mongo_id), str(team_mongo_id), player_essentials)
+            
+
+            if count_tournaments_team >= max_tournaments_per_team:
+                print(f"  Reached max tournaments per team ({max_tournaments_per_team}), skipping remaining tournaments for team {team}...")
+                break
 
             # get n tournaments played by user
             tournaments = LichessInterface.get_n_lichess_player_tournaments(username, TOURNAMENTS_PER_USER)
@@ -167,37 +178,53 @@ if __name__ == "__main__":
                 if tournament_id:
                     # get infos
                     tour_infos = LichessInterface.get_lichess_tournament_infos_with_players(tournament_id, NUM_PARTICIPANTS)
+                    if not tour_infos:
+                        #print(f"    No data for tournament id: {tournament_id}, skipping...")
+                        continue
+                    
+                    count_tournaments_team += 1
+                    tour_infos["buffered_games"] = 0
                     # get all games played in the tournament
-                    tour_games = LichessInterface.get_lichess_tournament_games_all(tournament_id, GAMES_PER_TOURNAMENT)
+                    max_games_per_tournament = 150
+                    tour_games = LichessInterface.get_lichess_tournament_games_all(tournament_id, max_games_per_tournament)
                     formatted_games = []
                     for i, game in enumerate(tqdm(tour_games, desc=f"    Scraping all games for tournament {tournament_id}")):
                         game_formatted = LichessInterface.format_lichess_game(game, OPENINGS)
                         game_mongo_id = mongo_db_interface.store_dict_to_MongoDB(game_formatted, collection_games)
                         formatted_games.append(LichessInterface.format_lichess_game_essentials(game_mongo_id, game_formatted, False))
+                        tour_infos["buffered_games"] += 1
 
                     # get formatted infos
                     infos_formatted = LichessInterface.format_lichess_tournament_info(tour_infos)
                     infos_formatted["games"] = formatted_games
-                    if len(infos_formatted["games"]) < GAMES_PER_TOURNAMENT:
-                        for i in range(0, GAMES_PER_TOURNAMENT - len(infos_formatted["games"])):
+                    # max_games_per_tournament = GAMES_PER_TOURNAMENT * NUM_PARTICIPANTS
+                    if len(infos_formatted["games"]) < max_games_per_tournament:
+                        for i in range(0, max_games_per_tournament - len(infos_formatted["games"])):
                             infos_formatted["games"].append(LichessInterface.format_lichess_game_essentials(None, None, True))
 
                     player_names = tour_infos["players"]
                     infos_formatted.pop("players")
                     total_games = infos_formatted["total_games"]
-                    number_partecipants = infos_formatted["number_partecipants"]
+                    number_participants = infos_formatted["number_participants"]
                     whiteWins = infos_formatted["whiteWins"]
                     blackWins = infos_formatted["blackWins"]
                     infos_formatted.pop("total_games")
                     infos_formatted.pop("whiteWins")
                     infos_formatted.pop("blackWins")
+                    infos_formatted.pop("number_participants", None)
+
+                    infos_formatted["max_participant"] = NUM_PARTICIPANTS
                     # store tournament to MongoDB
                     tournament_mongo_id = mongo_db_interface.store_dict_to_MongoDB(infos_formatted, collection_tournament)
                     # insert tournament in neo4j
                     neo4j_dr.insert_tournament_entity(str(tournament_mongo_id), infos_formatted.get("name"))
                     # estimate wins, losses, draws
                     
-                    wins, losses, draws = LichessInterface.estimate_player_stats(total_games,number_partecipants , whiteWins,blackWins, player_rank)
+                    # if len(players) < NUM_PARTICIPANTS: user is set to last position
+                    if len(player_names) < NUM_PARTICIPANTS:
+                        player_rank = len(player_names)
+
+                    wins, losses, draws = LichessInterface.estimate_player_stats(total_games, number_participants, whiteWins,blackWins, player_rank)
                     # connect user to tournament in neo4j
                     neo4j_dr.connect_user_tournament(str(user_mongo_id), str(tournament_mongo_id), tournament_user_stats={"placement": player_rank, "wins": wins, "losses": losses, "draws": draws})
 
@@ -240,7 +267,7 @@ if __name__ == "__main__":
                             p_team_mongo_id = random.choice(team_keys)
                             p_team_name = random_teams_dict.get(p_team_mongo_id)
 
-                            p_info_formatted["club"] = p_team_name
+                            
 
                             # placeholders to reach max document size
                             if len(p_info_formatted["games"]) < MAX_GAMES_PER_USER:
@@ -262,16 +289,16 @@ if __name__ == "__main__":
                             # insert user in neo4j
                             neo4j_dr.insert_user_entity(str(p_user_mongo_id), p_info_formatted.get("username"))
                             # estimate wins, losses, draws
-                            wins, losses, draws = LichessInterface.estimate_player_stats(total_games,number_partecipants , whiteWins, blackWins, placement)
+                            wins, losses, draws = LichessInterface.estimate_player_stats(total_games,number_participants , whiteWins, blackWins, placement)
                             # connect user to tournament in neo4j
                             neo4j_dr.connect_user_tournament(str(p_user_mongo_id), str(tournament_mongo_id), tournament_user_stats={"placement": placement, "wins": wins, "losses": losses, "draws": draws})
                             
+                            p_info_formatted["club"] = p_team_name
                             # connect user to team in neo4j
                             player_essentials = LichessInterface.format_lichess_player_essentials(p_info_formatted)
                             if p_team_mongo_id is not None:
                                 neo4j_dr.connect_user_club(str(p_user_mongo_id), str(p_team_mongo_id), player_essentials)
 
-        # TEMP: stop after first team (debug / test mode)            
-        break
+        
 
     print("Finished processing all teams.")

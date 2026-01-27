@@ -5,6 +5,7 @@ import random
 import math
 from datetime import datetime, timedelta
 from typing import List, Dict
+from requests.exceptions import ChunkedEncodingError
 
 # third-party
 import requests
@@ -70,17 +71,22 @@ class LichessInterface:
         headers = {"Accept": "application/x-ndjson",
                    "User-Agent": "Lichess Data Collector - for academic purposes - contact: andreagiacomazzi202@gmail.com"}
         games = []
-        response = requests.get(url, headers=headers, stream =True)
-        if response.status_code == 200:
-            # Parse NDJSON response
-            for line in response.iter_lines():
-                # For each line in the response, parse it as JSON
-                if line:
-                    game = json.loads(line)
-                    # Append the parsed game to the list
-                    games.append(game)
-            return games
-        else:
+        try:
+            response = requests.get(url, headers=headers, stream =True)
+            response.raise_for_status()
+            if response.status_code == 200:
+                # Parse NDJSON response
+                for line in response.iter_lines():
+                    # For each line in the response, parse it as JSON
+                    if line:
+                        game = json.loads(line)
+                        # Append the parsed game to the list
+                        games.append(game)
+                return games
+            else:
+                return []
+        except ChunkedEncodingError:
+            print("ChunkedEncodingError occurred while fetching games.")
             return []
     
     @staticmethod
@@ -209,11 +215,21 @@ class LichessInterface:
                 headers=headers,
                 params={"page": page}
             )
+            #print(response.status_code)
+            if response.status_code in (404, 403):
+                return {}
+            
             if response.status_code != 200:
                 break
-            data = response.json()
+
+            try:
+                data = response.json()
+            except ValueError:
+                break
+
             if tournament is None:
                 tournament = {k: v for k, v in data.items() if k != "standing"}
+
             players_page = data.get("standing", {}).get("players", [])
             if not players_page:
                 break
@@ -228,7 +244,7 @@ class LichessInterface:
                     all_participants.append(p)
                     if max_players is not None and len(all_participants) >= max_players:
                         break
-            if max_players is not None and len(all_participants) >= max_players:
+            if max_players and len(all_participants) >= max_players:
                 break
                     
             last_page_ids = current_ids
@@ -436,6 +452,7 @@ class LichessInterface:
             "end_time": end_time
         }
     
+    
     @staticmethod
     def format_lichess_game_essentials(game_mongo_id: str, formatted_game: dict, is_blank: bool) -> dict:
         """Formats essential information of a Lichess game for user document storage."""
@@ -542,28 +559,19 @@ class LichessInterface:
     @staticmethod
     def format_lichess_tournament_info(tournament_info: dict) -> dict:
         """Formats a Lichess tournament information dictionary into a structured format for MongoDB storage."""
-        # rename fields
-        tournament_info["number_partecipants"] = tournament_info.pop("nbPlayers")
-        # estimate max partecipants
-        current = tournament_info["number_partecipants"]
-
-        # between 10% e 30% margin
-        factor = random.uniform(1, 1.3)
-        estimated_max = math.ceil(current * factor)
-
-        # round
-        estimated_max = int(math.ceil(estimated_max / 10) * 10)
-
-        tournament_info["max_partecipants"] = estimated_max
-
-        tournament_info["creator"] = tournament_info.pop("createdBy")
+        try:
+            tournament_info["creator"] = tournament_info.pop("createdBy")
+        except KeyError:
+            tournament_info["creator"] = "unknown"
         tournament_info["name"] = tournament_info.pop("fullName")
-
+        tournament_info["number_participants"] = tournament_info.pop("nbPlayers", 0)
         # finished at, calculated from startsAt + field minutes
         try:
             starts_at = isoparse(tournament_info["startsAt"])
         except Exception as e:
             starts_at = None
+
+        tournament_info.pop("startsAt", None)
             
         if tournament_info.get("minutes"):
             finish_obj = starts_at + timedelta(minutes=tournament_info["minutes"])
@@ -626,6 +634,12 @@ class LichessInterface:
         tournament_info.pop("noStreak", None)
 
         tournament_info.pop("podium", None)
+        
+        tournament_info.pop("duelTeams", None)
+
+        tournament_info.pop("private", None)
+
+        tournament_info.pop("greatPlayer", None)
 
         # for the app purposes, if the creator is lichess, we set it to admin
         if tournament_info["creator"] == "lichess":

@@ -2,7 +2,9 @@ package it.unipi.chessApp.service.impl;
 
 import it.unipi.chessApp.dto.GameSummaryDTO;
 import it.unipi.chessApp.dto.PageDTO;
+import it.unipi.chessApp.dto.TiltPlayerDTO;
 import it.unipi.chessApp.dto.UserDTO;
+import it.unipi.chessApp.dto.UserRegistrationDTO;
 import it.unipi.chessApp.model.GameSummary;
 import it.unipi.chessApp.model.User;
 import it.unipi.chessApp.repository.UserRepository;
@@ -50,6 +52,34 @@ public class UserServiceImpl implements UserService {
       return convertToDTO(createdUser);
     } catch (Exception e) {
       throw new BusinessException("Error creating user", e);
+    }
+  }
+
+  @Override
+  public UserDTO registerUser(UserRegistrationDTO registrationDTO) throws BusinessException {
+    try {
+      // Create a new User with only the registration fields
+      User user = new User();
+      user.setUsername(registrationDTO.getUsername());
+      user.setName(registrationDTO.getName());
+      user.setPassword(authenticationService.encodePassword(registrationDTO.getPassword()));
+      user.setMail(registrationDTO.getMail());
+      user.setCountry(registrationDTO.getCountry());
+      user.setRole(Role.USER);
+      user.setFollowers(0);
+      user.setBufferedGames(0);
+      
+      // Initialize empty games buffer with placeholders
+      List<GameSummary> placeholders = new ArrayList<>();
+      for (int i = 0; i < Constants.GAMES_BUFFER_NUMBER; i++) {
+          placeholders.add(new GameSummary());
+      }
+      user.setGames(placeholders);
+      
+      User createdUser = userRepository.save(user);
+      return convertToDTO(createdUser);
+    } catch (Exception e) {
+      throw new BusinessException("Error registering user", e);
     }
   }
 
@@ -242,5 +272,14 @@ public class UserServiceImpl implements UserService {
           return 20;
       else
           return -20;
+  }
+
+  @Override
+  public List<TiltPlayerDTO> getTiltPlayers() throws BusinessException {
+    try {
+        return userRepository.findTiltPlayers();
+    } catch (Exception e) {
+        throw new BusinessException("Error fetching tilt players", e);
+    }
   }
 }

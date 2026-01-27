@@ -23,10 +23,32 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
+                        // Swagger UI
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/users/login").permitAll()
-                        .requestMatchers("/games/stats/top-openings", "/games/stats/average-elo").hasRole("ADMIN")
+                        
+                        // Public user endpoints
+                        .requestMatchers(HttpMethod.GET, "/users", "/users/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/users/register", "/users/login").permitAll()
+                        
+                        // Public game endpoints
+                        .requestMatchers(HttpMethod.GET, "/games", "/games/user/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/games/live/*/status").permitAll()
+                        
+                        // Public club endpoints
+                        .requestMatchers(HttpMethod.GET, "/clubs", "/clubs/*").permitAll()
+                        
+                        // Public tournament endpoints
+                        .requestMatchers(HttpMethod.GET, "/tournaments", "/tournaments/active", "/tournaments/*").permitAll()
+                        
+                        // Admin-only endpoints
+                        .requestMatchers(HttpMethod.DELETE, "/games/*").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/tournaments").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/tournaments/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/clubs/**").hasRole("ADMIN")
+                        .requestMatchers("/users/promote").hasRole("ADMIN")
+                        
+                        // All other requests require authentication (including /games/stats/**)
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

@@ -10,6 +10,7 @@ public interface TournamentService {
     throws BusinessException;
   TournamentDTO getTournamentById(String id) throws BusinessException;
   PageDTO<TournamentDTO> getAllTournaments(int page) throws BusinessException;
+  PageDTO<TournamentDTO> getActiveTournaments(int page) throws BusinessException;
   TournamentDTO updateTournament(String id, TournamentDTO tournamentDTO)
     throws BusinessException;
   void deleteTournament(String id) throws BusinessException;

@@ -2,6 +2,7 @@ package it.unipi.chessApp.repository;
 
 import it.unipi.chessApp.dto.AverageEloResult;
 import it.unipi.chessApp.dto.MonthlyOpeningStatDTO;
+import it.unipi.chessApp.dto.WinRateByOpeningDTO;
 import it.unipi.chessApp.model.Game;
 import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -32,4 +33,14 @@ public interface GameRepository extends MongoRepository<Game, String> {
 
     @Query("{'$or': [{'white_player': ?0}, {'black_player': ?0}]}")
     List<Game> findByPlayer(String username);
+
+    @Aggregation(pipeline = {
+        "{ '$match': { 'white_rating': { '$gte': ?0, '$lte': ?1 }, 'time_class': ?2 } }",
+        "{ '$project': { 'opening': 1, 'white_won': { '$cond': [{ '$eq': ['$result_white', 'win'] }, 1, 0] } } }",
+        "{ '$group': { '_id': '$opening', 'totalGames': { '$sum': 1 }, 'whiteWins': { '$sum': '$white_won' } } }",
+        "{ '$match': { 'totalGames': { '$gt': ?3 } } }",
+        "{ '$project': { 'opening': '$_id', '_id': 0, 'totalGames': 1, 'winPercentage': { '$multiply': [{ '$divide': ['$whiteWins', '$totalGames'] }, 100] } } }",
+        "{ '$sort': { 'winPercentage': -1 } }"
+    })
+    List<WinRateByOpeningDTO> getWinRateByOpening(int minRating, int maxRating, String timeClass, int minGames);
 }

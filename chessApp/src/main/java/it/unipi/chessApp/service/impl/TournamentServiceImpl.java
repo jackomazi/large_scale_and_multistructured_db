@@ -138,13 +138,33 @@ public class TournamentServiceImpl implements TournamentService {
   }
 
   @Override
+  public PageDTO<TournamentDTO> getActiveTournaments(int page)
+    throws BusinessException {
+    try {
+      PageRequest pageable = PageRequest.of(page - 1, Constants.PAGE_SIZE);
+      Page<Tournament> tournamentPage = tournamentRepository.findByStatus("active", pageable);
+      List<TournamentDTO> tournamentDTOs = tournamentPage
+        .getContent()
+        .stream()
+        .map(this::convertToDTO)
+        .collect(Collectors.toList());
+      return new PageDTO<>(
+        (int) tournamentPage.getTotalElements(),
+        tournamentDTOs
+      );
+    } catch (Exception e) {
+      throw new BusinessException("Error fetching active tournaments", e);
+    }
+  }
+
+  @Override
   public List<TournamentParticipantDTO> getTournamentParticipants(String id) throws BusinessException{
       try {
           List<TournamentParticipant> participants = tournamentNodeRepository.findTournamentParticipants(id);
 
           return participants
                   .stream()
-                  .map(this::convertoParticipantToDTO)
+                  .map(this::convertParticipantToDTO)
                   .toList();
       }
       catch (Exception e){
@@ -195,7 +215,7 @@ public class TournamentServiceImpl implements TournamentService {
         throw new BusinessException("Tournament is not active");
       }
 
-      // Check subscription window (1 day window, starting 1 week before finish time)
+      // Check subscription window (1. day window, starting 1 week before finish time)
       validateSubscriptionWindow(tournament.getFinishTime());
 
       String subscribersKey = getSubscribersKey(tournamentId);
@@ -377,7 +397,7 @@ public class TournamentServiceImpl implements TournamentService {
     return dto;
   }
 
-  private TournamentParticipantDTO convertoParticipantToDTO(TournamentParticipant participant){
+  private TournamentParticipantDTO convertParticipantToDTO(TournamentParticipant participant){
       TournamentParticipantDTO participantDTO = new TournamentParticipantDTO();
       participantDTO.setName(participant.getName());
       participantDTO.setWins(participant.getWins());

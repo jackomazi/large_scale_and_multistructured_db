@@ -4,6 +4,7 @@ import it.unipi.chessApp.dto.AverageEloResult;
 import it.unipi.chessApp.dto.GameDTO;
 import it.unipi.chessApp.dto.MonthlyOpeningStatDTO;
 import it.unipi.chessApp.dto.PageDTO;
+import it.unipi.chessApp.dto.WinRateByOpeningDTO;
 import it.unipi.chessApp.model.Game;
 import it.unipi.chessApp.repository.GameRepository;
 import it.unipi.chessApp.service.GameService;
@@ -147,6 +148,20 @@ public class GameServiceImpl implements GameService {
         return result.getFinalAverageElo();
     } catch (Exception e) {
         throw new BusinessException("Error fetching average elo for opening", e);
+    }
+  }
+
+  @Override
+  public List<WinRateByOpeningDTO> getWinRateByOpening(Integer minRating, Integer maxRating, String timeClass, Integer minGames) throws BusinessException {
+    try {
+        int minR = (minRating != null) ? minRating : 1200;
+        int maxR = (maxRating != null) ? maxRating : 1600;
+        String tc = (timeClass != null) ? timeClass : "blitz";
+        int minG = (minGames != null) ? minGames : 10;
+
+        return gameRepository.getWinRateByOpening(minR, maxR, tc, minG);
+    } catch (Exception e) {
+        throw new BusinessException("Error fetching win rate by opening", e);
     }
   }
 

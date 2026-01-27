@@ -37,6 +37,22 @@ public class ClubServiceImpl implements ClubService {
   }
 
   @Override
+  public ClubDTO getClubById(String id) throws BusinessException {
+    try {
+      Club club = clubRepository
+        .findById(id)
+        .orElseThrow(() ->
+          new BusinessException("Club not found with ID: " + id)
+        );
+      return convertToDTO(club);
+    } catch (BusinessException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new BusinessException("Error fetching club", e);
+    }
+  }
+
+  @Override
   public ClubDTO getClubByName(String name) throws BusinessException {
     try {
       Club club = clubRepository

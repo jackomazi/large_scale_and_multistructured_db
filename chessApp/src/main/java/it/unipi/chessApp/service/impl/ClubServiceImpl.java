@@ -14,12 +14,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ClubServiceImpl implements ClubService {
 
   private final ClubRepository clubRepository;
@@ -64,7 +66,7 @@ public class ClubServiceImpl implements ClubService {
     } catch (BusinessException e) {
       throw e;
     } catch (Exception e) {
-        System.out.println(e.getMessage());
+      log.error("Error fetching club by name: {}", e.getMessage());
       throw new BusinessException("Error fetching club", e);
     }
   }

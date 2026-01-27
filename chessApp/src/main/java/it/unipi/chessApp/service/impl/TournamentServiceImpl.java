@@ -4,7 +4,6 @@ import it.unipi.chessApp.dto.*;
 import it.unipi.chessApp.model.GameSummary;
 import it.unipi.chessApp.model.Tournament;
 import it.unipi.chessApp.model.TournamentPlayer;
-import it.unipi.chessApp.dto.GameDTO;
 import it.unipi.chessApp.model.neo4j.TournamentParticipant;
 import it.unipi.chessApp.repository.TournamentRepository;
 import it.unipi.chessApp.repository.neo4j.TournamentNodeRepository;
@@ -168,7 +167,7 @@ public class TournamentServiceImpl implements TournamentService {
                   .toList();
       }
       catch (Exception e){
-          System.out.println(e.getMessage());
+          log.error("Error fetching tournament participants: {}", e.getMessage());
           throw new BusinessException("Error fetching tournament participant", e);
       }
   }
@@ -321,7 +320,7 @@ public class TournamentServiceImpl implements TournamentService {
 
       int currentIndex = tournament.getBufferedGames();
 
-      System.out.println(" " + currentIndex + " / " + tournament.getMaxParticipants()*Constants.USER_GAMES_IN_TOURNAMENT);
+      log.debug("Buffering game {} / {}", currentIndex, tournament.getMaxParticipants() * Constants.USER_GAMES_IN_TOURNAMENT);
 
       //Check if the limit is reached
       if(currentIndex == tournament.getMaxParticipants()*Constants.USER_GAMES_IN_TOURNAMENT)

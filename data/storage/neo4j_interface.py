@@ -89,10 +89,47 @@ class neo4j_interface:
 
         query = "MATCH (usr:USER) WHERE usr.mongo_id = $mongo_id_user1 " \
                 "MATCH (usr1:USER) WHERE usr1.mongo_id = $mongo_id_user2 " \
-                "CREATE (usr)-[:FOLLOWS]->(usr1)"
+                "MERGE (usr)-[:FOLLOWS]->(usr1)"
 
         try:
             self.driver.execute_query(query, mongo_id_user2=str(mongo_id_user2), mongo_id_user1=str(mongo_id_user1), database_=self.database)
         except Exception as e:
             print("Connection user-user not successfull")
             print(f"Reason: {e}")
+
+    def get_all_users(self) -> list:
+
+        query = "MATCH (u:USER)" \
+                "RETURN" \
+                "   u.mongo_id AS mongo_id," \
+                "   u.name AS name"
+        
+        try:
+            records, _, _ = self.driver.execute_query(
+                query, 
+                database_=self.database,
+                routing_=RoutingControl.READ # Ottimale per query di sola lettura
+            )
+            return [record.data() for record in records]
+        except Exception as e:
+            print(f"Reason: {e}")
+            return []
+        
+    def connect_users_bulk(self, relationships):
+        query = (
+            "UNWIND $pairs AS pair "
+            "MATCH (usr1:USER {mongo_id: pair.id1}) "
+            "MATCH (usr2:USER {mongo_id: pair.id2}) "
+            "MERGE (usr1)-[:FOLLOWS]->(usr2)"
+        )
+
+        try:
+            self.driver.execute_query(
+                query, 
+                pairs=relationships, 
+                database_=self.database
+            )
+        except Exception as e:
+            print(f"Errore nel caricamento bulk: {e}")
+
+        

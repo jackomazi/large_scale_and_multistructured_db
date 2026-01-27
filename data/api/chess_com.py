@@ -220,7 +220,7 @@ class chess_com_interface:
         # Formatting tournament settings
         tournament["max_rating"] = tournament.get("settings").get("max_rating")
         tournament["min_rating"] = 600
-        tournament["max_partecipants"] = 50
+        tournament["max_partecipants"] = 20
         tournament["time_control"] = tournament.get("settings").get("time_control")
         tournament.pop("settings")
         return tournament
@@ -428,15 +428,15 @@ if __name__ == "__main__":
 
     working_clubs = []
     print("fetching italian clubs")
-    working_clubs += chess_com_interface.get_list_of_working_club_names_for_nation("IT",10)
+    working_clubs += chess_com_interface.get_list_of_working_club_names_for_nation("IT",20)
     print("fetching french clubs")
-    working_clubs += chess_com_interface.get_list_of_working_club_names_for_nation("FR",10)
+    working_clubs += chess_com_interface.get_list_of_working_club_names_for_nation("FR",20)
     print("fetching us clubs")
-    working_clubs += chess_com_interface.get_list_of_working_club_names_for_nation("US",10)
+    working_clubs += chess_com_interface.get_list_of_working_club_names_for_nation("US",20)
     print("fetching indian clubs")
-    working_clubs += chess_com_interface.get_list_of_working_club_names_for_nation("IN",10)
+    working_clubs += chess_com_interface.get_list_of_working_club_names_for_nation("IN",20)
     print("fetching german clubs")
-    working_clubs += chess_com_interface.get_list_of_working_club_names_for_nation("DE",10)
+    working_clubs += chess_com_interface.get_list_of_working_club_names_for_nation("DE",20)
     data["clubs"] = working_clubs
 
     # 3. Scrivi il file aggiornato

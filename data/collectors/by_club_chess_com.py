@@ -83,6 +83,7 @@ if __name__ == "__main__":
                 
             user_info = chess_com_interface.get_player_infos(user)
             user_archives = chess_com_interface.get_player_games_archives(user)
+            user_archives.reverse()
             # Storing user game stats
             user_info["stats"] = chess_com_interface.get_player_games_stats(user)
             # Not needed anymore
@@ -112,8 +113,9 @@ if __name__ == "__main__":
                     )
 
                     # Add id of game to user games
-                    user_info["games"].append(chess_com_interface.format_chess_com_game_essentials(game_mongo_id,formatted_game,False))
-                    user_info["buffered_games"] += 1
+                    if(user_info["buffered_games"] < scraping_values["maximum_games_stored_per_user_document"]):
+                        user_info["games"].append(chess_com_interface.format_chess_com_game_essentials(game_mongo_id,formatted_game,False))
+                        user_info["buffered_games"] += 1
 
                 if i_archive >= scraping_values.get("max_scrap_archives"):
                     break

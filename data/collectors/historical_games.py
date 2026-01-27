@@ -3,7 +3,7 @@ import sys
 from api.kaggle import KaggleInterface
 from pymongo import MongoClient
 from storage.mongo_interface import mongo_db_interface
-import chess.pgn    
+import chess.pgn
 
 if __name__ == "__main__":
     try:
@@ -13,8 +13,9 @@ if __name__ == "__main__":
         # change the database name if needed
         db = client["chess_db_test_3"]
 
-        ## Uncomment to clear collections
-        #db["games"].drop()
+        # drop games collection if exists
+        db.drop_collection("games")
+
 
         collection_historical = db["games"]
 

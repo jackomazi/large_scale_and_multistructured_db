@@ -43,7 +43,7 @@ class KaggleInterface:
         return KaggleInterface._eco_map.get(eco_code)
     
     @staticmethod
-    def download_chess_pgns(start_year: int =2003, end_year: int=2005):
+    def download_chess_pgns(start_year: int =1970, end_year: int=2021):
         dataset = "zq1200/world-chess-championships-1866-to-2021"
         download_path = "./kaggle_chess_data"
         
@@ -156,8 +156,10 @@ class KaggleInterface:
         game_dict["black_player"] = game_dict.pop("black")
 
         game_dict["time_class"] = "classical"
-
-        eco_code = game_dict.pop("eco")
+        try:
+            eco_code = game_dict.pop("eco")
+        except KeyError:
+            eco_code = None
         game_dict["opening"] = KaggleInterface.eco_to_opening(eco_code)
         
         game_dict["historical"] = True

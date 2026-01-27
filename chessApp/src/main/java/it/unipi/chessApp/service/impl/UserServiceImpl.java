@@ -1,21 +1,19 @@
 package it.unipi.chessApp.service.impl;
 
-import it.unipi.chessApp.dto.GameDTO;
 import it.unipi.chessApp.dto.GameSummaryDTO;
 import it.unipi.chessApp.dto.PageDTO;
+import it.unipi.chessApp.dto.TiltPlayerDTO;
 import it.unipi.chessApp.dto.UserDTO;
+import it.unipi.chessApp.dto.UserRegistrationDTO;
 import it.unipi.chessApp.model.GameSummary;
 import it.unipi.chessApp.model.User;
 import it.unipi.chessApp.repository.UserRepository;
 import it.unipi.chessApp.repository.neo4j.UserNodeRepository;
 import it.unipi.chessApp.model.Role;
-import it.unipi.chessApp.model.User;
-import it.unipi.chessApp.repository.UserRepository;
 import it.unipi.chessApp.service.AuthenticationService;
 import it.unipi.chessApp.service.UserService;
 import it.unipi.chessApp.service.exception.BusinessException;
 import it.unipi.chessApp.utils.Constants;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -54,6 +52,34 @@ public class UserServiceImpl implements UserService {
       return convertToDTO(createdUser);
     } catch (Exception e) {
       throw new BusinessException("Error creating user", e);
+    }
+  }
+
+  @Override
+  public UserDTO registerUser(UserRegistrationDTO registrationDTO) throws BusinessException {
+    try {
+      // Create a new User with only the registration fields
+      User user = new User();
+      user.setUsername(registrationDTO.getUsername());
+      user.setName(registrationDTO.getName());
+      user.setPassword(authenticationService.encodePassword(registrationDTO.getPassword()));
+      user.setMail(registrationDTO.getMail());
+      user.setCountry(registrationDTO.getCountry());
+      user.setRole(Role.USER);
+      user.setFollowers(0);
+      user.setBufferedGames(0);
+      
+      // Initialize empty games buffer with placeholders
+      List<GameSummary> placeholders = new ArrayList<>();
+      for (int i = 0; i < Constants.GAMES_BUFFER_NUMBER; i++) {
+          placeholders.add(new GameSummary());
+      }
+      user.setGames(placeholders);
+      
+      User createdUser = userRepository.save(user);
+      return convertToDTO(createdUser);
+    } catch (Exception e) {
+      throw new BusinessException("Error registering user", e);
     }
   }
 
@@ -205,12 +231,32 @@ public class UserServiceImpl implements UserService {
           eloBullet += eloDiff;
       }
 
-      int currentIndex = user.getBufferedGames();
-      int nextIndex = (currentIndex + 1)%Constants.GAMES_BUFFER_NUMBER;
+      // Find first placeholder index (where id == null)
+      int placeholderIndex = -1;
+      if (user.getGames() != null) {
+          for (int i = 0; i < user.getGames().size(); i++) {
+              if (user.getGames().get(i).getId() == null) {
+                  placeholderIndex = i;
+                  break;
+              }
+          }
+      }
+
+      int insertIndex;
+      int nextIndex;
+      if (placeholderIndex >= 0) {
+          // Replace placeholder, don't advance buffer
+          insertIndex = placeholderIndex;
+          nextIndex = user.getBufferedGames();
+      } else {
+          // Circular buffer logic
+          insertIndex = user.getBufferedGames();
+          nextIndex = (insertIndex + 1) % Constants.GAMES_BUFFER_NUMBER;
+      }
 
       Query query = new Query(Criteria.where("_id").is(userId));
       Update update = new Update()
-              .set("games." + currentIndex, summary)
+              .set("games." + insertIndex, summary)
               .set("buffered_games", nextIndex)
               .set("stats." + timeClass, oldElo + eloDiff);
 
@@ -226,5 +272,14 @@ public class UserServiceImpl implements UserService {
           return 20;
       else
           return -20;
+  }
+
+  @Override
+  public List<TiltPlayerDTO> getTiltPlayers() throws BusinessException {
+    try {
+        return userRepository.findTiltPlayers();
+    } catch (Exception e) {
+        throw new BusinessException("Error fetching tilt players", e);
+    }
   }
 }

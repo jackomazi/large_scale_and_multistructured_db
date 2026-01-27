@@ -1,6 +1,8 @@
 package it.unipi.chessApp.repository;
 
 import it.unipi.chessApp.model.Tournament;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -12,4 +14,7 @@ public interface TournamentRepository extends MongoRepository<Tournament, String
     
     @Query("{ 'status': 'active', 'finish_time': { $lte: ?0 } }")
     List<Tournament> findActiveTournamentsToFinish(String currentTime);
+    
+    @Query("{ 'status': ?0 }")
+    Page<Tournament> findByStatus(String status, Pageable pageable);
 }

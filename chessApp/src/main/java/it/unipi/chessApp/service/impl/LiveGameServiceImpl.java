@@ -8,14 +8,19 @@ import com.github.bhlangonijr.chesslib.move.Move;
 import com.github.bhlangonijr.chesslib.move.MoveList;
 import it.unipi.chessApp.dto.GameDTO;
 import it.unipi.chessApp.dto.GameStatusDTO;
+import it.unipi.chessApp.dto.GameSummaryDTO;
 import it.unipi.chessApp.dto.MatchmakingResultDTO;
 import it.unipi.chessApp.dto.MoveResultDTO;
+import it.unipi.chessApp.model.User;
 import it.unipi.chessApp.model.ChessOpening;
 import it.unipi.chessApp.model.LiveGameState;
 import it.unipi.chessApp.repository.TournamentRepository;
+import it.unipi.chessApp.repository.UserRepository;
 import it.unipi.chessApp.service.GameService;
 import it.unipi.chessApp.service.LiveGameService;
 import it.unipi.chessApp.service.OpeningService;
+import it.unipi.chessApp.service.TournamentService;
+import it.unipi.chessApp.service.UserService;
 import it.unipi.chessApp.service.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +41,9 @@ public class LiveGameServiceImpl implements LiveGameService {
     private final OpeningService openingService;
     private final GameService gameService;
     private final TournamentRepository tournamentRepository;
+    private final UserRepository userRepository;
+    private final UserService userService;
+    private final TournamentService tournamentService;
 
     private static final String MATCHMAKING_QUEUE_KEY = "chess:matchmaking:queue";
     private static final String TOURNAMENT_QUEUE_PREFIX = "chess:matchmaking:tournament:";
@@ -431,6 +439,33 @@ public class LiveGameServiceImpl implements LiveGameService {
             gameService.createGame(gameDTO);
             log.info("Saved completed game {} to MongoDB with opening: {}", 
                      gameState.getGameId(), gameState.getDetectedOpening());
+
+            // Create game summary for embedding in user documents
+            GameSummaryDTO summary = GameSummaryDTO.summarize(gameDTO);
+
+            // Get users by username
+            User whiteUser = userRepository.findByUsername(gameState.getWhitePlayer())
+                    .orElse(null);
+            User blackUser = userRepository.findByUsername(gameState.getBlackPlayer())
+                    .orElse(null);
+
+            // Buffer game to both players (updates ELO and games array)
+            if (whiteUser != null) {
+                userService.bufferGame(whiteUser.getId(), summary, "rapid");
+            }
+            if (blackUser != null) {
+                userService.bufferGame(blackUser.getId(), summary, "rapid");
+            }
+
+            // If tournament game, also buffer to tournament
+            if (gameState.isTournamentGame()) {
+                tournamentService.bufferTournamentGame(
+                        gameState.getTournamentId(),
+                        gameDTO,
+                        whiteUser != null ? whiteUser.getId() : null,
+                        blackUser != null ? blackUser.getId() : null
+                );
+            }
 
         } catch (Exception e) {
             log.error("Failed to save game {} to MongoDB: {}", gameState.getGameId(), e.getMessage(), e);

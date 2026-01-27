@@ -4,7 +4,6 @@ import it.unipi.chessApp.dto.*;
 import it.unipi.chessApp.model.GameSummary;
 import it.unipi.chessApp.model.Tournament;
 import it.unipi.chessApp.model.TournamentPlayer;
-import it.unipi.chessApp.dto.GameDTO;
 import it.unipi.chessApp.model.neo4j.TournamentParticipant;
 import it.unipi.chessApp.repository.TournamentRepository;
 import it.unipi.chessApp.repository.neo4j.TournamentNodeRepository;
@@ -138,17 +137,37 @@ public class TournamentServiceImpl implements TournamentService {
   }
 
   @Override
+  public PageDTO<TournamentDTO> getActiveTournaments(int page)
+    throws BusinessException {
+    try {
+      PageRequest pageable = PageRequest.of(page - 1, Constants.PAGE_SIZE);
+      Page<Tournament> tournamentPage = tournamentRepository.findByStatus("active", pageable);
+      List<TournamentDTO> tournamentDTOs = tournamentPage
+        .getContent()
+        .stream()
+        .map(this::convertToDTO)
+        .collect(Collectors.toList());
+      return new PageDTO<>(
+        (int) tournamentPage.getTotalElements(),
+        tournamentDTOs
+      );
+    } catch (Exception e) {
+      throw new BusinessException("Error fetching active tournaments", e);
+    }
+  }
+
+  @Override
   public List<TournamentParticipantDTO> getTournamentParticipants(String id) throws BusinessException{
       try {
           List<TournamentParticipant> participants = tournamentNodeRepository.findTournamentParticipants(id);
 
           return participants
                   .stream()
-                  .map(this::convertoParticipantToDTO)
+                  .map(this::convertParticipantToDTO)
                   .toList();
       }
       catch (Exception e){
-          System.out.println(e.getMessage());
+          log.error("Error fetching tournament participants: {}", e.getMessage());
           throw new BusinessException("Error fetching tournament participant", e);
       }
   }
@@ -195,7 +214,7 @@ public class TournamentServiceImpl implements TournamentService {
         throw new BusinessException("Tournament is not active");
       }
 
-      // Check subscription window (1 day window, starting 1 week before finish time)
+      // Check subscription window (1. day window, starting 1 week before finish time)
       validateSubscriptionWindow(tournament.getFinishTime());
 
       String subscribersKey = getSubscribersKey(tournamentId);
@@ -301,7 +320,7 @@ public class TournamentServiceImpl implements TournamentService {
 
       int currentIndex = tournament.getBufferedGames();
 
-      System.out.println(" " + currentIndex + " / " + tournament.getMaxParticipants()*Constants.USER_GAMES_IN_TOURNAMENT);
+      log.debug("Buffering game {} / {}", currentIndex, tournament.getMaxParticipants() * Constants.USER_GAMES_IN_TOURNAMENT);
 
       //Check if the limit is reached
       if(currentIndex == tournament.getMaxParticipants()*Constants.USER_GAMES_IN_TOURNAMENT)
@@ -377,7 +396,7 @@ public class TournamentServiceImpl implements TournamentService {
     return dto;
   }
 
-  private TournamentParticipantDTO convertoParticipantToDTO(TournamentParticipant participant){
+  private TournamentParticipantDTO convertParticipantToDTO(TournamentParticipant participant){
       TournamentParticipantDTO participantDTO = new TournamentParticipantDTO();
       participantDTO.setName(participant.getName());
       participantDTO.setWins(participant.getWins());

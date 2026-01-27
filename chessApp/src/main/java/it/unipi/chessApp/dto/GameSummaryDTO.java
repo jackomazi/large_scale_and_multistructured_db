@@ -1,7 +1,7 @@
 package it.unipi.chessApp.dto;
 
-import it.unipi.chessApp.model.Game;
 import it.unipi.chessApp.model.GameSummary;
+import it.unipi.chessApp.utils.Constants;
 
 public class GameSummaryDTO {
     private String id;
@@ -17,7 +17,7 @@ public class GameSummaryDTO {
         this.id = null;
         this.white = "name";
         this.black = "name";
-        this.date = "3033-04-08 00:00:00";
+        this.date = Constants.DEFAULT_PLACEHOLDER_DATE;
         this.opening = "name";
         this.winner = "name";
     }

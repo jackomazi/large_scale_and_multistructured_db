@@ -1,7 +1,5 @@
 package it.unipi.chessApp.dto;
 
-import it.unipi.chessApp.model.GameSummary;
-import it.unipi.chessApp.model.TournamentPlayer;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;

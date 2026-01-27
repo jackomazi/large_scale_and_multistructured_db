@@ -59,11 +59,12 @@
         "baden-baden-snowballs-fan-club",
         "1-fc-magdeburg"
     ],
-    "number_of_pages": 3, 
-    "number_of_users_per_team": 50,
-    "number_of_games_per_user": 50,
-    "number_of_games_per_tournament_participant": 10,
-    "max_games_per_user": 50,
-    "number_of_participant": 30,
+    "lichess_number_of_pages": 3, 
+    "lichess_number_of_users_per_team": 50,
+    "lichess_number_of_games_per_user": 50,
+    "lichess_number_of_games_per_tournament_participant": 10,
+    "lichess_max_games_per_user": 50,
+    "lichess_max_games_per_tournament": 150,
+    "lichess_number_of_participant": 30,
     "openings": ["Caro-Kann Defense", "Italian Game", "London System", "Three Knights Opening"]
 }

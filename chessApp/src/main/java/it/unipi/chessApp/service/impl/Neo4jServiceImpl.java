@@ -52,21 +52,16 @@ public class Neo4jServiceImpl implements Neo4jService {
     @Transactional
     public void joinClub(String userName, String clubName) {
         try {
-            Optional<UserNode> userOPT = userNodeRepository.findByName(userName);
-            Optional<ClubNode> clubOPT = clubNodeRepository.findByName(clubName);
-
-            if (userOPT.isPresent() && clubOPT.isPresent()) {
-                //Getting user infos & stats
-                Optional<User> user = userRepository.findByUsername(userOPT.get().getName());
-                if (user.isPresent()) {
-                    UserDTO userDTO = UserDTO.convertToDTO(user.get());
-                    userNodeRepository.createJoinedRelation(userName,
-                            clubName,
-                            userDTO.getCountry(),
-                            userDTO.getStats().getBullet(),
-                            userDTO.getStats().getBlitz(),
-                            userDTO.getStats().getRapid());
-                }
+            Optional<User> user = userRepository.findByUsername(userName);
+            if (user.isPresent()) {
+                UserDTO userDTO = UserDTO.convertToDTO(user.get());
+                userNodeRepository.createJoinedRelation(
+                        userName,
+                        clubName,
+                        userDTO.getCountry(),
+                        userDTO.getStats().getBullet(),
+                        userDTO.getStats().getBlitz(),
+                        userDTO.getStats().getRapid());
             }
         }
         catch (Exception e){

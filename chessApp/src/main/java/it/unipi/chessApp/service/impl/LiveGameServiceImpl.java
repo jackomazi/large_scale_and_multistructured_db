@@ -28,6 +28,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.TimeUnit;
 import org.bson.types.ObjectId;
 
@@ -415,7 +418,11 @@ public class LiveGameServiceImpl implements LiveGameService {
             gameDTO.setWhitePlayer(gameState.getWhitePlayer());
             gameDTO.setBlackPlayer(gameState.getBlackPlayer());
             gameDTO.setOpening(gameState.getDetectedOpening());
-            gameDTO.setEndTime(String.valueOf(gameState.getLastMoveAt()));
+            // Format end time as string date (yyyy-MM-dd HH:mm:ss)
+            String endTime = Instant.ofEpochMilli(gameState.getLastMoveAt())
+                    .atZone(ZoneId.systemDefault())
+                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            gameDTO.setEndTime(endTime);
             gameDTO.setTimeClass("live");
             gameDTO.setRated(true);
 

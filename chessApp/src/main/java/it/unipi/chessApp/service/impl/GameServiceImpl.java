@@ -11,7 +11,7 @@ import it.unipi.chessApp.service.GameService;
 import it.unipi.chessApp.service.exception.BusinessException;
 import it.unipi.chessApp.utils.Constants;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +22,9 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class GameServiceImpl implements GameService {
+
+  private static final DateTimeFormatter DATE_TIME_FORMATTER = 
+      DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
   private final GameRepository gameRepository;
 
@@ -122,10 +125,10 @@ public class GameServiceImpl implements GameService {
         int targetYear = (year != null) ? year : now.getYear();
         int targetMonth = (month != null) ? month : now.getMonthValue();
 
-        long startEpoch = LocalDate.of(targetYear, targetMonth, 1).atStartOfDay(ZoneOffset.UTC).toEpochSecond();
-        long endEpoch = LocalDate.of(targetYear, targetMonth, 1).plusMonths(1).atStartOfDay(ZoneOffset.UTC).toEpochSecond();
+        String startDate = LocalDate.of(targetYear, targetMonth, 1).atStartOfDay().format(DATE_TIME_FORMATTER);
+        String endDate = LocalDate.of(targetYear, targetMonth, 1).plusMonths(1).atStartOfDay().format(DATE_TIME_FORMATTER);
 
-        return gameRepository.getMonthlyTopOpenings(wRating, bRating, startEpoch, endEpoch);
+        return gameRepository.getMonthlyTopOpenings(wRating, bRating, startDate, endDate);
     } catch (Exception e) {
       throw new BusinessException("Error fetching monthly top openings", e);
     }
@@ -138,10 +141,10 @@ public class GameServiceImpl implements GameService {
         int targetYear = (year != null) ? year : now.getYear();
         int targetMonth = (month != null) ? month : now.getMonthValue();
 
-        long startEpoch = LocalDate.of(targetYear, targetMonth, 1).atStartOfDay(ZoneOffset.UTC).toEpochSecond();
-        long endEpoch = LocalDate.of(targetYear, targetMonth, 1).plusMonths(1).atStartOfDay(ZoneOffset.UTC).toEpochSecond();
+        String startDate = LocalDate.of(targetYear, targetMonth, 1).atStartOfDay().format(DATE_TIME_FORMATTER);
+        String endDate = LocalDate.of(targetYear, targetMonth, 1).plusMonths(1).atStartOfDay().format(DATE_TIME_FORMATTER);
 
-        AverageEloResult result = gameRepository.getAverageEloForOpening(opening, startEpoch, endEpoch);
+        AverageEloResult result = gameRepository.getAverageEloForOpening(opening, startDate, endDate);
         if (result == null || result.getFinalAverageElo() == null) {
             return 0.0;
         }
@@ -177,6 +180,7 @@ public class GameServiceImpl implements GameService {
     dto.setOpening(game.getOpening());
     dto.setMoves(game.getMoves());
     dto.setTimeClass(game.getTimeClass());
+    dto.setRated(game.isRated());
     dto.setEndTime(game.getEndTime());
     return dto;
   }
@@ -193,6 +197,7 @@ public class GameServiceImpl implements GameService {
     game.setOpening(dto.getOpening());
     game.setMoves(dto.getMoves());
     game.setTimeClass(dto.getTimeClass());
+    game.setRated(dto.isRated());
     game.setEndTime(dto.getEndTime());
     return game;
   }

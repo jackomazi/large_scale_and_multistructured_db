@@ -404,6 +404,12 @@ public class LiveGameServiceImpl implements LiveGameService {
      */
     private void saveCompletedGameToMongoDB(LiveGameState gameState) {
         try {
+            // Get users by username first to retrieve their ratings
+            User whiteUser = userRepository.findByUsername(gameState.getWhitePlayer())
+                    .orElse(null);
+            User blackUser = userRepository.findByUsername(gameState.getBlackPlayer())
+                    .orElse(null);
+
             GameDTO gameDTO = new GameDTO();
             gameDTO.setId(gameState.getGameId());
             gameDTO.setWhitePlayer(gameState.getWhitePlayer());
@@ -411,6 +417,15 @@ public class LiveGameServiceImpl implements LiveGameService {
             gameDTO.setOpening(gameState.getDetectedOpening());
             gameDTO.setEndTime(String.valueOf(gameState.getLastMoveAt()));
             gameDTO.setTimeClass("live");
+            gameDTO.setRated(true);
+
+            // Set player ratings from their user profiles (use rapid rating for live games)
+            if (whiteUser != null && whiteUser.getStats() != null) {
+                gameDTO.setWhiteRating(whiteUser.getStats().getRapid());
+            }
+            if (blackUser != null && blackUser.getStats() != null) {
+                gameDTO.setBlackRating(blackUser.getStats().getRapid());
+            }
 
             // Set results based on game status
             String resultString;
@@ -442,12 +457,6 @@ public class LiveGameServiceImpl implements LiveGameService {
 
             // Create game summary for embedding in user documents
             GameSummaryDTO summary = GameSummaryDTO.summarize(gameDTO);
-
-            // Get users by username
-            User whiteUser = userRepository.findByUsername(gameState.getWhitePlayer())
-                    .orElse(null);
-            User blackUser = userRepository.findByUsername(gameState.getBlackPlayer())
-                    .orElse(null);
 
             // Buffer game to both players (updates ELO and games array)
             if (whiteUser != null) {

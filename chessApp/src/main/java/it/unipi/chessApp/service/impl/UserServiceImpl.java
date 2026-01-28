@@ -9,7 +9,6 @@ import it.unipi.chessApp.model.GameSummary;
 import it.unipi.chessApp.model.User;
 import it.unipi.chessApp.repository.UserRepository;
 import it.unipi.chessApp.repository.neo4j.UserNodeRepository;
-import it.unipi.chessApp.model.Role;
 import it.unipi.chessApp.service.AuthenticationService;
 import it.unipi.chessApp.service.UserService;
 import it.unipi.chessApp.service.exception.BusinessException;
@@ -47,7 +46,7 @@ public class UserServiceImpl implements UserService {
       userDTO.setGames(placeholders);
       User user = convertToEntity(userDTO);
       user.setPassword(authenticationService.encodePassword(user.getPassword()));
-      user.setRole(Role.USER);
+      user.setAdmin(false);
       User createdUser = userRepository.save(user);
       return convertToDTO(createdUser);
     } catch (Exception e) {
@@ -65,7 +64,7 @@ public class UserServiceImpl implements UserService {
       user.setPassword(authenticationService.encodePassword(registrationDTO.getPassword()));
       user.setMail(registrationDTO.getMail());
       user.setCountry(registrationDTO.getCountry());
-      user.setRole(Role.USER);
+      user.setAdmin(false);
       user.setFollowers(0);
       user.setBufferedGames(0);
       
@@ -152,17 +151,18 @@ public class UserServiceImpl implements UserService {
     dto.setLastOnline(user.getLastOnline());
     dto.setJoined(user.getJoined());
     dto.setStreamer(user.isStreamer());
+    dto.setVerified(user.isVerified());
+    dto.setLeague(user.getLeague());
     dto.setStreamingPlatforms(user.getStreamingPlatforms());
-    dto.setClub(user.getClub());
     List<GameSummaryDTO> summaryDTO = user.getGames()
             .stream()
             .map(GameSummaryDTO::convertToDTO)
             .toList();
     dto.setGames(summaryDTO);
     dto.setStats(user.getStats());
-    dto.setTournaments(user.getTournaments());
     dto.setMail(user.getMail());
     dto.setPassword(user.getPassword());
+    dto.setAdmin(user.isAdmin());
     return dto;
   }
 
@@ -172,7 +172,7 @@ public class UserServiceImpl implements UserService {
       User user = userRepository.findByUsername(username)
               .orElseThrow(() -> new BusinessException("User not found"));
 
-      user.setRole(Role.ADMIN);
+      user.setAdmin(true);
       userRepository.save(user);
     } catch (BusinessException e) {
       throw e;
@@ -191,18 +191,18 @@ public class UserServiceImpl implements UserService {
     user.setLastOnline(dto.getLastOnline());
     user.setJoined(dto.getJoined());
     user.setStreamer(dto.isStreamer());
+    user.setVerified(dto.isVerified());
+    user.setLeague(dto.getLeague());
     user.setStreamingPlatforms(dto.getStreamingPlatforms());
-    user.setClub(dto.getClub());
-    List<GameSummary> summaries =dto.getGames()
+    List<GameSummary> summaries = dto.getGames()
             .stream()
             .map(GameSummary::convertToEntity)
             .toList();
     user.setGames(summaries);
     user.setStats(dto.getStats());
-    user.setTournaments(dto.getTournaments());
     user.setMail(dto.getMail());
     user.setPassword(dto.getPassword());
-    user.setRole(dto.getRole());
+    user.setAdmin(dto.isAdmin());
     return user;
   }
 

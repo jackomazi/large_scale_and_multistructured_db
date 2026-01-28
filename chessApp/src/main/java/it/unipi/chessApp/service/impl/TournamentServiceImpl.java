@@ -3,7 +3,6 @@ package it.unipi.chessApp.service.impl;
 import it.unipi.chessApp.dto.*;
 import it.unipi.chessApp.model.GameSummary;
 import it.unipi.chessApp.model.Tournament;
-import it.unipi.chessApp.model.TournamentPlayer;
 import it.unipi.chessApp.model.neo4j.TournamentParticipant;
 import it.unipi.chessApp.repository.TournamentRepository;
 import it.unipi.chessApp.repository.neo4j.TournamentNodeRepository;
@@ -58,10 +57,8 @@ public class TournamentServiceImpl implements TournamentService {
           placeholders.add(new GameSummaryDTO());
       tournamentDTO.setGames(placeholders);
       Tournament tournament = convertToEntity(tournamentDTO);
-      // Force status to "active" and initialize participants
+      // Force status to "active"
       tournament.setStatus("active");
-      tournament.setParticipants(0);
-      tournament.setPlayers(new ArrayList<>());
 
       Tournament createdTournament = tournamentRepository.save(tournament);
 
@@ -225,7 +222,7 @@ public class TournamentServiceImpl implements TournamentService {
         throw new BusinessException("You are already subscribed to this tournament");
       }
 
-      // Check max participants
+      // Check max participants using Redis set size
       Long currentCount = redisTemplate.opsForSet().size(subscribersKey);
       if (currentCount != null && currentCount >= tournament.getMaxParticipants()) {
         throw new BusinessException("Tournament has reached maximum participants");
@@ -233,17 +230,6 @@ public class TournamentServiceImpl implements TournamentService {
 
       // Add to Redis Set
       redisTemplate.opsForSet().add(subscribersKey, username);
-
-      // Update MongoDB - add to players list and increment participants
-      TournamentPlayer player = new TournamentPlayer();
-      player.setUsername(username);
-      player.setStatus("subscribed");
-      if (tournament.getPlayers() == null) {
-        tournament.setPlayers(new ArrayList<>());
-      }
-      tournament.getPlayers().add(player);
-      tournament.setParticipants(tournament.getParticipants() + 1);
-      tournamentRepository.save(tournament);
 
       log.info("User {} subscribed to tournament {}", username, tournamentId);
     } catch (BusinessException e) {
@@ -278,13 +264,6 @@ public class TournamentServiceImpl implements TournamentService {
 
       // Remove from Redis Set
       redisTemplate.opsForSet().remove(subscribersKey, username);
-
-      // Update MongoDB - remove from players list and decrement participants
-      if (tournament.getPlayers() != null) {
-        tournament.getPlayers().removeIf(p -> username.equals(p.getUsername()));
-      }
-      tournament.setParticipants(Math.max(0, tournament.getParticipants() - 1));
-      tournamentRepository.save(tournament);
 
       log.info("User {} unsubscribed from tournament {}", username, tournamentId);
     } catch (BusinessException e) {
@@ -385,7 +364,6 @@ public class TournamentServiceImpl implements TournamentService {
     dto.setFinishTime(tournament.getFinishTime());
     dto.setMinRating(tournament.getMinRating());
     dto.setMaxRating(tournament.getMaxRating());
-    dto.setParticipants(tournament.getParticipants());
     dto.setMaxParticipants(tournament.getMaxParticipants());
     dto.setTimeControl(tournament.getTimeControl());
     List<GameSummaryDTO> summaryDTOS = tournament.getGames()
@@ -416,7 +394,6 @@ public class TournamentServiceImpl implements TournamentService {
     tournament.setFinishTime(dto.getFinishTime());
     tournament.setMinRating(dto.getMinRating());
     tournament.setMaxRating(dto.getMaxRating());
-    tournament.setParticipants(dto.getParticipants());
     tournament.setMaxParticipants(dto.getMaxParticipants());
     tournament.setTimeControl(dto.getTimeControl());
     List<GameSummary> summary = dto.getGames()

@@ -1,7 +1,6 @@
 package it.unipi.chessApp.scheduler;
 
 import it.unipi.chessApp.model.Tournament;
-import it.unipi.chessApp.model.TournamentPlayer;
 import it.unipi.chessApp.model.User;
 import it.unipi.chessApp.repository.TournamentRepository;
 import it.unipi.chessApp.repository.UserRepository;
@@ -15,6 +14,7 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -35,8 +35,8 @@ public class TournamentScheduler {
      * Scheduled task that runs once a day to check for tournaments that have finished.
      * When a tournament finishes:
      * 1. Updates tournament status to "finished" in MongoDB
-     * 2. Deletes the Redis subscribers set
-     * 3. Copy participant data to Neo4j
+     * 2. Copy participant data to Neo4j from Redis subscribers
+     * 3. Deletes the Redis subscribers set
      */
     @Scheduled(fixedRate = 86400000) // Run once a day
     public void finishExpiredTournaments() {
@@ -62,31 +62,34 @@ public class TournamentScheduler {
             tournament.setStatus("finished");
             tournamentRepository.save(tournament);
 
-            // Delete Redis subscribers set
+            // Get subscribers from Redis before deleting
             String subscribersKey = TOURNAMENT_SUBSCRIBERS_PREFIX + tournament.getId() + TOURNAMENT_SUBSCRIBERS_SUFFIX;
-            redisTemplate.delete(subscribersKey);
+            Set<String> subscribers = redisTemplate.opsForSet().members(subscribersKey);
 
             log.info("Tournament {} ({}) has been finished", tournament.getId(), tournament.getName());
 
-            // Create PARTICIPATED relationships in Neo4j for each player
-            if (tournament.getPlayers() != null) {
-                for (TournamentPlayer player : tournament.getPlayers()) {
+            // Create PARTICIPATED relationships in Neo4j for each subscriber
+            if (subscribers != null && !subscribers.isEmpty()) {
+                for (String username : subscribers) {
                     try {
                         // Look up user's mongo ID from username
-                        User user = userRepository.findByUsername(player.getUsername()).orElse(null);
+                        User user = userRepository.findByUsername(username).orElse(null);
                         if (user != null) {
                             neo4jService.participateTournament(user.getId(), tournament.getId());
                             log.debug("Created PARTICIPATED relationship for user {} in tournament {}",
-                                     player.getUsername(), tournament.getId());
+                                     username, tournament.getId());
                         } else {
-                            log.warn("User not found for username: {}", player.getUsername());
+                            log.warn("User not found for username: {}", username);
                         }
                     } catch (Exception e) {
                         log.error("Error creating PARTICIPATED relationship for user {}: {}",
-                                 player.getUsername(), e.getMessage());
+                                 username, e.getMessage());
                     }
                 }
             }
+
+            // Delete Redis subscribers set after processing
+            redisTemplate.delete(subscribersKey);
 
         } catch (Exception e) {
             log.error("Error finishing tournament {}: {}", tournament.getId(), e.getMessage(), e);

@@ -18,6 +18,7 @@ public class GameDTO {
     private String opening;
     private String moves;
     private String timeClass;
+    private boolean rated;
     private String endTime;
 
     public String getId() {
@@ -98,6 +99,14 @@ public class GameDTO {
 
     public void setTimeClass(String timeClass) {
         this.timeClass = timeClass;
+    }
+
+    public boolean isRated() {
+        return rated;
+    }
+
+    public void setRated(boolean rated) {
+        this.rated = rated;
     }
 
     public String  getEndTime() {

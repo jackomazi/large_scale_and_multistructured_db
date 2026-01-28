@@ -6,6 +6,7 @@ import it.unipi.chessApp.dto.TiltPlayerDTO;
 import it.unipi.chessApp.dto.UserDTO;
 import it.unipi.chessApp.dto.UserRegistrationDTO;
 import it.unipi.chessApp.model.GameSummary;
+import it.unipi.chessApp.model.Stats;
 import it.unipi.chessApp.model.User;
 import it.unipi.chessApp.repository.UserRepository;
 import it.unipi.chessApp.repository.neo4j.UserNodeRepository;
@@ -13,6 +14,8 @@ import it.unipi.chessApp.service.AuthenticationService;
 import it.unipi.chessApp.service.UserService;
 import it.unipi.chessApp.service.exception.BusinessException;
 import it.unipi.chessApp.utils.Constants;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -68,10 +71,20 @@ public class UserServiceImpl implements UserService {
       user.setFollowers(0);
       user.setBufferedGames(0);
       
-      // Initialize empty games buffer with placeholders
+      // Set joined and lastOnline to current datetime
+      String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+      user.setJoined(now);
+      user.setLastOnline(now);
+      
+      // Initialize stats with default ELO of 1000
+      user.setStats(new Stats(1000, 1000, 1000));
+      
+      // Initialize empty games buffer with placeholders (using default date)
       List<GameSummary> placeholders = new ArrayList<>();
       for (int i = 0; i < Constants.GAMES_BUFFER_NUMBER; i++) {
-          placeholders.add(new GameSummary());
+          GameSummary placeholder = new GameSummary();
+          placeholder.setDate(Constants.DEFAULT_PLACEHOLDER_DATE);
+          placeholders.add(placeholder);
       }
       user.setGames(placeholders);
       

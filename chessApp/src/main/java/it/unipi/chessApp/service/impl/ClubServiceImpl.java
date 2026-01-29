@@ -1,24 +1,31 @@
 package it.unipi.chessApp.service.impl;
 
 import it.unipi.chessApp.dto.ClubDTO;
+import it.unipi.chessApp.dto.ClubMemberDTO;
 import it.unipi.chessApp.dto.PageDTO;
 import it.unipi.chessApp.model.Club;
+import it.unipi.chessApp.model.neo4j.ClubMember;
 import it.unipi.chessApp.repository.ClubRepository;
+import it.unipi.chessApp.repository.neo4j.ClubNodeRepository;
 import it.unipi.chessApp.service.ClubService;
 import it.unipi.chessApp.service.exception.BusinessException;
 import it.unipi.chessApp.utils.Constants;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ClubServiceImpl implements ClubService {
 
   private final ClubRepository clubRepository;
+  private final ClubNodeRepository clubNodeRepository;
 
   @Override
   public ClubDTO createClub(ClubDTO clubDTO) throws BusinessException {
@@ -45,6 +52,39 @@ public class ClubServiceImpl implements ClubService {
     } catch (Exception e) {
       throw new BusinessException("Error fetching club", e);
     }
+  }
+
+  @Override
+  public ClubDTO getClubByName(String name) throws BusinessException {
+    try {
+      Club club = clubRepository
+        .findByName(name)
+        .orElseThrow(() ->
+          new BusinessException("Club not found with ID: " + name)
+        );
+      return convertToDTO(club);
+    } catch (BusinessException e) {
+      throw e;
+    } catch (Exception e) {
+      log.error("Error fetching club by name: {}", e.getMessage());
+      throw new BusinessException("Error fetching club", e);
+    }
+  }
+
+  @Override
+  public List<ClubMemberDTO> getClubMembers(String name) throws BusinessException{
+      try {
+          List<ClubMember> members = clubNodeRepository.findClubMembers(name);
+          List<ClubMemberDTO> clubMemberDTOS = new ArrayList<>();
+          for(ClubMember member: members){
+              clubMemberDTOS.add(ClubMemberDTO.convertMemberToDTO(member));
+          }
+          return clubMemberDTOS;
+      }
+      catch (Exception e){
+          throw new BusinessException("Error fetching club", e);
+      }
+
   }
 
   @Override
@@ -98,7 +138,6 @@ public class ClubServiceImpl implements ClubService {
     dto.setCountry(club.getCountry());
     dto.setCreationDate(club.getCreationDate());
     dto.setAdmin(club.getAdmin());
-    dto.setMembers(club.getMembers());
     return dto;
   }
 
@@ -110,7 +149,6 @@ public class ClubServiceImpl implements ClubService {
     club.setCountry(dto.getCountry());
     club.setCreationDate(dto.getCreationDate());
     club.setAdmin(dto.getAdmin());
-    club.setMembers(dto.getMembers());
     return club;
   }
 }

@@ -29,10 +29,10 @@ if __name__ == "__main__":
         client = MongoClient("mongodb://localhost:27017/")
         client.server_info()
         db = client["chess_db_test"]
-        collection_users = db["users_isaia"]
-        collection_games = db["games_isaia"]
-        collection_clubs = db["clubs_isaia"]
-        collection_tournament = db["tournaments_isaia"]
+        collection_users = db["users"]
+        collection_games = db["games"]
+        collection_clubs = db["clubs"]
+        collection_tournament = db["tournaments"]
     except:
         sys.exit(1)
 
@@ -64,8 +64,7 @@ if __name__ == "__main__":
         }
 
     for i_club, club in enumerate(scraping_values["clubs"]):
-        if i_club > 2:
-            break
+
         print(f"Scraping club: {i_club}")
         # Club scraping
         usernames = chess_com_interface.get_players_usernames(club)
@@ -86,7 +85,8 @@ if __name__ == "__main__":
             user_archives = chess_com_interface.get_player_games_archives(user)
             # Storing user game stats
             user_info["stats"] = chess_com_interface.get_player_games_stats(user)
-            user_info["club"] = club
+            # Not needed anymore
+            #user_info["club"] = club
 
             # Archives scraping
             for i_archive, archive_url in enumerate(user_archives):
@@ -113,6 +113,7 @@ if __name__ == "__main__":
 
                     # Add id of game to user games
                     user_info["games"].append(chess_com_interface.format_chess_com_game_essentials(game_mongo_id,formatted_game,False))
+                    user_info["buffered_games"] += 1
 
                 if i_archive >= scraping_values.get("max_scrap_archives"):
                     break
@@ -121,6 +122,9 @@ if __name__ == "__main__":
             # Insert "blank" data into games array
             for i in range(0,scraping_values["maximum_games_stored_per_user_document"] - len(user_info.get("games"))):
                 user_info["games"].append(chess_com_interface.format_chess_com_game_essentials(None, None, True))
+
+            # user admin field
+            user_info["admin"] = False
 
             # Saving user to mongoDB
             user_mongo_id = mongo_db_interface.store_dict_to_MongoDB(user_info, collection_users)
@@ -142,6 +146,7 @@ if __name__ == "__main__":
 
                 #Create tournament document for mongoDB
                 tournament_doc = chess_com_interface.get_chess_com_tournament(tournament_url)
+                tournament_doc["buffered_games"] = 0
                 if "Error" in tournament_doc:
                     print("Jumping")
                     continue
@@ -149,11 +154,10 @@ if __name__ == "__main__":
                 #Fetching games from tournaments and mongoDB memorization and cached inside tournament document
                 games = chess_com_interface.get_games_from_tournament(tournament_url)
                 if games is None:
-                    print("Jumping")
-                    continue
+                    games = []
 
                 for i_game, game in tqdm(enumerate(games), total=len(games), desc="Scraping games tournaments"):
-                    if i_game >= scraping_values.get("maximum_games_per_tournament"):
+                    if i_game >= scraping_values.get("maximum_games_per_tournament")*tournament_doc.get("max_partecipants"):
                         break
                     formatted_game = chess_com_interface.format_chess_com_game(game)
                     if formatted_game["opening"] is None:
@@ -162,6 +166,12 @@ if __name__ == "__main__":
                         formatted_game, collection_games
                     )
                     tournament_doc["games"].append(chess_com_interface.format_chess_com_game_essentials(game_mongo_id,formatted_game,False))
+                    tournament_doc["buffered_games"] += 1
+
+
+                #Inserting placeholders into tournament games field
+                for i in range(0,scraping_values["maximum_games_per_tournament"]*tournament_doc.get("max_partecipants") - len(tournament_doc.get("games"))):
+                    tournament_doc["games"].append(chess_com_interface.format_chess_com_game_essentials(None, None, True))
 
                 #MongoDB tournament memorization
                 tournament_mongo_id = mongo_db_interface.store_dict_to_MongoDB(tournament_doc, collection_tournament)

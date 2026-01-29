@@ -17,6 +17,8 @@ public class User {
     private String id;
     private String name;
     private String username;
+    @Field("buffered_games")
+    private int bufferedGames;
     private int followers;
     private String country;
     @Field("last_online")
@@ -24,12 +26,13 @@ public class User {
     private String joined;
     @Field("is_streamer")
     private boolean isStreamer;
+    private boolean verified;
+    private String league;
     @Field("streaming_platforms")
     private List<String> streamingPlatforms;
-    private String club;
     private List<GameSummary> games;
     private Stats stats;
-    private TournamentStats tournaments;
     private String mail;
     private String password;
+    private boolean admin = false;
 }

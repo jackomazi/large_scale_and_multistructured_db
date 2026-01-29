@@ -1,12 +1,17 @@
 package it.unipi.chessApp.service.impl;
 
+import it.unipi.chessApp.dto.AverageEloResult;
 import it.unipi.chessApp.dto.GameDTO;
+import it.unipi.chessApp.dto.MonthlyOpeningStatDTO;
 import it.unipi.chessApp.dto.PageDTO;
+import it.unipi.chessApp.dto.WinRateByOpeningDTO;
 import it.unipi.chessApp.model.Game;
 import it.unipi.chessApp.repository.GameRepository;
 import it.unipi.chessApp.service.GameService;
 import it.unipi.chessApp.service.exception.BusinessException;
 import it.unipi.chessApp.utils.Constants;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +22,9 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class GameServiceImpl implements GameService {
+
+  private static final DateTimeFormatter DATE_TIME_FORMATTER = 
+      DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
   private final GameRepository gameRepository;
 
@@ -107,6 +115,59 @@ public class GameServiceImpl implements GameService {
     }
   }
 
+  @Override
+  public List<MonthlyOpeningStatDTO> getMonthlyTopOpenings(Integer minWhite, Integer minBlack, Integer year, Integer month) throws BusinessException {
+    try {
+        int wRating = (minWhite != null) ? minWhite : 2000;
+        int bRating = (minBlack != null) ? minBlack : 2000;
+
+        LocalDate now = LocalDate.now();
+        int targetYear = (year != null) ? year : now.getYear();
+        int targetMonth = (month != null) ? month : now.getMonthValue();
+
+        String startDate = LocalDate.of(targetYear, targetMonth, 1).atStartOfDay().format(DATE_TIME_FORMATTER);
+        String endDate = LocalDate.of(targetYear, targetMonth, 1).plusMonths(1).atStartOfDay().format(DATE_TIME_FORMATTER);
+
+        return gameRepository.getMonthlyTopOpenings(wRating, bRating, startDate, endDate);
+    } catch (Exception e) {
+      throw new BusinessException("Error fetching monthly top openings", e);
+    }
+  }
+
+  @Override
+  public Double getAverageEloForOpening(String opening, Integer year, Integer month) throws BusinessException {
+    try {
+        LocalDate now = LocalDate.now();
+        int targetYear = (year != null) ? year : now.getYear();
+        int targetMonth = (month != null) ? month : now.getMonthValue();
+
+        String startDate = LocalDate.of(targetYear, targetMonth, 1).atStartOfDay().format(DATE_TIME_FORMATTER);
+        String endDate = LocalDate.of(targetYear, targetMonth, 1).plusMonths(1).atStartOfDay().format(DATE_TIME_FORMATTER);
+
+        AverageEloResult result = gameRepository.getAverageEloForOpening(opening, startDate, endDate);
+        if (result == null || result.getFinalAverageElo() == null) {
+            return 0.0;
+        }
+        return result.getFinalAverageElo();
+    } catch (Exception e) {
+        throw new BusinessException("Error fetching average elo for opening", e);
+    }
+  }
+
+  @Override
+  public List<WinRateByOpeningDTO> getWinRateByOpening(Integer minRating, Integer maxRating, String timeClass, Integer minGames) throws BusinessException {
+    try {
+        int minR = (minRating != null) ? minRating : 1200;
+        int maxR = (maxRating != null) ? maxRating : 1600;
+        String tc = (timeClass != null) ? timeClass : "blitz";
+        int minG = (minGames != null) ? minGames : 10;
+
+        return gameRepository.getWinRateByOpening(minR, maxR, tc, minG);
+    } catch (Exception e) {
+        throw new BusinessException("Error fetching win rate by opening", e);
+    }
+  }
+
   private GameDTO convertToDTO(Game game) {
     GameDTO dto = new GameDTO();
     dto.setId(game.getId());
@@ -119,6 +180,7 @@ public class GameServiceImpl implements GameService {
     dto.setOpening(game.getOpening());
     dto.setMoves(game.getMoves());
     dto.setTimeClass(game.getTimeClass());
+    dto.setRated(game.isRated());
     dto.setEndTime(game.getEndTime());
     return dto;
   }
@@ -135,6 +197,7 @@ public class GameServiceImpl implements GameService {
     game.setOpening(dto.getOpening());
     game.setMoves(dto.getMoves());
     game.setTimeClass(dto.getTimeClass());
+    game.setRated(dto.isRated());
     game.setEndTime(dto.getEndTime());
     return game;
   }

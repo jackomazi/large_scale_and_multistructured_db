@@ -1,7 +1,9 @@
 package it.unipi.chessApp.service;
 
 import it.unipi.chessApp.dto.GameDTO;
+import it.unipi.chessApp.dto.MonthlyOpeningStatDTO;
 import it.unipi.chessApp.dto.PageDTO;
+import it.unipi.chessApp.dto.WinRateByOpeningDTO;
 import it.unipi.chessApp.service.exception.BusinessException;
 import java.util.List;
 
@@ -12,4 +14,7 @@ public interface GameService {
   PageDTO<GameDTO> getAllGames(int page) throws BusinessException;
   GameDTO updateGame(String id, GameDTO gameDTO) throws BusinessException;
   void deleteGame(String id) throws BusinessException;
+  List<MonthlyOpeningStatDTO> getMonthlyTopOpenings(Integer minWhite, Integer minBlack, Integer year, Integer month) throws BusinessException;
+  Double getAverageEloForOpening(String opening, Integer year, Integer month) throws BusinessException;
+  List<WinRateByOpeningDTO> getWinRateByOpening(Integer minRating, Integer maxRating, String timeClass, Integer minGames) throws BusinessException;
 }

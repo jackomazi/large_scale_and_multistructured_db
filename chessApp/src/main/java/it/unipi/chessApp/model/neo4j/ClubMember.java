@@ -21,7 +21,7 @@ public class ClubMember {
 
     private String country;
 
-    @Property("butter")
+    @Property("bullet")
     private int bulletRating;
 
     @Property("blitz")

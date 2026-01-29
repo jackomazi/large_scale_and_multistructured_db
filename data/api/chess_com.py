@@ -127,7 +127,7 @@ class chess_com_interface:
         # Adding empty array/object to comply with MongoDB data structure constraints
         user_info["games"] = []
         user_info["stats"] = {}
-        user_info["club"] = ""
+        user_info["buffered_games"] = 0
 
         # Adding some basic fake informations
         fake = Faker()
@@ -209,16 +209,20 @@ class chess_com_interface:
         except:
             pass
         date = tournament.get("finish_time")
+        date1 = tournament.get("start_time")
         if date is not None:
             tournament["finish_time"] = datetime.fromtimestamp(date).strftime('%Y-%m-%d %H:%M:%S')
+        if date1 is not None:
+            tournament["start_time"] = datetime.fromtimestamp(date1).strftime('%Y-%m-%d %H:%M:%S')
         tournament.pop("rounds")
         tournament.pop("players")
         tournament["games"] = []
         # Formatting tournament settings
         tournament["max_rating"] = tournament.get("settings").get("max_rating")
         tournament["min_rating"] = 600
-        tournament["max_partecipants"] = random.uniform(10,20)
+        tournament["max_partecipants"] = 50
         tournament["time_control"] = tournament.get("settings").get("time_control")
+        tournament.pop("settings")
         return tournament
 
     @staticmethod
@@ -306,7 +310,7 @@ class chess_com_interface:
             "moves": chess_com_interface.extract_moves_from_pgn(game.get("pgn", "")),
             "time_class": game.get("time_class"),
             "rated": game.get("rated"),
-            "end_time": game.get("end_time"),
+            "end_time": datetime.fromtimestamp(game.get("end_time")).strftime('%Y-%m-%d %H:%M:%S'),
         }
     
     @staticmethod
@@ -319,14 +323,14 @@ class chess_com_interface:
                     "black": "name",
                     "opening": "name",
                     "winner": "name",
-                    "date": "date"
+                    "date": "3033-04-08 21:41:56"
                     }
         return {"_id": id,
                 "white": game.get("white_player"),
                 "black": game.get("black_player"),
                 "opening": game.get("opening"),
                 "winner": game.get("white_player") if game.get("white_result") == game.get("white_player") else game.get("black_player"),
-                "date": game.get("end_time")
+                "date":  game.get("end_time")
         }
     
     @staticmethod

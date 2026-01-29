@@ -7,9 +7,9 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Neo4jTournamentParticipationDTO {
-    private int wins;
-    private int draws;
-    private int losses;
-    private int placement;
+public class UserFavoriteOpeningDTO {
+
+    private String opening;
+
+    private long count;
 }

@@ -40,6 +40,8 @@ public class Game {
     @Field("time_class")
     private String timeClass;
 
+    private boolean rated;
+
     @Field("end_time")
-    private long endTime;
+    private String endTime;
 }

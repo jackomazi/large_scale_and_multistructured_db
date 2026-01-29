@@ -10,3 +10,26 @@ class mongo_db_interface:
         
         result = collection.insert_one(document)
         return result.inserted_id
+    
+    @staticmethod
+    def add_members_to_team_in_MongoDB(team_mongo_id: ObjectId, members: list, collection):
+        collection.update_one(
+            {"_id": team_mongo_id},
+            {"$push": {"members": {"$each": members}}}
+        )
+
+    @staticmethod
+    def add_games_to_tournament_in_MongoDB(tournament_mongo_id: ObjectId, games: list, collection):
+        collection.update_one(
+            {"_id": tournament_mongo_id},
+            {"$push": {"games": {"$each": games}}}
+        )
+        
+    @staticmethod
+    def add_games_to_user_in_MongoDB(user_mongo_id: ObjectId, games: list, collection):
+        collection.update_one(
+            {"_id": user_mongo_id},
+            {"$push": {"games": {"$each": games}}}
+        )
+
+    

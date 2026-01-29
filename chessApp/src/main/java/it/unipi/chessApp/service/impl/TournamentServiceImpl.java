@@ -328,8 +328,6 @@ public class TournamentServiceImpl implements TournamentService {
 
       int currentIndex = tournament.getBufferedGames();
 
-      log.debug("Buffering game {} / {}", currentIndex, tournament.getMaxParticipants() * Constants.USER_GAMES_IN_TOURNAMENT);
-
       //Check if the limit is reached
       if(currentIndex == tournament.getMaxParticipants()*Constants.USER_GAMES_IN_TOURNAMENT)
           return Outcomes.TOURNAMENT_BUFFERING_ENDED;

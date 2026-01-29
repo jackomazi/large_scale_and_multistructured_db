@@ -1,10 +1,6 @@
 package it.unipi.chessApp.service;
 
-import it.unipi.chessApp.dto.GameSummaryDTO;
-import it.unipi.chessApp.dto.PageDTO;
-import it.unipi.chessApp.dto.TiltPlayerDTO;
-import it.unipi.chessApp.dto.UserDTO;
-import it.unipi.chessApp.dto.UserRegistrationDTO;
+import it.unipi.chessApp.dto.*;
 import it.unipi.chessApp.service.exception.BusinessException;
 
 import java.util.List;
@@ -19,4 +15,6 @@ public interface UserService {
   void bufferGame(String userId, GameSummaryDTO summary, String timeClass);
   void promoteToAdmin(String username) throws BusinessException;
   List<TiltPlayerDTO> getTiltPlayers() throws BusinessException;
+  UserWinRateDTO getUserWinRate(String userId) throws BusinessException;
+  UserFavoriteOpeningDTO getUserFavOpening(String userId) throws BusinessException;
 }

@@ -140,6 +140,26 @@ public class UserController {
     );
   }
 
+  @GetMapping("/{userId}/win_rate")
+  public ResponseEntity<ResponseWrapper<UserWinRateDTO>> getUserWinRate(
+          @PathVariable String userId
+  ) throws BusinessException{
+      UserWinRateDTO winRate = userService.getUserWinRate(userId);
+      return ResponseEntity.ok(
+              new ResponseWrapper<>("User win rate sucessfully calculated", winRate)
+      );
+  }
+
+  @GetMapping("/{userId}/most_used_opening")
+  public ResponseEntity<ResponseWrapper<UserFavoriteOpeningDTO>> getUserFavOpening(
+          @PathVariable String userId
+  ) throws BusinessException{
+      UserFavoriteOpeningDTO opening = userService.getUserFavOpening(userId);
+      return ResponseEntity.ok(
+              new ResponseWrapper<>("User win rate sucessfully calculated", opening)
+      );
+  }
+
   // ==================== Stats Endpoints (authenticated users) ====================
 
   // Get players on tilt (lost last 3 games)

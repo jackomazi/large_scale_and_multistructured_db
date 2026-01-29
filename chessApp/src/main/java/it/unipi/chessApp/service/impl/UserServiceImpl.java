@@ -1,10 +1,6 @@
 package it.unipi.chessApp.service.impl;
 
-import it.unipi.chessApp.dto.GameSummaryDTO;
-import it.unipi.chessApp.dto.PageDTO;
-import it.unipi.chessApp.dto.TiltPlayerDTO;
-import it.unipi.chessApp.dto.UserDTO;
-import it.unipi.chessApp.dto.UserRegistrationDTO;
+import it.unipi.chessApp.dto.*;
 import it.unipi.chessApp.model.GameSummary;
 import it.unipi.chessApp.model.Stats;
 import it.unipi.chessApp.model.User;
@@ -294,5 +290,23 @@ public class UserServiceImpl implements UserService {
     } catch (Exception e) {
         throw new BusinessException("Error fetching tilt players", e);
     }
+  }
+
+  @Override
+  public UserWinRateDTO getUserWinRate(String userId) throws BusinessException{
+      try {
+          return userRepository.calcUserWinRate(userId);
+      } catch (Exception e) {
+          throw new BusinessException("Error calculating user win rate", e);
+      }
+  }
+
+  @Override
+    public UserFavoriteOpeningDTO getUserFavOpening(String userId) throws BusinessException{
+      try {
+          return userRepository.calcFavoriteOpening(userId);
+      } catch (Exception e) {
+          throw new BusinessException("Error calculating user favorite opening", e);
+      }
   }
 }

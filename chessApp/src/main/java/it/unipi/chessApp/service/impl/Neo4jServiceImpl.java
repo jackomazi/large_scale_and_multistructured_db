@@ -1,7 +1,6 @@
 package it.unipi.chessApp.service.impl;
 
 import it.unipi.chessApp.dto.*;
-import it.unipi.chessApp.model.TournamentPlayer;
 import it.unipi.chessApp.model.User;
 import it.unipi.chessApp.model.neo4j.*;
 import it.unipi.chessApp.repository.UserRepository;
@@ -10,16 +9,17 @@ import it.unipi.chessApp.repository.neo4j.TournamentNodeRepository;
 import it.unipi.chessApp.repository.neo4j.UserNodeRepository;
 import it.unipi.chessApp.service.Neo4jService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import it.unipi.chessApp.dto.FriendRecommendationDTO;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class Neo4jServiceImpl implements Neo4jService {
 
     private final UserNodeRepository userNodeRepository;
@@ -52,25 +52,20 @@ public class Neo4jServiceImpl implements Neo4jService {
     @Transactional
     public void joinClub(String userName, String clubName) {
         try {
-            Optional<UserNode> userOPT = userNodeRepository.findByName(userName);
-            Optional<ClubNode> clubOPT = clubNodeRepository.findByName(clubName);
-
-            if (userOPT.isPresent() && clubOPT.isPresent()) {
-                //Getting user infos & stats
-                Optional<User> user = userRepository.findByUsername(userOPT.get().getName());
-                if (user.isPresent()) {
-                    UserDTO userDTO = UserDTO.convertToDTO(user.get());
-                    userNodeRepository.createJoinedRelation(userName,
-                            clubName,
-                            userDTO.getCountry(),
-                            userDTO.getStats().getBullet(),
-                            userDTO.getStats().getBlitz(),
-                            userDTO.getStats().getRapid());
-                }
+            Optional<User> user = userRepository.findByUsername(userName);
+            if (user.isPresent()) {
+                UserDTO userDTO = UserDTO.convertToDTO(user.get());
+                userNodeRepository.createJoinedRelation(
+                        userName,
+                        clubName,
+                        userDTO.getCountry(),
+                        userDTO.getStats().getBullet(),
+                        userDTO.getStats().getBlitz(),
+                        userDTO.getStats().getRapid());
             }
         }
         catch (Exception e){
-            System.out.println(e.getMessage());
+            log.error("Error joining club: {}", e.getMessage());
         }
     }
 
@@ -126,6 +121,7 @@ public class Neo4jServiceImpl implements Neo4jService {
     }
 
     @Override
+    @Transactional
     public List<TournamentParticipantDTO> findUserTournaments(String userId){
         List<TournamentParticipant> userTournaments = userNodeRepository.findUserTournaments(userId);
         List<TournamentParticipantDTO> tournamentsDTO = userTournaments

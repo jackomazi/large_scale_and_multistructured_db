@@ -46,7 +46,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-        authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
+        String roleName = user.isAdmin() ? "ADMIN" : "USER";
+        authorities.add(new SimpleGrantedAuthority("ROLE_" + roleName));
 
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),

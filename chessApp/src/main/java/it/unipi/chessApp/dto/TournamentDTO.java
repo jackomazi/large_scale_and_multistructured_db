@@ -1,7 +1,5 @@
 package it.unipi.chessApp.dto;
 
-import it.unipi.chessApp.model.GameSummary;
-import it.unipi.chessApp.model.TournamentPlayer;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -19,7 +17,6 @@ public class TournamentDTO {
     private String finishTime;
     private int minRating;
     private int maxRating;
-    private int participants;
     private int maxParticipants;
     private String timeControl;
     private List<GameSummaryDTO> games;
@@ -87,14 +84,6 @@ public class TournamentDTO {
 
     public void setMaxRating(int maxRating) {
         this.maxRating = maxRating;
-    }
-
-    public int getParticipants() {
-        return participants;
-    }
-
-    public void setParticipants(int participants) {
-        this.participants = participants;
     }
 
     public int getMaxParticipants() {

@@ -1,9 +1,6 @@
 package it.unipi.chessApp.dto;
 
-import it.unipi.chessApp.model.GameSummary;
-import it.unipi.chessApp.model.Role;
 import it.unipi.chessApp.model.Stats;
-import it.unipi.chessApp.model.TournamentStats;
 import java.util.List;
 
 import it.unipi.chessApp.model.User;
@@ -24,14 +21,14 @@ public class UserDTO {
   private String lastOnline;
   private String joined;
   private boolean isStreamer;
+  private boolean verified;
+  private String league;
   private List<String> streamingPlatforms;
-  private String club;
   private List<GameSummaryDTO> games;
   private Stats stats;
-  private TournamentStats tournaments;
   private String mail;
   private String password;
-  private Role role;
+  private boolean admin;
 
     public String getId() {
         return id;
@@ -97,20 +94,28 @@ public class UserDTO {
         isStreamer = streamer;
     }
 
+    public boolean isVerified() {
+        return verified;
+    }
+
+    public void setVerified(boolean verified) {
+        this.verified = verified;
+    }
+
+    public String getLeague() {
+        return league;
+    }
+
+    public void setLeague(String league) {
+        this.league = league;
+    }
+
     public List<String> getStreamingPlatforms() {
         return streamingPlatforms;
     }
 
     public void setStreamingPlatforms(List<String> streamingPlatforms) {
         this.streamingPlatforms = streamingPlatforms;
-    }
-
-    public String getClub() {
-        return club;
-    }
-
-    public void setClub(String club) {
-        this.club = club;
     }
 
     public List<GameSummaryDTO> getGames() {
@@ -129,14 +134,6 @@ public class UserDTO {
         this.stats = stats;
     }
 
-    public TournamentStats getTournaments() {
-        return tournaments;
-    }
-
-    public void setTournaments(TournamentStats tournaments) {
-        this.tournaments = tournaments;
-    }
-
     public String getMail() {
         return mail;
     }
@@ -153,7 +150,15 @@ public class UserDTO {
         this.password = password;
     }
 
-    public static  UserDTO convertToDTO(User user) {
+    public boolean isAdmin() {
+        return admin;
+    }
+
+    public void setAdmin(boolean admin) {
+        this.admin = admin;
+    }
+
+    public static UserDTO convertToDTO(User user) {
         UserDTO dto = new UserDTO();
         dto.setId(user.getId());
         dto.setName(user.getName());
@@ -163,18 +168,18 @@ public class UserDTO {
         dto.setLastOnline(user.getLastOnline());
         dto.setJoined(user.getJoined());
         dto.setStreamer(user.isStreamer());
+        dto.setVerified(user.isVerified());
+        dto.setLeague(user.getLeague());
         dto.setStreamingPlatforms(user.getStreamingPlatforms());
-        dto.setClub(user.getClub());
         List<GameSummaryDTO> summaries = user.getGames()
                 .stream()
                 .map(GameSummaryDTO::convertToDTO)
                 .toList();
         dto.setGames(summaries);
         dto.setStats(user.getStats());
-        dto.setTournaments(user.getTournaments());
         dto.setMail(user.getMail());
         dto.setPassword(user.getPassword());
-        dto.setRole(user.getRole());
+        dto.setAdmin(user.isAdmin());
         return dto;
     }
 }

@@ -9,6 +9,7 @@ import java.util.List;
 
 public interface ClubService {
   ClubDTO createClub(ClubDTO clubDTO) throws BusinessException;
+  ClubDTO getClubById(String id) throws BusinessException;
   ClubDTO getClubByName(String name) throws BusinessException;
   PageDTO<ClubDTO> getAllClubs(int page) throws BusinessException;
   ClubDTO updateClub(String id, ClubDTO clubDTO) throws BusinessException;

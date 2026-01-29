@@ -6,7 +6,7 @@ import it.unipi.chessApp.service.exception.BusinessException;
 import java.util.List;
 
 public interface TournamentService {
-  TournamentDTO createTournament(TournamentDTO tournamentDTO)
+  TournamentDTO createTournament(TournamentCreateDTO tournamentCreateDTO, String creatorUsername)
     throws BusinessException;
   TournamentDTO getTournamentById(String id) throws BusinessException;
   PageDTO<TournamentDTO> getAllTournaments(int page) throws BusinessException;

@@ -3,8 +3,10 @@ package it.unipi.chessApp.service.impl;
 import it.unipi.chessApp.dto.*;
 import it.unipi.chessApp.model.GameSummary;
 import it.unipi.chessApp.model.Tournament;
+import it.unipi.chessApp.model.User;
 import it.unipi.chessApp.model.neo4j.TournamentParticipant;
 import it.unipi.chessApp.repository.TournamentRepository;
+import it.unipi.chessApp.repository.UserRepository;
 import it.unipi.chessApp.repository.neo4j.TournamentNodeRepository;
 import it.unipi.chessApp.repository.neo4j.UserNodeRepository;
 import it.unipi.chessApp.service.TournamentService;
@@ -35,38 +37,53 @@ public class TournamentServiceImpl implements TournamentService {
 
   private final TournamentRepository tournamentRepository;
   private final TournamentNodeRepository tournamentNodeRepository;
+  private final UserRepository userRepository;
   private final StringRedisTemplate redisTemplate;
 
-  private static final String TOURNAMENT_SUBSCRIBERS_PREFIX = "chess:tournament:";
+  private static final String TOURNAMENT_PREFIX = "chess:tournament:";
   private static final String TOURNAMENT_SUBSCRIBERS_SUFFIX = ":subscribers";
+  private static final String TOURNAMENT_DATA_SUFFIX = ":data";
   private static final DateTimeFormatter DATE_TIME_FORMATTER =
       DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
   private final MongoTemplate mongoTemplate;
   private final UserNodeRepository userNodeRepository;
 
   @Override
-  public TournamentDTO createTournament(TournamentDTO tournamentDTO)
+  public TournamentDTO createTournament(TournamentCreateDTO tournamentCreateDTO, String creatorUsername)
     throws BusinessException {
     try {
       // Validate finish time is at least 1 week from now
-      validateFinishTime(tournamentDTO.getFinishTime());
+      validateFinishTime(tournamentCreateDTO.getFinishTime());
 
       //Adding placeholders to tournament document
-      List<GameSummaryDTO> placeholders = new ArrayList<>();
-      for(int i = 0; i < tournamentDTO.getMaxParticipants() * Constants.USER_GAMES_IN_TOURNAMENT; i++)
-          placeholders.add(new GameSummaryDTO());
-      tournamentDTO.setGames(placeholders);
-      Tournament tournament = convertToEntity(tournamentDTO);
+      List<GameSummary> placeholders = new ArrayList<>();
+      for(int i = 0; i < Constants.TOURNAMENT_MAX_PARTICIPANTS * Constants.USER_GAMES_IN_TOURNAMENT; i++)
+          placeholders.add(new GameSummary());
+
+      Tournament tournament = convertCreateDTOToEntity(tournamentCreateDTO);
+      tournament.setGames(placeholders);
+      // Set creator from authenticated admin
+      tournament.setCreator(creatorUsername);
+      // Set static values
+      tournament.setMaxParticipants(Constants.TOURNAMENT_MAX_PARTICIPANTS);
+      tournament.setTimeControl(Constants.TOURNAMENT_TIME_CONTROL);
       // Force status to "active"
       tournament.setStatus("active");
 
       Tournament createdTournament = tournamentRepository.save(tournament);
 
+      // Store tournament data in Redis hash
+      String dataKey = getDataKey(createdTournament.getId());
+      redisTemplate.opsForHash().put(dataKey, "status", createdTournament.getStatus());
+      redisTemplate.opsForHash().put(dataKey, "minRating", String.valueOf(createdTournament.getMinRating()));
+      redisTemplate.opsForHash().put(dataKey, "maxRating", String.valueOf(createdTournament.getMaxRating()));
+      redisTemplate.opsForHash().put(dataKey, "maxParticipants", String.valueOf(createdTournament.getMaxParticipants()));
+      redisTemplate.opsForHash().put(dataKey, "finishTime", createdTournament.getFinishTime());
+
       // Create Redis Set for subscribers
       String subscribersKey = getSubscribersKey(createdTournament.getId());
-      // Initialize empty set by adding and removing a placeholder (Redis doesn't create empty sets)
       // The set will be populated when users subscribe
-      log.info("Created tournament {} with Redis key {}", createdTournament.getId(), subscribersKey);
+      log.info("Created tournament {} with Redis keys {} and {}", createdTournament.getId(), dataKey, subscribersKey);
 
       return convertToDTO(createdTournament);
     } catch (BusinessException e) {
@@ -94,7 +111,11 @@ public class TournamentServiceImpl implements TournamentService {
   }
 
   private String getSubscribersKey(String tournamentId) {
-    return TOURNAMENT_SUBSCRIBERS_PREFIX + tournamentId + TOURNAMENT_SUBSCRIBERS_SUFFIX;
+    return TOURNAMENT_PREFIX + tournamentId + TOURNAMENT_SUBSCRIBERS_SUFFIX;
+  }
+
+  private String getDataKey(String tournamentId) {
+    return TOURNAMENT_PREFIX + tournamentId + TOURNAMENT_DATA_SUFFIX;
   }
 
   @Override
@@ -190,9 +211,11 @@ public class TournamentServiceImpl implements TournamentService {
   @Override
   public void deleteTournament(String id) throws BusinessException {
     try {
-      // Also delete Redis key when tournament is deleted
+      // Delete Redis keys when tournament is deleted
       String subscribersKey = getSubscribersKey(id);
+      String dataKey = getDataKey(id);
       redisTemplate.delete(subscribersKey);
+      redisTemplate.delete(dataKey);
       tournamentRepository.deleteById(id);
     } catch (Exception e) {
       throw new BusinessException("Error deleting tournament", e);
@@ -202,19 +225,26 @@ public class TournamentServiceImpl implements TournamentService {
   @Override
   public void subscribeTournament(String tournamentId, String username) throws BusinessException {
     try {
-      Tournament tournament = tournamentRepository
-          .findById(tournamentId)
-          .orElseThrow(() -> new BusinessException("Tournament not found with ID: " + tournamentId));
-
-      // Check tournament is active
-      if (!"active".equals(tournament.getStatus())) {
-        throw new BusinessException("Tournament is not active");
-      }
-
-      // Check subscription window (1. day window, starting 1 week before finish time)
-      validateSubscriptionWindow(tournament.getFinishTime());
-
+      String dataKey = getDataKey(tournamentId);
       String subscribersKey = getSubscribersKey(tournamentId);
+
+      // Check subscription window (1 day window, starting 1 week before finish time)
+      String finishTime = (String) redisTemplate.opsForHash().get(dataKey, "finishTime");
+      validateSubscriptionWindow(finishTime);
+
+      // Check user's bullet elo is within tournament rating range
+      String minRatingStr = (String) redisTemplate.opsForHash().get(dataKey, "minRating");
+      String maxRatingStr = (String) redisTemplate.opsForHash().get(dataKey, "maxRating");
+      int minRating = Integer.parseInt(minRatingStr);
+      int maxRating = Integer.parseInt(maxRatingStr);
+
+      User user = userRepository.findByUsername(username)
+          .orElseThrow(() -> new BusinessException("User not found: " + username));
+      int bulletElo = user.getStats() != null ? user.getStats().getBullet() : 0;
+      if (bulletElo < minRating || bulletElo > maxRating) {
+        throw new BusinessException("Your bullet elo (" + bulletElo + ") is not within the tournament rating range ("
+            + minRating + " - " + maxRating + ")");
+      }
 
       // Check if already subscribed
       Boolean isAlreadySubscribed = redisTemplate.opsForSet().isMember(subscribersKey, username);
@@ -223,8 +253,10 @@ public class TournamentServiceImpl implements TournamentService {
       }
 
       // Check max participants using Redis set size
+      String maxParticipantsStr = (String) redisTemplate.opsForHash().get(dataKey, "maxParticipants");
+      int maxParticipants = Integer.parseInt(maxParticipantsStr);
       Long currentCount = redisTemplate.opsForSet().size(subscribersKey);
-      if (currentCount != null && currentCount >= tournament.getMaxParticipants()) {
+      if (currentCount != null && currentCount >= maxParticipants) {
         throw new BusinessException("Tournament has reached maximum participants");
       }
 
@@ -242,24 +274,25 @@ public class TournamentServiceImpl implements TournamentService {
   @Override
   public void unsubscribeTournament(String tournamentId, String username) throws BusinessException {
     try {
-      Tournament tournament = tournamentRepository
-          .findById(tournamentId)
-          .orElseThrow(() -> new BusinessException("Tournament not found with ID: " + tournamentId));
-
-      // Check tournament is active
-      if (!"active".equals(tournament.getStatus())) {
-        throw new BusinessException("Tournament is not active");
-      }
+      String dataKey = getDataKey(tournamentId);
+      String subscribersKey = getSubscribersKey(tournamentId);
 
       // Check subscription window is still open
-      validateSubscriptionWindow(tournament.getFinishTime());
-
-      String subscribersKey = getSubscribersKey(tournamentId);
+      String finishTime = (String) redisTemplate.opsForHash().get(dataKey, "finishTime");
+      validateSubscriptionWindow(finishTime);
 
       // Check if subscribed
       Boolean isSubscribed = redisTemplate.opsForSet().isMember(subscribersKey, username);
       if (!Boolean.TRUE.equals(isSubscribed)) {
         throw new BusinessException("You are not subscribed to this tournament");
+      }
+
+      // Check if user has already played a game in this tournament
+      String gameCountKey = TOURNAMENT_PREFIX + tournamentId + ":player:" + username + ":games";
+      String gameCountStr = redisTemplate.opsForValue().get(gameCountKey);
+      int gameCount = gameCountStr != null ? Integer.parseInt(gameCountStr) : 0;
+      if (gameCount > 0) {
+        throw new BusinessException("Cannot unsubscribe: you have already played " + gameCount + " game(s) in this tournament");
       }
 
       // Remove from Redis Set
@@ -275,15 +308,10 @@ public class TournamentServiceImpl implements TournamentService {
 
   private void validateSubscriptionWindow(String finishTime) throws BusinessException {
     LocalDateTime finish = LocalDateTime.parse(finishTime, DATE_TIME_FORMATTER);
-    // Subscription window: from (finishTime - 1 week) to (finishTime - 6 days)
-    // This gives a 1 day window starting 1 week before the tournament ends
-    LocalDateTime subscriptionStart = finish.minusWeeks(1);
-    LocalDateTime subscriptionEnd = subscriptionStart.plusDays(1);
+    // Subscription window: from tournament creation until 6 days before the end
+    LocalDateTime subscriptionEnd = finish.minusDays(6);
     LocalDateTime now = LocalDateTime.now();
 
-    if (now.isBefore(subscriptionStart)) {
-      throw new BusinessException("Subscription window has not started yet");
-    }
     if (now.isAfter(subscriptionEnd)) {
       throw new BusinessException("Subscription window has closed");
     }
@@ -292,7 +320,8 @@ public class TournamentServiceImpl implements TournamentService {
   public String bufferTournamentGame(String tournamentId, GameDTO game, String whiteId, String blackId){
 
       //Summarises game
-      GameSummaryDTO summary = GameSummaryDTO.summarize(game);
+      GameSummaryDTO summaryDTO = GameSummaryDTO.summarize(game);
+      GameSummary summary = GameSummary.convertToEntity(summaryDTO);
 
       Tournament tournament = tournamentRepository.findById(tournamentId)
               .orElseThrow(() -> new RuntimeException("Tournament not found"));
@@ -312,28 +341,45 @@ public class TournamentServiceImpl implements TournamentService {
               .set("games." + currentIndex, summary)
               .set("buffered_games", nextIndex);
 
-      //Neo4j user tournament stats update
+      //Neo4j user tournament stats update - create relationship if it doesn't exist
       TournamentParticipant whiteJoinedRelationM = userNodeRepository.findUserTournamentStats(tournamentId, whiteId);
-      if(whiteJoinedRelationM == null)
-          return Outcomes.TOURNAMENT_BUFFERING_FAILURE;
+      if(whiteJoinedRelationM == null) {
+          tournamentNodeRepository.createParticipatedRelation(whiteId, tournamentId);
+          whiteJoinedRelationM = userNodeRepository.findUserTournamentStats(tournamentId, whiteId);
+          if(whiteJoinedRelationM == null)
+              return Outcomes.TOURNAMENT_BUFFERING_FAILURE;
+      }
       TournamentParticipantDTO whiteJoinedRelation = TournamentParticipantDTO.convertToDTO(whiteJoinedRelationM);
 
       TournamentParticipant blackJoinedRelationM = userNodeRepository.findUserTournamentStats(tournamentId, blackId);
-      if(blackJoinedRelationM == null)
-          return Outcomes.TOURNAMENT_BUFFERING_FAILURE;
+      if(blackJoinedRelationM == null) {
+          tournamentNodeRepository.createParticipatedRelation(blackId, tournamentId);
+          blackJoinedRelationM = userNodeRepository.findUserTournamentStats(tournamentId, blackId);
+          if(blackJoinedRelationM == null)
+              return Outcomes.TOURNAMENT_BUFFERING_FAILURE;
+      }
       TournamentParticipantDTO blackJoinedRelation = TournamentParticipantDTO.convertToDTO(blackJoinedRelationM);
+
+      // Calculate elo changes for bullet (tournament time control)
+      int whiteEloDiff = 0;
+      int blackEloDiff = 0;
 
       if(game.getResultWhite().equals("stalemate")){
           whiteJoinedRelation.setDraws(whiteJoinedRelation.getDraws() + 1);
           blackJoinedRelation.setDraws(blackJoinedRelation.getDraws() + 1);
+          // Draw: no elo change
       }
       else if(game.getResultWhite().equals("win")){
           whiteJoinedRelation.setWins(whiteJoinedRelation.getWins() + 1);
           blackJoinedRelation.setLosses(blackJoinedRelation.getLosses() + 1);
+          whiteEloDiff = Constants.ELO_CHANGE;
+          blackEloDiff = -Constants.ELO_CHANGE;
       }
       else {
           blackJoinedRelation.setWins(blackJoinedRelation.getWins() + 1);
           whiteJoinedRelation.setLosses(whiteJoinedRelation.getLosses() + 1);
+          whiteEloDiff = -Constants.ELO_CHANGE;
+          blackEloDiff = Constants.ELO_CHANGE;
       }
 
       userNodeRepository.updateUserTournamentStats(whiteId,tournamentId,
@@ -351,6 +397,33 @@ public class TournamentServiceImpl implements TournamentService {
       //After we see if the users are actually participants
       mongoTemplate.updateFirst(query, update, Tournament.class);
 
+      // Update bullet elo for both players in MongoDB
+      if (whiteEloDiff != 0) {
+          Query whiteQuery = new Query(Criteria.where("_id").is(whiteId));
+          Update whiteUpdate = new Update().inc("stats.bullet", whiteEloDiff);
+          mongoTemplate.updateFirst(whiteQuery, whiteUpdate, User.class);
+
+          Query blackQuery = new Query(Criteria.where("_id").is(blackId));
+          Update blackUpdate = new Update().inc("stats.bullet", blackEloDiff);
+          mongoTemplate.updateFirst(blackQuery, blackUpdate, User.class);
+
+          // Update Neo4j redundancy for both players
+          User whiteUser = userRepository.findById(whiteId).orElse(null);
+          User blackUser = userRepository.findById(blackId).orElse(null);
+          if (whiteUser != null && whiteUser.getStats() != null) {
+              userNodeRepository.updateJoinedRelation(whiteId,
+                      whiteUser.getStats().getBullet(),
+                      whiteUser.getStats().getBlitz(),
+                      whiteUser.getStats().getRapid());
+          }
+          if (blackUser != null && blackUser.getStats() != null) {
+              userNodeRepository.updateJoinedRelation(blackId,
+                      blackUser.getStats().getBullet(),
+                      blackUser.getStats().getBlitz(),
+                      blackUser.getStats().getRapid());
+          }
+      }
+
       return Outcomes.TOURNAMENT_BUFFERING_SUCCESS;
   }
 
@@ -366,6 +439,7 @@ public class TournamentServiceImpl implements TournamentService {
     dto.setMaxRating(tournament.getMaxRating());
     dto.setMaxParticipants(tournament.getMaxParticipants());
     dto.setTimeControl(tournament.getTimeControl());
+    dto.setBufferedGames(tournament.getBufferedGames());
     List<GameSummaryDTO> summaryDTOS = tournament.getGames()
             .stream()
             .map(GameSummaryDTO::convertToDTO)
@@ -401,6 +475,16 @@ public class TournamentServiceImpl implements TournamentService {
             .map(GameSummary::convertToEntity)
             .toList();
     tournament.setGames(summary);
+    return tournament;
+  }
+
+  private Tournament convertCreateDTOToEntity(TournamentCreateDTO dto) {
+    Tournament tournament = new Tournament();
+    tournament.setName(dto.getName());
+    tournament.setDescription(dto.getDescription());
+    tournament.setFinishTime(dto.getFinishTime());
+    tournament.setMinRating(dto.getMinRating());
+    tournament.setMaxRating(dto.getMaxRating());
     return tournament;
   }
 }

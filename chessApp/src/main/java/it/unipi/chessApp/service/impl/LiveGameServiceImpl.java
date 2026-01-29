@@ -189,6 +189,7 @@ public class LiveGameServiceImpl implements LiveGameService {
         );
 
         if (isTournament) {
+            log.info("Incrementing tournament game count for opponent: {} and username: {} in tournament: {}", opponent, username, tournamentId);
             incrementTournamentGameCount(tournamentId, opponent);
             incrementTournamentGameCount(tournamentId, username);
         }
@@ -475,12 +476,16 @@ public class LiveGameServiceImpl implements LiveGameService {
 
             // If tournament game, also buffer to tournament
             if (gameState.isTournamentGame()) {
-                tournamentService.bufferTournamentGame(
+                log.info("Buffering tournament game {} to tournament {}", gameState.getGameId(), gameState.getTournamentId());
+                String result = tournamentService.bufferTournamentGame(
                         gameState.getTournamentId(),
                         gameDTO,
                         whiteUser != null ? whiteUser.getId() : null,
                         blackUser != null ? blackUser.getId() : null
                 );
+                log.info("Tournament buffering result for game {}: {}", gameState.getGameId(), result);
+            } else {
+                log.info("Game {} is not a tournament game (tournamentId: {})", gameState.getGameId(), gameState.getTournamentId());
             }
 
         } catch (Exception e) {
@@ -546,7 +551,8 @@ public class LiveGameServiceImpl implements LiveGameService {
 
     private void incrementTournamentGameCount(String tournamentId, String username) {
         String key = TOURNAMENT_GAME_COUNT_PREFIX + tournamentId + ":player:" + username + ":games";
-        redisTemplate.opsForValue().increment(key);
+        Long newValue = redisTemplate.opsForValue().increment(key);
         redisTemplate.expire(key, 7, TimeUnit.DAYS);
+        log.info("Incremented tournament game count for {} - key: {}, new value: {}", username, key, newValue);
     }
 }

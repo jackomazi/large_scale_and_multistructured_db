@@ -2,6 +2,7 @@ package it.unipi.chessApp.controller;
 
 import it.unipi.chessApp.dto.PageDTO;
 import it.unipi.chessApp.dto.ResponseWrapper;
+import it.unipi.chessApp.dto.TournamentCreateDTO;
 import it.unipi.chessApp.dto.TournamentDTO;
 import it.unipi.chessApp.service.Neo4jService;
 import it.unipi.chessApp.service.TournamentService;
@@ -56,12 +57,14 @@ public class TournamentController {
   }
 
   // Create tournament (admin only)
-  @PostMapping
+  @PostMapping("/create")
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<ResponseWrapper<TournamentDTO>> createTournament(
-    @RequestBody TournamentDTO tournamentDTO
+    @RequestBody TournamentCreateDTO tournamentCreateDTO
   ) throws BusinessException {
-    TournamentDTO createdTournamentDTO = tournamentService.createTournament(tournamentDTO);
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String creatorUsername = authentication.getName();
+    TournamentDTO createdTournamentDTO = tournamentService.createTournament(tournamentCreateDTO, creatorUsername);
     neo4jService.createTournament(createdTournamentDTO.getId(), createdTournamentDTO.getName());
     return ResponseEntity.status(HttpStatus.CREATED).body(
       new ResponseWrapper<>("Tournament created successfully", createdTournamentDTO)

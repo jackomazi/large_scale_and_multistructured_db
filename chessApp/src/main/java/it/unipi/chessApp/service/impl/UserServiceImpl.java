@@ -282,9 +282,9 @@ public class UserServiceImpl implements UserService {
 
   private int calculateEloChange(GameSummaryDTO game, String nameUser){
       if(game.getWinner().equals(nameUser))
-          return 20;
+          return Constants.ELO_CHANGE;
       else
-          return -20;
+          return -Constants.ELO_CHANGE;
   }
 
   @Override

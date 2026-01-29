@@ -28,6 +28,7 @@ public class TournamentScheduler {
 
     private static final String TOURNAMENT_SUBSCRIBERS_PREFIX = "chess:tournament:";
     private static final String TOURNAMENT_SUBSCRIBERS_SUFFIX = ":subscribers";
+    private static final String TOURNAMENT_GAME_COUNT_PATTERN = "chess:tournament:%s:player:*:games";
     private static final DateTimeFormatter DATE_TIME_FORMATTER =
         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -90,6 +91,14 @@ public class TournamentScheduler {
 
             // Delete Redis subscribers set after processing
             redisTemplate.delete(subscribersKey);
+
+            // Delete all game count keys for this tournament
+            String gameCountPattern = String.format(TOURNAMENT_GAME_COUNT_PATTERN, tournament.getId());
+            Set<String> gameCountKeys = redisTemplate.keys(gameCountPattern);
+            if (gameCountKeys != null && !gameCountKeys.isEmpty()) {
+                redisTemplate.delete(gameCountKeys);
+                log.info("Deleted {} game count keys for tournament {}", gameCountKeys.size(), tournament.getId());
+            }
 
         } catch (Exception e) {
             log.error("Error finishing tournament {}: {}", tournament.getId(), e.getMessage(), e);

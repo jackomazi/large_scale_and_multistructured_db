@@ -8,5 +8,5 @@ import lombok.AllArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MatchmakingRequestDTO {
-    private String tournamentId;
+    private String gameType;
 }

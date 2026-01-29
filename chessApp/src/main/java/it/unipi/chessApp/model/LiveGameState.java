@@ -3,16 +3,13 @@ package it.unipi.chessApp.model;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class LiveGameState implements Serializable {
-    private static final long serialVersionUID = 2L;
-
+public class LiveGameState {
     private String gameId;
     private String whitePlayer;
     private String blackPlayer;
@@ -20,6 +17,7 @@ public class LiveGameState implements Serializable {
     private String status;
     private String lastMove;
     private String tournamentId;
+    private String gameType;
     private long createdAt;
     private long lastMoveAt;
     
@@ -36,7 +34,25 @@ public class LiveGameState implements Serializable {
     public static final String STATUS_DRAW = "DRAW";
     public static final String STATUS_STALEMATE = "STALEMATE";
 
-    public static LiveGameState createNew(String gameId, String whitePlayer, String blackPlayer, String tournamentId) {
+    public static LiveGameState createNewRegularGame(String gameId, String whitePlayer, String blackPlayer, String gameType) {
+        LiveGameState state = new LiveGameState();
+        state.setGameId(gameId);
+        state.setWhitePlayer(whitePlayer);
+        state.setBlackPlayer(blackPlayer);
+        state.setFen(STARTING_FEN);
+        state.setStatus(STATUS_IN_PROGRESS);
+        state.setLastMove(null);
+        state.setTournamentId(null);
+        state.setGameType(gameType);
+        state.setCreatedAt(System.currentTimeMillis());
+        state.setLastMoveAt(System.currentTimeMillis());
+        state.setMoveHistory(new ArrayList<>());
+        state.setDetectedOpening(null);
+        state.setDetectedOpeningEco(null);
+        return state;
+    }
+
+    public static LiveGameState createNewTournamentGame(String gameId, String whitePlayer, String blackPlayer, String tournamentId) {
         LiveGameState state = new LiveGameState();
         state.setGameId(gameId);
         state.setWhitePlayer(whitePlayer);
@@ -45,6 +61,7 @@ public class LiveGameState implements Serializable {
         state.setStatus(STATUS_IN_PROGRESS);
         state.setLastMove(null);
         state.setTournamentId(tournamentId);
+        state.setGameType(null);
         state.setCreatedAt(System.currentTimeMillis());
         state.setLastMoveAt(System.currentTimeMillis());
         state.setMoveHistory(new ArrayList<>());

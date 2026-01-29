@@ -121,15 +121,15 @@ public class GameController {
 
   // ==================== Live Game Endpoints ====================
 
-  // Join matchmaking queue (authenticated)
+  // Join regular matchmaking queue (authenticated)
   @PostMapping("/live/matchmaking")
   public ResponseEntity<ResponseWrapper<MatchmakingResultDTO>> joinMatchmaking(
-    @RequestBody(required = false) MatchmakingRequestDTO request
+    @RequestBody MatchmakingRequestDTO request
   ) throws BusinessException {
     String username = getCurrentUsername();
-    String tournamentId = request != null ? request.getTournamentId() : null;
+    String gameType = request != null ? request.getGameType() : null;
 
-    MatchmakingResultDTO result = liveGameService.joinMatchmaking(username, tournamentId);
+    MatchmakingResultDTO result = liveGameService.joinMatchmaking(username, gameType);
 
     String message = result.isMatched()
       ? "Match found! Game created."
@@ -140,16 +140,47 @@ public class GameController {
     );
   }
 
-  // Leave matchmaking queue (authenticated)
-  @DeleteMapping("/live/matchmaking")
-  public ResponseEntity<ResponseWrapper<Void>> leaveMatchmaking(
-    @RequestParam(required = false) String tournamentId
+  // Join tournament matchmaking queue (authenticated)
+  @PostMapping("/live/matchmaking/tournament/{tournamentId}")
+  public ResponseEntity<ResponseWrapper<MatchmakingResultDTO>> joinTournamentMatchmaking(
+    @PathVariable String tournamentId
   ) throws BusinessException {
     String username = getCurrentUsername();
-    liveGameService.leaveMatchmaking(username, tournamentId);
+
+    MatchmakingResultDTO result = liveGameService.joinTournamentMatchmaking(username, tournamentId);
+
+    String message = result.isMatched()
+      ? "Match found! Game created."
+      : "No opponent found yet. Still in matchmaking queue.";
+
+    return ResponseEntity.status(HttpStatus.OK).body(
+      new ResponseWrapper<>(message, result)
+    );
+  }
+
+  // Leave regular matchmaking queue (authenticated)
+  @DeleteMapping("/live/matchmaking")
+  public ResponseEntity<ResponseWrapper<Void>> leaveMatchmaking(
+    @RequestParam String gameType
+  ) throws BusinessException {
+    String username = getCurrentUsername();
+    liveGameService.leaveMatchmaking(username, gameType);
 
     return ResponseEntity.ok(
       new ResponseWrapper<>("Left matchmaking queue", null)
+    );
+  }
+
+  // Leave tournament matchmaking queue (authenticated)
+  @DeleteMapping("/live/matchmaking/tournament/{tournamentId}")
+  public ResponseEntity<ResponseWrapper<Void>> leaveTournamentMatchmaking(
+    @PathVariable String tournamentId
+  ) throws BusinessException {
+    String username = getCurrentUsername();
+    liveGameService.leaveTournamentMatchmaking(username, tournamentId);
+
+    return ResponseEntity.ok(
+      new ResponseWrapper<>("Left tournament matchmaking queue", null)
     );
   }
 

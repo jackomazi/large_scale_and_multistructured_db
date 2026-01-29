@@ -48,8 +48,10 @@ public class LiveGameServiceImpl implements LiveGameService {
     private final UserService userService;
     private final TournamentService tournamentService;
 
-    private static final String MATCHMAKING_QUEUE_KEY = "chess:matchmaking:queue";
+    private static final String MATCHMAKING_QUEUE_PREFIX = "chess:matchmaking:queue:";
     private static final String TOURNAMENT_QUEUE_PREFIX = "chess:matchmaking:tournament:";
+
+    private static final java.util.Set<String> VALID_GAME_TYPES = java.util.Set.of("bullet", "blitz", "rapid");
     private static final String GAME_STATE_PREFIX = "chess:game:";
     private static final String PLAYER_GAME_PREFIX = "chess:player:game:";
     private static final String TOURNAMENT_GAME_COUNT_PREFIX = "chess:tournament:";
@@ -69,8 +71,14 @@ public class LiveGameServiceImpl implements LiveGameService {
     private static final int POLL_INTERVAL_MS = 500;
 
     @Override
-    public MatchmakingResultDTO joinMatchmaking(String username, String tournamentId) throws BusinessException {
+    public MatchmakingResultDTO joinMatchmaking(String username, String gameType) throws BusinessException {
         try {
+            // Validate game type
+            if (gameType == null || !VALID_GAME_TYPES.contains(gameType.toLowerCase())) {
+                throw new BusinessException("Invalid game type. Must be one of: bullet, blitz, rapid");
+            }
+            String normalizedGameType = gameType.toLowerCase();
+
             String existingGameId = redisTemplate.opsForValue().get(PLAYER_GAME_PREFIX + username);
             if (existingGameId != null) {
                 LiveGameState existingGame = getGameState(existingGameId);
@@ -79,33 +87,13 @@ public class LiveGameServiceImpl implements LiveGameService {
                 }
             }
 
-            boolean isTournament = tournamentId != null && !tournamentId.isEmpty();
-
-            if (isTournament) {
-                if (!tournamentRepository.existsById(tournamentId)) {
-                    throw new BusinessException("Tournament not found: " + tournamentId);
-                }
-
-                // Check if player is subscribed to the tournament
-                String subscribersKey = "chess:tournament:" + tournamentId + ":subscribers";
-                Boolean isSubscribed = redisTemplate.opsForSet().isMember(subscribersKey, username);
-                if (!Boolean.TRUE.equals(isSubscribed)) {
-                    throw new BusinessException("You are not subscribed to this tournament");
-                }
-
-                int gameCount = getTournamentGameCount(tournamentId, username);
-                if (gameCount >= maxTournamentGames) {
-                    throw new BusinessException("You have reached the maximum of " + maxTournamentGames + " games in this tournament");
-                }
-            }
-
-            String queueKey = isTournament ? TOURNAMENT_QUEUE_PREFIX + tournamentId : MATCHMAKING_QUEUE_KEY;
+            String queueKey = MATCHMAKING_QUEUE_PREFIX + normalizedGameType;
 
             String opponent = redisTemplate.opsForList().leftPop(queueKey);
 
             if (opponent != null && !opponent.equals(username)) {
                 // Match found immediately - create the game
-                return createGameForMatch(username, opponent, tournamentId, queueKey);
+                return createRegularGameForMatch(username, opponent, normalizedGameType, queueKey);
             } else {
                 // No opponent available - add to queue and wait
                 if (opponent != null && opponent.equals(username)) {
@@ -150,12 +138,12 @@ public class LiveGameServiceImpl implements LiveGameService {
                 // Timeout expired - remove from queue
                 redisTemplate.opsForList().remove(queueKey, 0, username);
                 log.info("Matchmaking timeout for user {}. Removed from queue.", username);
-                
+
                 return new MatchmakingResultDTO(
                     null,
                     null,
                     null,
-                    tournamentId,
+                    null,
                     false,
                     "No opponent found. Removed from queue."
                 );
@@ -168,11 +156,109 @@ public class LiveGameServiceImpl implements LiveGameService {
         }
     }
 
-    private MatchmakingResultDTO createGameForMatch(String username, String opponent, String tournamentId, String queueKey) throws BusinessException {
-        boolean isTournament = tournamentId != null && !tournamentId.isEmpty();
-        
+    @Override
+    public MatchmakingResultDTO joinTournamentMatchmaking(String username, String tournamentId) throws BusinessException {
+        try {
+            if (tournamentId == null || tournamentId.isEmpty()) {
+                throw new BusinessException("Tournament ID is required");
+            }
+
+            String existingGameId = redisTemplate.opsForValue().get(PLAYER_GAME_PREFIX + username);
+            if (existingGameId != null) {
+                LiveGameState existingGame = getGameState(existingGameId);
+                if (existingGame != null && LiveGameState.STATUS_IN_PROGRESS.equals(existingGame.getStatus())) {
+                    throw new BusinessException("You are already in an active game: " + existingGameId);
+                }
+            }
+
+            if (!tournamentRepository.existsById(tournamentId)) {
+                throw new BusinessException("Tournament not found: " + tournamentId);
+            }
+
+            // Check if player is subscribed to the tournament
+            String subscribersKey = "chess:tournament:" + tournamentId + ":subscribers";
+            Boolean isSubscribed = redisTemplate.opsForSet().isMember(subscribersKey, username);
+            if (!Boolean.TRUE.equals(isSubscribed)) {
+                throw new BusinessException("You are not subscribed to this tournament");
+            }
+
+            int gameCount = getTournamentGameCount(tournamentId, username);
+            if (gameCount >= maxTournamentGames) {
+                throw new BusinessException("You have reached the maximum of " + maxTournamentGames + " games in this tournament");
+            }
+
+            String queueKey = TOURNAMENT_QUEUE_PREFIX + tournamentId;
+
+            String opponent = redisTemplate.opsForList().leftPop(queueKey);
+
+            if (opponent != null && !opponent.equals(username)) {
+                // Match found immediately - create the game
+                return createTournamentGameForMatch(username, opponent, tournamentId, queueKey);
+            } else {
+                // No opponent available - add to queue and wait
+                if (opponent != null && opponent.equals(username)) {
+                    redisTemplate.opsForList().leftPush(queueKey, username);
+                }
+
+                Long position = redisTemplate.opsForList().indexOf(queueKey, username);
+                if (position == null || position < 0) {
+                    redisTemplate.opsForList().rightPush(queueKey, username);
+                }
+
+                // Poll for match
+                long startTime = System.currentTimeMillis();
+                long timeoutMs = matchmakingTimeoutSeconds * 1000L;
+
+                while (System.currentTimeMillis() - startTime < timeoutMs) {
+                    // Check if another player matched us
+                    String matchedGameId = redisTemplate.opsForValue().get(PLAYER_GAME_PREFIX + username);
+                    if (matchedGameId != null) {
+                        LiveGameState gameState = getGameState(matchedGameId);
+                        if (gameState != null && LiveGameState.STATUS_IN_PROGRESS.equals(gameState.getStatus())) {
+                            log.info("User {} was matched to game {} by another player", username, matchedGameId);
+                            return new MatchmakingResultDTO(
+                                matchedGameId,
+                                gameState.getWhitePlayer(),
+                                gameState.getBlackPlayer(),
+                                gameState.getTournamentId(),
+                                true,
+                                "Match found! Game started."
+                            );
+                        }
+                    }
+
+                    try {
+                        Thread.sleep(POLL_INTERVAL_MS);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new BusinessException("Matchmaking interrupted");
+                    }
+                }
+
+                // Timeout expired - remove from queue
+                redisTemplate.opsForList().remove(queueKey, 0, username);
+                log.info("Matchmaking timeout for user {}. Removed from queue.", username);
+
+                return new MatchmakingResultDTO(
+                    null,
+                    null,
+                    null,
+                    tournamentId,
+                    false,
+                    "No opponent found. Removed from queue."
+                );
+            }
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Error in tournament matchmaking for user: {}", username, e);
+            throw new BusinessException("Error joining tournament matchmaking");
+        }
+    }
+
+    private MatchmakingResultDTO createRegularGameForMatch(String username, String opponent, String gameType, String queueKey) throws BusinessException {
         String gameId = new ObjectId().toHexString();
-        LiveGameState gameState = LiveGameState.createNew(gameId, opponent, username, tournamentId);
+        LiveGameState gameState = LiveGameState.createNewRegularGame(gameId, opponent, username, gameType);
         saveGameState(gameState);
 
         redisTemplate.opsForValue().set(
@@ -188,13 +274,41 @@ public class LiveGameServiceImpl implements LiveGameService {
             TimeUnit.HOURS
         );
 
-        if (isTournament) {
-            log.info("Incrementing tournament game count for opponent: {} and username: {} in tournament: {}", opponent, username, tournamentId);
-            incrementTournamentGameCount(tournamentId, opponent);
-            incrementTournamentGameCount(tournamentId, username);
-        }
+        log.info("Regular match created: {} (white: {}, black: {}, gameType: {})", gameId, opponent, username, gameType);
 
-        log.info("Match created: {} (white: {}, black: {}, tournament: {})", gameId, opponent, username, tournamentId);
+        return new MatchmakingResultDTO(
+            gameId,
+            opponent,
+            username,
+            null,
+            true,
+            "Match found! Game started."
+        );
+    }
+
+    private MatchmakingResultDTO createTournamentGameForMatch(String username, String opponent, String tournamentId, String queueKey) throws BusinessException {
+        String gameId = new ObjectId().toHexString();
+        LiveGameState gameState = LiveGameState.createNewTournamentGame(gameId, opponent, username, tournamentId);
+        saveGameState(gameState);
+
+        redisTemplate.opsForValue().set(
+            PLAYER_GAME_PREFIX + opponent,
+            gameId,
+            gameExpirationHours,
+            TimeUnit.HOURS
+        );
+        redisTemplate.opsForValue().set(
+            PLAYER_GAME_PREFIX + username,
+            gameId,
+            gameExpirationHours,
+            TimeUnit.HOURS
+        );
+
+        log.info("Incrementing tournament game count for opponent: {} and username: {} in tournament: {}", opponent, username, tournamentId);
+        incrementTournamentGameCount(tournamentId, opponent);
+        incrementTournamentGameCount(tournamentId, username);
+
+        log.info("Tournament match created: {} (white: {}, black: {}, tournament: {})", gameId, opponent, username, tournamentId);
 
         return new MatchmakingResultDTO(
             gameId,
@@ -207,17 +321,38 @@ public class LiveGameServiceImpl implements LiveGameService {
     }
 
     @Override
-    public void leaveMatchmaking(String username, String tournamentId) throws BusinessException {
+    public void leaveMatchmaking(String username, String gameType) throws BusinessException {
         try {
-            String queueKey = (tournamentId != null && !tournamentId.isEmpty())
-                ? TOURNAMENT_QUEUE_PREFIX + tournamentId
-                : MATCHMAKING_QUEUE_KEY;
+            if (gameType == null || !VALID_GAME_TYPES.contains(gameType.toLowerCase())) {
+                throw new BusinessException("Invalid game type. Must be one of: bullet, blitz, rapid");
+            }
+            String queueKey = MATCHMAKING_QUEUE_PREFIX + gameType.toLowerCase();
 
             redisTemplate.opsForList().remove(queueKey, 0, username);
-            log.info("User {} left matchmaking queue (tournament: {})", username, tournamentId);
+            log.info("User {} left matchmaking queue (gameType: {})", username, gameType);
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Error leaving matchmaking for user: {}", username, e);
             throw new BusinessException("Error leaving matchmaking");
+        }
+    }
+
+    @Override
+    public void leaveTournamentMatchmaking(String username, String tournamentId) throws BusinessException {
+        try {
+            if (tournamentId == null || tournamentId.isEmpty()) {
+                throw new BusinessException("Tournament ID is required");
+            }
+            String queueKey = TOURNAMENT_QUEUE_PREFIX + tournamentId;
+
+            redisTemplate.opsForList().remove(queueKey, 0, username);
+            log.info("User {} left tournament matchmaking queue (tournament: {})", username, tournamentId);
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Error leaving tournament matchmaking for user: {}", username, e);
+            throw new BusinessException("Error leaving tournament matchmaking");
         }
     }
 
@@ -266,10 +401,10 @@ public class LiveGameServiceImpl implements LiveGameService {
             gameState.setFen(board.getFen());
             gameState.setLastMove(move);
             gameState.setLastMoveAt(System.currentTimeMillis());
-            
+
             // Track move history in UCI notation (will be converted to SAN when saving)
             gameState.addMove(move);
-            
+
             // Check for opening detection (only in the first N moves)
             if (gameState.getMoveCount() <= maxMoveCheckForOpening) {
                 detectOpening(gameState, board.getFen());
@@ -395,7 +530,7 @@ public class LiveGameServiceImpl implements LiveGameService {
             if (opening != null) {
                 gameState.setDetectedOpening(opening.getName());
                 gameState.setDetectedOpeningEco(opening.getEco());
-                log.debug("Opening detected for game {}: {} ({})", 
+                log.debug("Opening detected for game {}: {} ({})",
                          gameState.getGameId(), opening.getName(), opening.getEco());
             }
         } catch (Exception e) {
@@ -424,15 +559,24 @@ public class LiveGameServiceImpl implements LiveGameService {
                     .atZone(ZoneId.systemDefault())
                     .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             gameDTO.setEndTime(endTime);
-            gameDTO.setTimeClass("live");
-            gameDTO.setRated(true);
+            gameDTO.setTimeClass(gameState.isTournamentGame() ? "tournament" : gameState.getGameType());
+            // Tournament games are not rated (do not affect Elo)
+            gameDTO.setRated(!gameState.isTournamentGame());
 
-            // Set player ratings from their user profiles (use rapid rating for live games)
+            // Set player ratings from their user profiles based on game type
             if (whiteUser != null && whiteUser.getStats() != null) {
-                gameDTO.setWhiteRating(whiteUser.getStats().getRapid());
+                if (gameState.isTournamentGame()) {
+                    gameDTO.setWhiteRating(whiteUser.getStats().getRapid());
+                } else {
+                    gameDTO.setWhiteRating(getRatingForGameType(whiteUser, gameState.getGameType()));
+                }
             }
             if (blackUser != null && blackUser.getStats() != null) {
-                gameDTO.setBlackRating(blackUser.getStats().getRapid());
+                if (gameState.isTournamentGame()) {
+                    gameDTO.setBlackRating(blackUser.getStats().getRapid());
+                } else {
+                    gameDTO.setBlackRating(getRatingForGameType(blackUser, gameState.getGameType()));
+                }
             }
 
             // Set results based on game status
@@ -460,20 +604,22 @@ public class LiveGameServiceImpl implements LiveGameService {
             gameDTO.setMoves(movesFormatted);
 
             gameService.createGame(gameDTO);
-            log.info("Saved completed game {} to MongoDB with opening: {}", 
+            log.info("Saved completed game {} to MongoDB with opening: {}",
                      gameState.getGameId(), gameState.getDetectedOpening());
 
             // Create game summary for embedding in user documents
             GameSummaryDTO summary = GameSummaryDTO.summarize(gameDTO);
 
             // Buffer game to both players (updates ELO and games array)
-            // Tournament games update bullet ELO, non-tournament games update rapid ELO
-            String timeClass = gameState.isTournamentGame() ? "bullet" : "rapid";
-            if (whiteUser != null) {
-                userService.bufferGame(whiteUser.getId(), summary, timeClass);
-            }
-            if (blackUser != null) {
-                userService.bufferGame(blackUser.getId(), summary, timeClass);
+            // Only update Elo for regular games, NOT for tournament games
+            if (!gameState.isTournamentGame()) {
+                String timeClass = gameState.getGameType();
+                if (whiteUser != null) {
+                    userService.bufferGame(whiteUser.getId(), summary, timeClass);
+                }
+                if (blackUser != null) {
+                    userService.bufferGame(blackUser.getId(), summary, timeClass);
+                }
             }
 
             // If tournament game, also buffer to tournament document
@@ -497,21 +643,21 @@ public class LiveGameServiceImpl implements LiveGameService {
         if (gameState.getMoveHistory() == null || gameState.getMoveHistory().isEmpty()) {
             return result;
         }
-        
+
         try {
             // Create a MoveList starting from the initial position
             MoveList moveList = new MoveList();
-            
+
             // Add all UCI moves to the MoveList
             for (String uciMove : gameState.getMoveHistory()) {
                 moveList.add(new Move(uciMove, Side.WHITE)); // Side doesn't matter for UCI parsing
             }
-            
+
             // Convert to SAN notation (space-separated, no move numbers)
             String sanMoves = moveList.toSan();
             return sanMoves + " " + result;
         } catch (Exception e) {
-            log.warn("Failed to convert moves to SAN for game {}, using raw moves: {}", 
+            log.warn("Failed to convert moves to SAN for game {}, using raw moves: {}",
                      gameState.getGameId(), e.getMessage());
             return String.join(" ", gameState.getMoveHistory()) + " " + result;
         }
@@ -552,7 +698,18 @@ public class LiveGameServiceImpl implements LiveGameService {
     private void incrementTournamentGameCount(String tournamentId, String username) {
         String key = TOURNAMENT_GAME_COUNT_PREFIX + tournamentId + ":player:" + username + ":games";
         Long newValue = redisTemplate.opsForValue().increment(key);
-        redisTemplate.expire(key, 7, TimeUnit.DAYS);
         log.info("Incremented tournament game count for {} - key: {}, new value: {}", username, key, newValue);
+    }
+
+    private int getRatingForGameType(User user, String gameType) {
+        if (user.getStats() == null) {
+            return 1000;
+        }
+        return switch (gameType) {
+            case "bullet" -> user.getStats().getBullet();
+            case "blitz" -> user.getStats().getBlitz();
+            case "rapid" -> user.getStats().getRapid();
+            default -> user.getStats().getRapid();
+        };
     }
 }

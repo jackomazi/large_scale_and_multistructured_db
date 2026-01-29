@@ -7,9 +7,13 @@ import it.unipi.chessApp.service.exception.BusinessException;
 
 public interface LiveGameService {
 
-    MatchmakingResultDTO joinMatchmaking(String username, String tournamentId) throws BusinessException;
+    MatchmakingResultDTO joinMatchmaking(String username, String gameType) throws BusinessException;
 
-    void leaveMatchmaking(String username, String tournamentId) throws BusinessException;
+    MatchmakingResultDTO joinTournamentMatchmaking(String username, String tournamentId) throws BusinessException;
+
+    void leaveMatchmaking(String username, String gameType) throws BusinessException;
+
+    void leaveTournamentMatchmaking(String username, String tournamentId) throws BusinessException;
 
     MoveResultDTO makeMove(String gameId, String username, String move) throws BusinessException;
 

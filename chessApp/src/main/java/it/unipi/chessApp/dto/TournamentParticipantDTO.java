@@ -14,14 +14,15 @@ public class TournamentParticipantDTO {
     private int draws;
     private int losses;
     private int placement;
-    private String toutamentName;
+    private String tournamentName;
+    private String tournamentId;
 
-    public String getToutamentName() {
-        return toutamentName;
+    public String getTournamentName() {
+        return tournamentName;
     }
 
-    public void setToutamentName(String toutamentName) {
-        this.toutamentName = toutamentName;
+    public void setTournamentName(String tournamentName) {
+        this.tournamentName = tournamentName;
     }
 
     public String getTournamentId() {
@@ -31,8 +32,6 @@ public class TournamentParticipantDTO {
     public void setTournamentId(String tournamentId) {
         this.tournamentId = tournamentId;
     }
-
-    private String tournamentId;
 
     public String getName() {
         return name;
@@ -82,7 +81,7 @@ public class TournamentParticipantDTO {
         dto.setWins(model.getWins());
         dto.setDraws(model.getDraws());
         dto.setTournamentId(model.getTournament().getId());
-        dto.setToutamentName(model.getTournament().getName());
+        dto.setTournamentName(model.getTournament().getName());
         return dto;
     }
 }

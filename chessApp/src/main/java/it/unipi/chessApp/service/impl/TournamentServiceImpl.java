@@ -175,14 +175,11 @@ public class TournamentServiceImpl implements TournamentService {
   }
 
   @Override
-  public List<TournamentParticipantDTO> getTournamentParticipants(String id) throws BusinessException{
+  public List<TournamentPlayerResultDTO> getTournamentParticipants(String id) throws BusinessException{
       try {
-          List<TournamentParticipant> participants = tournamentNodeRepository.findTournamentParticipants(id);
+          List<TournamentPlayerResultDTO> participants = tournamentNodeRepository.findTournamentParticipants(id);
 
-          return participants
-                  .stream()
-                  .map(this::convertParticipantToDTO)
-                  .toList();
+          return participants;
       }
       catch (Exception e){
           log.error("Error fetching tournament participants: {}", e.getMessage());

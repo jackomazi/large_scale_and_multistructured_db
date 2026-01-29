@@ -1,9 +1,6 @@
 package it.unipi.chessApp.controller;
 
-import it.unipi.chessApp.dto.PageDTO;
-import it.unipi.chessApp.dto.ResponseWrapper;
-import it.unipi.chessApp.dto.TournamentCreateDTO;
-import it.unipi.chessApp.dto.TournamentDTO;
+import it.unipi.chessApp.dto.*;
 import it.unipi.chessApp.service.Neo4jService;
 import it.unipi.chessApp.service.TournamentService;
 import it.unipi.chessApp.service.exception.BusinessException;
@@ -14,6 +11,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/tournaments")
@@ -43,6 +42,15 @@ public class TournamentController {
     return ResponseEntity.ok(
       new ResponseWrapper<>("Active tournaments retrieved successfully", tournaments)
     );
+  }
+
+  @GetMapping("/{id}/participants")
+  public ResponseEntity<ResponseWrapper<List<TournamentPlayerResultDTO>>>
+  getTournamentParticipants(@RequestParam String id) throws BusinessException{
+      List<TournamentPlayerResultDTO> participants = tournamentService.getTournamentParticipants(id);
+      return ResponseEntity.ok(
+              new ResponseWrapper<>("Tournament participant retrieved successfully", participants)
+      );
   }
 
   // Get tournament by ID (public)

@@ -255,7 +255,7 @@ public class UserController {
   }
 
   // Get user's tournaments (Neo4j)
-  @GetMapping("/{userId}/tournament")
+  @GetMapping("/{userId}/tournaments")
   public ResponseEntity<ResponseWrapper<List<TournamentParticipantDTO>>> findUserTournaments(
     @PathVariable String userId
   ) {

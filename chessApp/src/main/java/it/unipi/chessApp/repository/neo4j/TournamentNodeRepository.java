@@ -1,5 +1,6 @@
 package it.unipi.chessApp.repository.neo4j;
 
+import it.unipi.chessApp.dto.TournamentPlayerResultDTO;
 import it.unipi.chessApp.model.neo4j.ClubMember;
 import it.unipi.chessApp.model.neo4j.TournamentNode;
 import it.unipi.chessApp.model.neo4j.TournamentParticipant;
@@ -13,17 +14,17 @@ import java.util.List;
 public interface TournamentNodeRepository extends Neo4jRepository<TournamentNode, String> {
 
     @Query("""
-            MATCH (p)-[r:PARTECIPATED]->(t)
-            WHERE t.mongo_id STARTS WITH $id
-               RETURN
-               p.mongo_id AS id,
-               p.name AS name,
-               r.wins AS wins,
-               r.losses AS losses,
-               r.draws AS draws,
-               r.placement AS placement
-            """)
-    List<TournamentParticipant> findTournamentParticipants(String id);
+    MATCH (t:TOURNAMENT {mongo_id: $id})
+    MATCH (p:USER)-[r:PARTECIPATED]->(t)
+    RETURN
+       p.mongo_id AS participantId,
+       p.name AS name,
+       r.wins AS wins,
+       r.losses AS losses,
+       r.draws AS draws,
+       r.placement AS placement
+    """)
+    List<TournamentPlayerResultDTO> findTournamentParticipants(String id);
 
     @Query("""
             MATCH (p: USER {mongo_id: $userID})

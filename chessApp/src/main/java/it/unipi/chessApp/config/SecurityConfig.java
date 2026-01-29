@@ -38,7 +38,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/clubs", "/clubs/*").permitAll()
                         
                         // Public tournament endpoints
-                        .requestMatchers(HttpMethod.GET, "/tournaments", "/tournaments/active", "/tournaments/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/tournaments", "/tournaments/active", "/tournaments/*", "/tournaments/*/*").permitAll()
                         
                         // Admin-only endpoints
                         .requestMatchers(HttpMethod.DELETE, "/games/*").hasRole("ADMIN")

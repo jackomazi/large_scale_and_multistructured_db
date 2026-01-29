@@ -77,12 +77,6 @@
             <artifactId>json</artifactId>
             <version>20250517</version>
         </dependency>
-        <!-- Override temporaneo della versione di commons-lang3 per evitare la vulnerabilità CVE-2025-48924. -->
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>3.19.0</version>
-        </dependency>
         <!-- Spring Security for authentication and authorization -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

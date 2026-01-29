@@ -467,14 +467,16 @@ public class LiveGameServiceImpl implements LiveGameService {
             GameSummaryDTO summary = GameSummaryDTO.summarize(gameDTO);
 
             // Buffer game to both players (updates ELO and games array)
+            // Tournament games update bullet ELO, non-tournament games update rapid ELO
+            String timeClass = gameState.isTournamentGame() ? "bullet" : "rapid";
             if (whiteUser != null) {
-                userService.bufferGame(whiteUser.getId(), summary, "rapid");
+                userService.bufferGame(whiteUser.getId(), summary, timeClass);
             }
             if (blackUser != null) {
-                userService.bufferGame(blackUser.getId(), summary, "rapid");
+                userService.bufferGame(blackUser.getId(), summary, timeClass);
             }
 
-            // If tournament game, also buffer to tournament
+            // If tournament game, also buffer to tournament document
             if (gameState.isTournamentGame()) {
                 log.info("Buffering tournament game {} to tournament {}", gameState.getGameId(), gameState.getTournamentId());
                 String result = tournamentService.bufferTournamentGame(
@@ -484,8 +486,6 @@ public class LiveGameServiceImpl implements LiveGameService {
                         blackUser != null ? blackUser.getId() : null
                 );
                 log.info("Tournament buffering result for game {}: {}", gameState.getGameId(), result);
-            } else {
-                log.info("Game {} is not a tournament game (tournamentId: {})", gameState.getGameId(), gameState.getTournamentId());
             }
 
         } catch (Exception e) {

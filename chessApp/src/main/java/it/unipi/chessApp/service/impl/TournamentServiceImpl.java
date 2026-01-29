@@ -360,26 +360,18 @@ public class TournamentServiceImpl implements TournamentService {
       }
       TournamentParticipantDTO blackJoinedRelation = TournamentParticipantDTO.convertToDTO(blackJoinedRelationM);
 
-      // Calculate elo changes for bullet (tournament time control)
-      int whiteEloDiff = 0;
-      int blackEloDiff = 0;
-
+      // Update tournament stats (wins/draws/losses)
       if(game.getResultWhite().equals("stalemate")){
           whiteJoinedRelation.setDraws(whiteJoinedRelation.getDraws() + 1);
           blackJoinedRelation.setDraws(blackJoinedRelation.getDraws() + 1);
-          // Draw: no elo change
       }
       else if(game.getResultWhite().equals("win")){
           whiteJoinedRelation.setWins(whiteJoinedRelation.getWins() + 1);
           blackJoinedRelation.setLosses(blackJoinedRelation.getLosses() + 1);
-          whiteEloDiff = Constants.ELO_CHANGE;
-          blackEloDiff = -Constants.ELO_CHANGE;
       }
       else {
           blackJoinedRelation.setWins(blackJoinedRelation.getWins() + 1);
           whiteJoinedRelation.setLosses(whiteJoinedRelation.getLosses() + 1);
-          whiteEloDiff = -Constants.ELO_CHANGE;
-          blackEloDiff = Constants.ELO_CHANGE;
       }
 
       userNodeRepository.updateUserTournamentStats(whiteId,tournamentId,
@@ -397,32 +389,7 @@ public class TournamentServiceImpl implements TournamentService {
       //After we see if the users are actually participants
       mongoTemplate.updateFirst(query, update, Tournament.class);
 
-      // Update bullet elo for both players in MongoDB
-      if (whiteEloDiff != 0) {
-          Query whiteQuery = new Query(Criteria.where("_id").is(whiteId));
-          Update whiteUpdate = new Update().inc("stats.bullet", whiteEloDiff);
-          mongoTemplate.updateFirst(whiteQuery, whiteUpdate, User.class);
-
-          Query blackQuery = new Query(Criteria.where("_id").is(blackId));
-          Update blackUpdate = new Update().inc("stats.bullet", blackEloDiff);
-          mongoTemplate.updateFirst(blackQuery, blackUpdate, User.class);
-
-          // Update Neo4j redundancy for both players
-          User whiteUser = userRepository.findById(whiteId).orElse(null);
-          User blackUser = userRepository.findById(blackId).orElse(null);
-          if (whiteUser != null && whiteUser.getStats() != null) {
-              userNodeRepository.updateJoinedRelation(whiteId,
-                      whiteUser.getStats().getBullet(),
-                      whiteUser.getStats().getBlitz(),
-                      whiteUser.getStats().getRapid());
-          }
-          if (blackUser != null && blackUser.getStats() != null) {
-              userNodeRepository.updateJoinedRelation(blackId,
-                      blackUser.getStats().getBullet(),
-                      blackUser.getStats().getBlitz(),
-                      blackUser.getStats().getRapid());
-          }
-      }
+      // Note: bullet ELO update is handled by bufferGame in LiveGameServiceImpl
 
       return Outcomes.TOURNAMENT_BUFFERING_SUCCESS;
   }

@@ -15,6 +15,9 @@ users = neo4j_dr.get_all_users()
 
 to_connect = []
 
+print(len(users))
+
+"""
 for user1 in users:
     for user2 in users:
         id1 = user1.get("mongo_id")
@@ -32,3 +35,4 @@ print(f"Trying to memorize {len(to_connect)} in neo4j")
 if to_connect:
     neo4j_dr.connect_users_bulk(to_connect)
     print(f"Created {len(to_connect)} follow relationship with success.")
+"""

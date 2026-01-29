@@ -9,7 +9,7 @@ class neo4j_interface:
     URI = os.getenv("NEO4J_URI", "neo4j://localhost:7687")
     AUTH = (os.getenv("NEO4J_USER", "neo4j"), os.getenv("NEO4J_PASSWORD"))
 
-    def __init__(self, database="square64beta"):
+    def __init__(self, database="neo4j"):
         self.driver = GraphDatabase.driver(neo4j_interface.URI, auth=neo4j_interface.AUTH)
         self.database = database
 

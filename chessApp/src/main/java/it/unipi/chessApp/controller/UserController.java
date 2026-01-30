@@ -146,7 +146,7 @@ public class UserController {
   ) throws BusinessException{
       UserWinRateDTO winRate = userService.getUserWinRate(userId);
       return ResponseEntity.ok(
-              new ResponseWrapper<>("User win rate sucessfully calculated", winRate)
+              new ResponseWrapper<>("User win rate successfully calculated", winRate)
       );
   }
 
@@ -156,7 +156,7 @@ public class UserController {
   ) throws BusinessException{
       UserFavoriteOpeningDTO opening = userService.getUserFavOpening(userId);
       return ResponseEntity.ok(
-              new ResponseWrapper<>("User win rate sucessfully calculated", opening)
+              new ResponseWrapper<>("User favorite opening successfully calculated", opening)
       );
   }
 

@@ -3,7 +3,6 @@ package it.unipi.chessApp.dto;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -15,7 +14,6 @@ public class ClubDTO {
     private String country;
     private String creationDate;
     private String admin;
-    private List<ClubMemberDTO> members;
 
     public String getId() {
         return id;
@@ -63,13 +61,5 @@ public class ClubDTO {
 
     public void setAdmin(String admin) {
         this.admin = admin;
-    }
-
-    public List<ClubMemberDTO> getMembers() {
-        return members;
-    }
-
-    public void setMembers(List<ClubMemberDTO> members) {
-        this.members = members;
     }
 }

@@ -5,6 +5,7 @@ import it.unipi.chessApp.dto.Neo4jEntityDTO;
 import it.unipi.chessApp.dto.TournamentParticipantDTO;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface Neo4jService {
     void createUser(String mongoId, String username);
@@ -18,4 +19,5 @@ public interface Neo4jService {
     List<Neo4jEntityDTO> findUserFollows(String userID);
     List<Neo4jEntityDTO> findUserFollowers(String userID);
     List<TournamentParticipantDTO> findUserTournaments(String userID);
+    Optional<Neo4jEntityDTO> findUserClub(String userID);
 }

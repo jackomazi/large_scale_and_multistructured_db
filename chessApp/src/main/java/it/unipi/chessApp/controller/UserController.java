@@ -264,4 +264,16 @@ public class UserController {
       new ResponseWrapper<>("User tournaments", userTournaments)
     );
   }
+
+  // Get user's club (Neo4j)
+  @GetMapping("/{userId}/club")
+  public ResponseEntity<ResponseWrapper<Neo4jEntityDTO>> findUserClub(
+    @PathVariable String userId
+  ) throws BusinessException {
+    Neo4jEntityDTO club = neo4jService.findUserClub(userId)
+      .orElseThrow(() -> new BusinessException("User is not a member of any club"));
+    return ResponseEntity.ok(
+      new ResponseWrapper<>("User club", club)
+    );
+  }
 }

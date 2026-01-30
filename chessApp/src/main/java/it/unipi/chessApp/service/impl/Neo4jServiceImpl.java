@@ -130,4 +130,11 @@ public class Neo4jServiceImpl implements Neo4jService {
                 .toList();
         return tournamentsDTO;
     }
+
+    @Override
+    @Transactional
+    public Optional<Neo4jEntityDTO> findUserClub(String userId){
+        Optional<ClubNode> club = userNodeRepository.findJoinedClub(userId);
+        return club.map(Neo4jEntityDTO::convertToDTO);
+    }
 }

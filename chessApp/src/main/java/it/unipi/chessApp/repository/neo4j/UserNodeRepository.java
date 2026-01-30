@@ -1,6 +1,6 @@
 package it.unipi.chessApp.repository.neo4j;
 
-import it.unipi.chessApp.model.neo4j.ClubMember;
+import it.unipi.chessApp.model.neo4j.ClubNode;
 import it.unipi.chessApp.model.neo4j.FriendRecommendation;
 import it.unipi.chessApp.model.neo4j.TournamentParticipant;
 import it.unipi.chessApp.model.neo4j.UserNode;
@@ -16,16 +16,12 @@ public interface UserNodeRepository extends Neo4jRepository<UserNode, String> {
 
     @Query("""
             MATCH (p)-[r:JOINED]->(c)
-            WHERE p.name STARTS WITH $name
+            WHERE p.mongo_id = $id
             RETURN
-                p.mongo_id AS id,
-                p.name AS name, 
-                r.country AS country,
-                r.bullet AS bulletRating,
-                r.blitz AS blitzRating,
-                r.rapid AS rapidRating
+                c.mongo_id as mongo_id,
+                c.name AS name
             """)
-    Optional<ClubMember> findJoinedClub(String name);
+    Optional<ClubNode> findJoinedClub(String id);
 
     @Query("""
             MATCH (p:USER {name: $userName})
@@ -124,19 +120,19 @@ public interface UserNodeRepository extends Neo4jRepository<UserNode, String> {
 
     @Query("""
             MATCH (me:USER {mongo_id: $userID})
-            
+
             MATCH (me)-[:FOLLOWS|JOINED|PARTECIPATED*2]-(consigliato:USER)
-            
+
             WHERE consigliato <> me
               AND NOT (me)-[:FOLLOWS]->(consigliato)
-            
+
             WITH me, consigliato
             OPTIONAL MATCH (me)-[:FOLLOWS]->(amico:USER)-[:FOLLOWS]->(consigliato)
             WITH me, consigliato, collect(DISTINCT amico.name) AS amiciInComune
-            
+
             OPTIONAL MATCH (me)-[:JOINED|PARTECIPATED]->(comune)<-[:JOINED|PARTECIPATED]-(consigliato)
             WITH me, consigliato, amiciInComune, collect(DISTINCT labels(comune)[0]) AS interessiLabels
-            
+
             RETURN
                 consigliato.mongo_id AS mongoID,
                 consigliato.name AS name,
@@ -147,7 +143,7 @@ public interface UserNodeRepository extends Neo4jRepository<UserNode, String> {
                 END AS connectionType
             ORDER BY size(amiciInComune) DESC, size(interessiLabels) DESC
             LIMIT 10
-            
+
             """)
     List<FriendRecommendation> suggestFriends(String userID);
 

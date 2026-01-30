@@ -16,13 +16,11 @@ public class UserDTO {
   private String id;
   private String name;
   private String username;
-  private int followers;
   private String country;
   private String lastOnline;
   private String joined;
   private boolean isStreamer;
   private boolean verified;
-  private String league;
   private List<String> streamingPlatforms;
   private List<GameSummaryDTO> games;
   private Stats stats;
@@ -52,14 +50,6 @@ public class UserDTO {
 
     public void setUsername(String username) {
         this.username = username;
-    }
-
-    public int getFollowers() {
-        return followers;
-    }
-
-    public void setFollowers(int followers) {
-        this.followers = followers;
     }
 
     public String getCountry() {
@@ -100,14 +90,6 @@ public class UserDTO {
 
     public void setVerified(boolean verified) {
         this.verified = verified;
-    }
-
-    public String getLeague() {
-        return league;
-    }
-
-    public void setLeague(String league) {
-        this.league = league;
     }
 
     public List<String> getStreamingPlatforms() {
@@ -163,13 +145,11 @@ public class UserDTO {
         dto.setId(user.getId());
         dto.setName(user.getName());
         dto.setUsername(user.getUsername());
-        dto.setFollowers(user.getFollowers());
         dto.setCountry(user.getCountry());
         dto.setLastOnline(user.getLastOnline());
         dto.setJoined(user.getJoined());
         dto.setStreamer(user.isStreamer());
         dto.setVerified(user.isVerified());
-        dto.setLeague(user.getLeague());
         dto.setStreamingPlatforms(user.getStreamingPlatforms());
         List<GameSummaryDTO> summaries = user.getGames()
                 .stream()

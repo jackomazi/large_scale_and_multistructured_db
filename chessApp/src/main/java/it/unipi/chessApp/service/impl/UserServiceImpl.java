@@ -64,7 +64,6 @@ public class UserServiceImpl implements UserService {
       user.setMail(registrationDTO.getMail());
       user.setCountry(registrationDTO.getCountry());
       user.setAdmin(false);
-      user.setFollowers(0);
       user.setBufferedGames(0);
       
       // Set joined and lastOnline to current datetime
@@ -124,14 +123,27 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public UserDTO updateUser(String id, UserDTO userDTO)
+  public UserDTO updateUser(String id, UserUpdateDTO userUpdateDTO)
     throws BusinessException {
     try {
-      if (!userRepository.existsById(id)) {
-        throw new BusinessException("User not found with ID: " + id);
+      User user = userRepository
+        .findById(id)
+        .orElseThrow(() ->
+          new BusinessException("User not found with ID: " + id)
+        );
+      
+      // Only update allowed fields
+      user.setName(userUpdateDTO.getName());
+      user.setUsername(userUpdateDTO.getUsername());
+      user.setCountry(userUpdateDTO.getCountry());
+      user.setStreamer(userUpdateDTO.isStreamer());
+      user.setVerified(userUpdateDTO.isVerified());
+      user.setStreamingPlatforms(userUpdateDTO.getStreamingPlatforms());
+      user.setMail(userUpdateDTO.getMail());
+      if (userUpdateDTO.getPassword() != null && !userUpdateDTO.getPassword().isEmpty()) {
+        user.setPassword(authenticationService.encodePassword(userUpdateDTO.getPassword()));
       }
-      User user = convertToEntity(userDTO);
-      user.setId(id);
+      
       User updatedUser = userRepository.save(user);
       return convertToDTO(updatedUser);
     } catch (BusinessException e) {
@@ -155,13 +167,11 @@ public class UserServiceImpl implements UserService {
     dto.setId(user.getId());
     dto.setName(user.getName());
     dto.setUsername(user.getUsername());
-    dto.setFollowers(user.getFollowers());
     dto.setCountry(user.getCountry());
     dto.setLastOnline(user.getLastOnline());
     dto.setJoined(user.getJoined());
     dto.setStreamer(user.isStreamer());
     dto.setVerified(user.isVerified());
-    dto.setLeague(user.getLeague());
     dto.setStreamingPlatforms(user.getStreamingPlatforms());
     List<GameSummaryDTO> summaryDTO = user.getGames()
             .stream()
@@ -195,13 +205,11 @@ public class UserServiceImpl implements UserService {
     user.setId(dto.getId());
     user.setName(dto.getName());
     user.setUsername(dto.getUsername());
-    user.setFollowers(dto.getFollowers());
     user.setCountry(dto.getCountry());
     user.setLastOnline(dto.getLastOnline());
     user.setJoined(dto.getJoined());
     user.setStreamer(dto.isStreamer());
     user.setVerified(dto.isVerified());
-    user.setLeague(dto.getLeague());
     user.setStreamingPlatforms(dto.getStreamingPlatforms());
     List<GameSummary> summaries = dto.getGames()
             .stream()

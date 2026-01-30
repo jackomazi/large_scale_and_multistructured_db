@@ -7,13 +7,11 @@
     "$oid": "69778de0cba6240a4bd04cf5"
   },
   "username": "--hugo--",
-  "followers": 17,
   "country": "IT",
   "last_online": "2026-01-26 16:49:07",
   "joined": "2012-09-28 15:44:42",
   "is_streamer": false,
   "verified": false,
-  "league": "Elite",
   "streaming_platforms": [],
   "games": [
     {
@@ -107,7 +105,8 @@
   "moves": "d4 Nf6 c4 g6 Nc3 Bg7 e4 d6 f3 a6 Be3 Nbd7 Qd2 c5 Nge2 O-O h4 cxd4 Nxd4 h5 Be2 Ne5 Bh6 Bd7 g4 Rc8 gxh5 Nxh5 b3 b5 f4 Bxh6 Bxh5 gxh5 Qg2+ Ng4 Nce2 Qa5+ 0-1",
   "time_class": "blitz",
   "rated": true,
-  "end_time": "2024-07-01 11:41:24"
+  "end_time": "2024-07-01 11:41:24",
+  "historical":true
 }
 ```
 

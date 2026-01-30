@@ -44,4 +44,6 @@ public class Game {
 
     @Field("end_time")
     private String endTime;
+
+    private boolean historical;
 }

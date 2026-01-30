@@ -20,6 +20,7 @@ public class GameDTO {
     private String timeClass;
     private boolean rated;
     private String endTime;
+    private boolean historical;
 
     public String getId() {
         return id;
@@ -115,5 +116,13 @@ public class GameDTO {
 
     public void setEndTime(String endTime) {
         this.endTime = endTime;
+    }
+
+    public boolean isHistorical() {
+        return historical;
+    }
+
+    public void setHistorical(boolean historical) {
+        this.historical = historical;
     }
 }

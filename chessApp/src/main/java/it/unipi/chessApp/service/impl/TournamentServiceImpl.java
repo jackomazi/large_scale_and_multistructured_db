@@ -417,14 +417,14 @@ public class TournamentServiceImpl implements TournamentService {
 
       userNodeRepository.updateUserTournamentStats(whiteId,tournamentId,
               whiteJoinedRelation.getWins(),
-              whiteJoinedRelation.getDraws(),
               whiteJoinedRelation.getLosses(),
+              whiteJoinedRelation.getDraws(),
               whiteJoinedRelation.getPlacement());
 
       userNodeRepository.updateUserTournamentStats(blackId,tournamentId,
               blackJoinedRelation.getWins(),
-              blackJoinedRelation.getDraws(),
               blackJoinedRelation.getLosses(),
+              blackJoinedRelation.getDraws(),
               blackJoinedRelation.getPlacement());
 
       //After we see if the users are actually participants

@@ -35,7 +35,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/games/live/*/status").permitAll()
                         
                         // Public club endpoints
-                        .requestMatchers(HttpMethod.GET, "/clubs", "/clubs/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/clubs", "/clubs/*", "/clubs/*/*").permitAll()
                         
                         // Public tournament endpoints
                         .requestMatchers(HttpMethod.GET, "/tournaments", "/tournaments/active", "/tournaments/*", "/tournaments/*/*").permitAll()

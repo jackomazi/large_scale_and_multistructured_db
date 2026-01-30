@@ -4,11 +4,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
 import org.springframework.data.neo4j.core.schema.Id;
-import org.springframework.data.neo4j.core.schema.RelationshipProperties;
 import org.springframework.data.neo4j.core.schema.Property;
-import org.springframework.data.neo4j.core.schema.TargetNode;
 
-@RelationshipProperties
 @Data
 @NoArgsConstructor
 public class ClubMember {
@@ -29,8 +26,5 @@ public class ClubMember {
 
     @Property("rapid")
     private int rapidRating;
-
-    @TargetNode
-    private ClubNode club;
 
 }

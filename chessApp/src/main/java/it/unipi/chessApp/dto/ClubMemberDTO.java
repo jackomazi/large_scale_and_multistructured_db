@@ -58,9 +58,9 @@ public class ClubMemberDTO {
         ClubMemberDTO dto = new ClubMemberDTO();
         dto.setName(member.getName());
         dto.setCountry(member.getCountry());
+        dto.setBulletRating(member.getBulletRating());
         dto.setBlitzRating(member.getBlitzRating());
-        dto.setBulletRating(member.getBulletRating());
-        dto.setBulletRating(member.getBulletRating());
+        dto.setRapidRating(member.getRapidRating());
         return dto;
     }
 }

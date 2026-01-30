@@ -1,6 +1,7 @@
 package it.unipi.chessApp.controller;
 
 import it.unipi.chessApp.dto.ClubDTO;
+import it.unipi.chessApp.dto.ClubMemberDTO;
 import it.unipi.chessApp.dto.PageDTO;
 import it.unipi.chessApp.dto.ResponseWrapper;
 import it.unipi.chessApp.service.ClubService;
@@ -13,6 +14,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/clubs")
@@ -43,6 +46,16 @@ public class ClubController {
       new ResponseWrapper<>("Club retrieved successfully", club)
     );
   }
+
+    @GetMapping("/{name}/members")
+    public ResponseEntity<ResponseWrapper<List<ClubMemberDTO>>> getClubMembers(
+            @PathVariable String name
+    ) throws BusinessException {
+        List<ClubMemberDTO> members = clubService.getClubMembers(name);
+        return ResponseEntity.ok(
+                new ResponseWrapper<List<ClubMemberDTO>>("Club retrieved successfully", members)
+        );
+    }
 
   // Create club (authenticated - creator becomes owner)
   @PostMapping

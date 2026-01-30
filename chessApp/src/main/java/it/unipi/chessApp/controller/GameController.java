@@ -133,7 +133,7 @@ public class GameController {
 
     String message = result.isMatched()
       ? "Match found! Game created."
-      : "No opponent found yet. Still in matchmaking queue.";
+      : "No opponent found. Removed from matchmaking queue.";
 
     return ResponseEntity.status(HttpStatus.OK).body(
       new ResponseWrapper<>(message, result)
@@ -151,7 +151,7 @@ public class GameController {
 
     String message = result.isMatched()
       ? "Match found! Game created."
-      : "No opponent found yet. Still in matchmaking queue.";
+      : "No opponent found. Removed from matchmaking queue.";
 
     return ResponseEntity.status(HttpStatus.OK).body(
       new ResponseWrapper<>(message, result)

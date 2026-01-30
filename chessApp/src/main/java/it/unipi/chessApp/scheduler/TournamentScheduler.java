@@ -1,10 +1,7 @@
 package it.unipi.chessApp.scheduler;
 
 import it.unipi.chessApp.model.Tournament;
-import it.unipi.chessApp.model.User;
 import it.unipi.chessApp.repository.TournamentRepository;
-import it.unipi.chessApp.repository.UserRepository;
-import it.unipi.chessApp.service.Neo4jService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -23,11 +20,10 @@ public class TournamentScheduler {
 
     private final TournamentRepository tournamentRepository;
     private final StringRedisTemplate redisTemplate;
-    private final UserRepository userRepository;
-    private final Neo4jService neo4jService;
 
-    private static final String TOURNAMENT_SUBSCRIBERS_PREFIX = "chess:tournament:";
+    private static final String TOURNAMENT_PREFIX = "chess:tournament:";
     private static final String TOURNAMENT_SUBSCRIBERS_SUFFIX = ":subscribers";
+    private static final String TOURNAMENT_DATA_SUFFIX = ":data";
     private static final String TOURNAMENT_GAME_COUNT_PATTERN = "chess:tournament:%s:player:*:games";
     private static final DateTimeFormatter DATE_TIME_FORMATTER =
         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -36,8 +32,8 @@ public class TournamentScheduler {
      * Scheduled task that runs once a day to check for tournaments that have finished.
      * When a tournament finishes:
      * 1. Updates tournament status to "finished" in MongoDB
-     * 2. Copy participant data to Neo4j from Redis subscribers
-     * 3. Deletes the Redis subscribers set
+     * 2. Deletes the Redis subscribers set and game count keys
+     * Note: Neo4j PARTICIPATED relationships are created when games are played (in TournamentServiceImpl.bufferTournamentGame)
      */
     @Scheduled(fixedRate = 86400000) // Run once a day
     public void finishExpiredTournaments() {
@@ -63,34 +59,15 @@ public class TournamentScheduler {
             tournament.setStatus("finished");
             tournamentRepository.save(tournament);
 
-            // Get subscribers from Redis before deleting
-            String subscribersKey = TOURNAMENT_SUBSCRIBERS_PREFIX + tournament.getId() + TOURNAMENT_SUBSCRIBERS_SUFFIX;
-            Set<String> subscribers = redisTemplate.opsForSet().members(subscribersKey);
-
             log.info("Tournament {} ({}) has been finished", tournament.getId(), tournament.getName());
 
-            // Create PARTICIPATED relationships in Neo4j for each subscriber
-            if (subscribers != null && !subscribers.isEmpty()) {
-                for (String username : subscribers) {
-                    try {
-                        // Look up user's mongo ID from username
-                        User user = userRepository.findByUsername(username).orElse(null);
-                        if (user != null) {
-                            neo4jService.participateTournament(user.getId(), tournament.getId());
-                            log.debug("Created PARTICIPATED relationship for user {} in tournament {}",
-                                     username, tournament.getId());
-                        } else {
-                            log.warn("User not found for username: {}", username);
-                        }
-                    } catch (Exception e) {
-                        log.error("Error creating PARTICIPATED relationship for user {}: {}",
-                                 username, e.getMessage());
-                    }
-                }
-            }
-
-            // Delete Redis subscribers set after processing
+            // Delete Redis subscribers set
+            String subscribersKey = TOURNAMENT_PREFIX + tournament.getId() + TOURNAMENT_SUBSCRIBERS_SUFFIX;
             redisTemplate.delete(subscribersKey);
+
+            // Delete Redis tournament data key
+            String dataKey = TOURNAMENT_PREFIX + tournament.getId() + TOURNAMENT_DATA_SUFFIX;
+            redisTemplate.delete(dataKey);
 
             // Delete all game count keys for this tournament
             String gameCountPattern = String.format(TOURNAMENT_GAME_COUNT_PATTERN, tournament.getId());

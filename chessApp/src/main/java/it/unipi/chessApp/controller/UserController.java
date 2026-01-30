@@ -55,7 +55,7 @@ public class UserController {
     @RequestBody UserRegistrationDTO registrationDTO
   ) throws BusinessException {
     UserDTO createdUser = userService.registerUser(registrationDTO);
-    neo4jService.createUser(createdUser.getId(), createdUser.getName());
+    neo4jService.createUser(createdUser.getId(), createdUser.getUsername());
     return ResponseEntity.status(HttpStatus.CREATED).body(
       new ResponseWrapper<>("User created successfully", createdUser)
     );
@@ -97,20 +97,20 @@ public class UserController {
   ) throws BusinessException {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     String currentUsername = authentication.getName();
-    
+
     // Get the user being edited to check ownership
     UserDTO existingUser = userService.getUserById(id);
-    
+
     // Check if current user is the owner or an admin
     boolean isOwner = existingUser.getUsername().equals(currentUsername);
     boolean isAdmin = authentication.getAuthorities().stream()
         .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
-    
+
     if (!isOwner && !isAdmin) {
       throw new BusinessException("You can only edit your own profile");
     }
-    
-    UserDTO updatedUser = userService.updateUser(id, userUpdateDTO);
+
+    UserDTO updatedUser = userService.updateUser(id, userUpdateDTO, isAdmin);
     return ResponseEntity.ok(
       new ResponseWrapper<>("User updated successfully", updatedUser)
     );

@@ -1,8 +1,11 @@
 package it.unipi.chessApp.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import it.unipi.chessApp.dto.*;
 import it.unipi.chessApp.model.GameSummary;
 import it.unipi.chessApp.model.Tournament;
+import it.unipi.chessApp.model.LiveTournamentData;
 import it.unipi.chessApp.model.User;
 import it.unipi.chessApp.model.neo4j.TournamentParticipant;
 import it.unipi.chessApp.repository.TournamentRepository;
@@ -16,6 +19,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import it.unipi.chessApp.utils.Outcomes;
@@ -39,6 +43,7 @@ public class TournamentServiceImpl implements TournamentService {
   private final TournamentNodeRepository tournamentNodeRepository;
   private final UserRepository userRepository;
   private final StringRedisTemplate redisTemplate;
+  private final ObjectMapper objectMapper;
 
   private static final String TOURNAMENT_PREFIX = "chess:tournament:";
   private static final String TOURNAMENT_SUBSCRIBERS_SUFFIX = ":subscribers";
@@ -72,18 +77,21 @@ public class TournamentServiceImpl implements TournamentService {
 
       Tournament createdTournament = tournamentRepository.save(tournament);
 
-      // Store tournament data in Redis hash
-      String dataKey = getDataKey(createdTournament.getId());
-      redisTemplate.opsForHash().put(dataKey, "status", createdTournament.getStatus());
-      redisTemplate.opsForHash().put(dataKey, "minRating", String.valueOf(createdTournament.getMinRating()));
-      redisTemplate.opsForHash().put(dataKey, "maxRating", String.valueOf(createdTournament.getMaxRating()));
-      redisTemplate.opsForHash().put(dataKey, "maxParticipants", String.valueOf(createdTournament.getMaxParticipants()));
-      redisTemplate.opsForHash().put(dataKey, "finishTime", createdTournament.getFinishTime());
+      // Store tournament data in Redis as JSON string
+      LiveTournamentData liveTournamentData = LiveTournamentData.fromTournament(
+          createdTournament.getStatus(),
+          createdTournament.getMinRating(),
+          createdTournament.getMaxRating(),
+          createdTournament.getMaxParticipants(),
+          createdTournament.getFinishTime()
+      );
+      saveLiveTournamentData(createdTournament.getId(), liveTournamentData);
 
-      // Create Redis Set for subscribers
-      String subscribersKey = getSubscribersKey(createdTournament.getId());
-      // The set will be populated when users subscribe
-      log.info("Created tournament {} with Redis keys {} and {}", createdTournament.getId(), dataKey, subscribersKey);
+      // Create Redis Set for subscribers (will be populated when users subscribe)
+      log.info("Created tournament {} with Redis data key {} and subscribers key {}",
+          createdTournament.getId(),
+          getDataKey(createdTournament.getId()),
+          getSubscribersKey(createdTournament.getId()));
 
       return convertToDTO(createdTournament);
     } catch (BusinessException e) {
@@ -116,6 +124,37 @@ public class TournamentServiceImpl implements TournamentService {
 
   private String getDataKey(String tournamentId) {
     return TOURNAMENT_PREFIX + tournamentId + TOURNAMENT_DATA_SUFFIX;
+  }
+
+  /**
+   * Retrieve tournament data from Redis and deserialize from JSON.
+   * @param tournamentId The tournament ID
+   * @return LiveTournamentData or null if not found
+   */
+  private LiveTournamentData getLiveTournamentData(String tournamentId) throws BusinessException {
+    try {
+      String json = redisTemplate.opsForValue().get(getDataKey(tournamentId));
+      if (json == null) {
+        return null;
+      }
+      return objectMapper.readValue(json, LiveTournamentData.class);
+    } catch (JsonProcessingException e) {
+      throw new BusinessException("Error reading tournament data from Redis");
+    }
+  }
+
+  /**
+   * Save tournament data to Redis as JSON string.
+   * @param tournamentId The tournament ID
+   * @param tournamentData The tournament data to save
+   */
+  private void saveLiveTournamentData(String tournamentId, LiveTournamentData tournamentData) throws BusinessException {
+    try {
+      String json = objectMapper.writeValueAsString(tournamentData);
+      redisTemplate.opsForValue().set(getDataKey(tournamentId), json);
+    } catch (JsonProcessingException e) {
+      throw new BusinessException("Error saving tournament data to Redis");
+    }
   }
 
   @Override
@@ -222,18 +261,20 @@ public class TournamentServiceImpl implements TournamentService {
   @Override
   public void subscribeTournament(String tournamentId, String username) throws BusinessException {
     try {
-      String dataKey = getDataKey(tournamentId);
       String subscribersKey = getSubscribersKey(tournamentId);
 
+      // Get tournament data from Redis JSON string
+      LiveTournamentData tournamentData = getLiveTournamentData(tournamentId);
+      if (tournamentData == null) {
+        throw new BusinessException("Tournament not found in Redis: " + tournamentId);
+      }
+
       // Check subscription window (1 day window, starting 1 week before finish time)
-      String finishTime = (String) redisTemplate.opsForHash().get(dataKey, "finishTime");
-      validateSubscriptionWindow(finishTime);
+      validateSubscriptionWindow(tournamentData.getFinishTime());
 
       // Check user's bullet elo is within tournament rating range
-      String minRatingStr = (String) redisTemplate.opsForHash().get(dataKey, "minRating");
-      String maxRatingStr = (String) redisTemplate.opsForHash().get(dataKey, "maxRating");
-      int minRating = Integer.parseInt(minRatingStr);
-      int maxRating = Integer.parseInt(maxRatingStr);
+      int minRating = tournamentData.getMinRating();
+      int maxRating = tournamentData.getMaxRating();
 
       User user = userRepository.findByUsername(username)
           .orElseThrow(() -> new BusinessException("User not found: " + username));
@@ -243,22 +284,23 @@ public class TournamentServiceImpl implements TournamentService {
             + minRating + " - " + maxRating + ")");
       }
 
-      // Check if already subscribed
-      Boolean isAlreadySubscribed = redisTemplate.opsForSet().isMember(subscribersKey, username);
-      if (Boolean.TRUE.equals(isAlreadySubscribed)) {
+      // Add first, then check - this avoids a race condition where multiple users
+      // could pass the count check simultaneously and exceed maxParticipants
+      int maxParticipants = tournamentData.getMaxParticipants();
+      Long added = redisTemplate.opsForSet().add(subscribersKey, username);
+
+      if (added == null || added == 0) {
+        // User was already in set (SADD returns 0 if element already exists)
         throw new BusinessException("You are already subscribed to this tournament");
       }
 
-      // Check max participants using Redis set size
-      String maxParticipantsStr = (String) redisTemplate.opsForHash().get(dataKey, "maxParticipants");
-      int maxParticipants = Integer.parseInt(maxParticipantsStr);
+      // Now check if we exceeded the limit
       Long currentCount = redisTemplate.opsForSet().size(subscribersKey);
-      if (currentCount != null && currentCount >= maxParticipants) {
+      if (currentCount != null && currentCount > maxParticipants) {
+        // Over limit - remove ourselves and reject
+        redisTemplate.opsForSet().remove(subscribersKey, username);
         throw new BusinessException("Tournament has reached maximum participants");
       }
-
-      // Add to Redis Set
-      redisTemplate.opsForSet().add(subscribersKey, username);
 
       log.info("User {} subscribed to tournament {}", username, tournamentId);
     } catch (BusinessException e) {
@@ -271,12 +313,16 @@ public class TournamentServiceImpl implements TournamentService {
   @Override
   public void unsubscribeTournament(String tournamentId, String username) throws BusinessException {
     try {
-      String dataKey = getDataKey(tournamentId);
       String subscribersKey = getSubscribersKey(tournamentId);
 
+      // Get tournament data from Redis JSON string
+      LiveTournamentData tournamentData = getLiveTournamentData(tournamentId);
+      if (tournamentData == null) {
+        throw new BusinessException("Tournament not found in Redis: " + tournamentId);
+      }
+
       // Check subscription window is still open
-      String finishTime = (String) redisTemplate.opsForHash().get(dataKey, "finishTime");
-      validateSubscriptionWindow(finishTime);
+      validateSubscriptionWindow(tournamentData.getFinishTime());
 
       // Check if subscribed
       Boolean isSubscribed = redisTemplate.opsForSet().isMember(subscribersKey, username);

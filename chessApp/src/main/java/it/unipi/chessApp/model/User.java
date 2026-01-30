@@ -19,7 +19,6 @@ public class User {
     private String username;
     @Field("buffered_games")
     private int bufferedGames;
-    private int followers;
     private String country;
     @Field("last_online")
     private String lastOnline;
@@ -27,7 +26,6 @@ public class User {
     @Field("is_streamer")
     private boolean isStreamer;
     private boolean verified;
-    private String league;
     @Field("streaming_platforms")
     private List<String> streamingPlatforms;
     private List<GameSummary> games;

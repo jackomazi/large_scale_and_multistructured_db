@@ -93,7 +93,7 @@ public class UserController {
   @PostMapping("/{id}/edit")
   public ResponseEntity<ResponseWrapper<UserDTO>> updateUser(
     @PathVariable String id,
-    @RequestBody UserDTO userDTO
+    @RequestBody UserUpdateDTO userUpdateDTO
   ) throws BusinessException {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     String currentUsername = authentication.getName();
@@ -110,7 +110,7 @@ public class UserController {
       throw new BusinessException("You can only edit your own profile");
     }
     
-    UserDTO updatedUser = userService.updateUser(id, userDTO);
+    UserDTO updatedUser = userService.updateUser(id, userUpdateDTO);
     return ResponseEntity.ok(
       new ResponseWrapper<>("User updated successfully", updatedUser)
     );

@@ -10,7 +10,7 @@ public interface UserService {
   UserDTO registerUser(UserRegistrationDTO registrationDTO) throws BusinessException;
   UserDTO getUserById(String id) throws BusinessException;
   PageDTO<UserDTO> getAllUsers(int page) throws BusinessException;
-  UserDTO updateUser(String id, UserDTO userDTO) throws BusinessException;
+  UserDTO updateUser(String id, UserUpdateDTO userUpdateDTO) throws BusinessException;
   void deleteUser(String id) throws BusinessException;
   void bufferGame(String userId, GameSummaryDTO summary, String timeClass);
   void promoteToAdmin(String username) throws BusinessException;

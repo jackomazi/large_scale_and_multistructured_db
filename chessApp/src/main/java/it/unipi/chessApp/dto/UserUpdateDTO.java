@@ -11,10 +11,9 @@ import java.util.List;
 @AllArgsConstructor
 public class UserUpdateDTO {
     private String name;
-    private String username;
     private String country;
-    private boolean isStreamer;
-    private boolean verified;
+    private Boolean isStreamer;
+    private Boolean verified;
     private List<String> streamingPlatforms;
     private String mail;
     private String password;

@@ -18,9 +18,16 @@ public interface UserRepository extends MongoRepository<User, String> {
     boolean existsByUsername(String username);
 
     @Aggregation(pipeline = {
-        "{ '$project': { 'username': 1, 'recentGames': { '$slice': ['$games', -3] } } }",
+        // Filter out placeholder games (where _id is null or missing) before slicing
+        "{ '$project': { 'username': 1, 'realGames': { '$filter': { 'input': '$games', 'as': 'game', 'cond': { '$and': [ { '$ne': ['$$game._id', null] }, { '$gt': ['$$game._id', null] } ] } } } } }",
+        // Get the last 3 real games
+        "{ '$project': { 'username': 1, 'recentGames': { '$slice': ['$realGames', -3] } } }",
+        // Only consider users with at least 3 real games
+        "{ '$match': { '$expr': { '$gte': [{ '$size': '$recentGames' }, 3] } } }",
+        // Check if user lost each of the 3 games
         "{ '$project': { 'username': 1, 'recentGames': 1, 'winResults': { '$map': { 'input': '$recentGames', 'as': 'game', 'in': { '$eq': ['$$game.winner', '$username'] } } } } }",
-        "{ '$match': { 'winResults': { '$ne': true }, '$expr': { '$eq': [{ '$size': '$winResults' }, 3] } } }",
+        // Match users who lost all 3 games (no wins in the array)
+        "{ '$match': { 'winResults': { '$not': { '$elemMatch': { '$eq': true } } } } }",
         "{ '$project': { '_id': 0, 'username': 1, 'status': { '$literal': 'ON TILT' } } }"
     })
     List<TiltPlayerDTO> findTiltPlayers();
@@ -60,7 +67,8 @@ public interface UserRepository extends MongoRepository<User, String> {
     @Aggregation(pipeline = {
             "{ '$match': { '_id': ?0 } }",
             "{ '$unwind': '$games' }",
-            "{ '$match': { 'games.opening': { '$ne': 'name' } } }",
+            // Filter out placeholder games (where _id is null)
+            "{ '$match': { 'games._id': { '$ne': null } } }",
             "{ '$group': { '_id': '$games.opening', 'count': { '$sum': 1 } } }",
             "{ '$sort': { 'count': -1 } }",
             "{ '$limit': 1 }",

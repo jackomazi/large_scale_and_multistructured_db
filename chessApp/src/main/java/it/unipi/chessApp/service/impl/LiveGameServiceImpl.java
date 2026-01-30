@@ -259,20 +259,28 @@ public class LiveGameServiceImpl implements LiveGameService {
     private MatchmakingResultDTO createRegularGameForMatch(String username, String opponent, String gameType, String queueKey) throws BusinessException {
         String gameId = new ObjectId().toHexString();
         LiveGameState gameState = LiveGameState.createNewRegularGame(gameId, opponent, username, gameType);
-        saveGameState(gameState);
 
-        redisTemplate.opsForValue().set(
-            PLAYER_GAME_PREFIX + opponent,
-            gameId,
-            gameExpirationHours,
-            TimeUnit.HOURS
-        );
-        redisTemplate.opsForValue().set(
-            PLAYER_GAME_PREFIX + username,
-            gameId,
-            gameExpirationHours,
-            TimeUnit.HOURS
-        );
+        try {
+            saveGameState(gameState);
+            redisTemplate.opsForValue().set(
+                PLAYER_GAME_PREFIX + opponent,
+                gameId,
+                gameExpirationHours,
+                TimeUnit.HOURS
+            );
+            redisTemplate.opsForValue().set(
+                PLAYER_GAME_PREFIX + username,
+                gameId,
+                gameExpirationHours,
+                TimeUnit.HOURS
+            );
+        } catch (Exception e) {
+            log.error("Failed to create game {}, attempting cleanup", gameId, e);
+            redisTemplate.delete(GAME_STATE_PREFIX + gameId);
+            redisTemplate.delete(PLAYER_GAME_PREFIX + opponent);
+            redisTemplate.delete(PLAYER_GAME_PREFIX + username);
+            throw new BusinessException("Failed to create game");
+        }
 
         log.info("Regular match created: {} (white: {}, black: {}, gameType: {})", gameId, opponent, username, gameType);
 
@@ -289,20 +297,28 @@ public class LiveGameServiceImpl implements LiveGameService {
     private MatchmakingResultDTO createTournamentGameForMatch(String username, String opponent, String tournamentId, String queueKey) throws BusinessException {
         String gameId = new ObjectId().toHexString();
         LiveGameState gameState = LiveGameState.createNewTournamentGame(gameId, opponent, username, tournamentId);
-        saveGameState(gameState);
 
-        redisTemplate.opsForValue().set(
-            PLAYER_GAME_PREFIX + opponent,
-            gameId,
-            gameExpirationHours,
-            TimeUnit.HOURS
-        );
-        redisTemplate.opsForValue().set(
-            PLAYER_GAME_PREFIX + username,
-            gameId,
-            gameExpirationHours,
-            TimeUnit.HOURS
-        );
+        try {
+            saveGameState(gameState);
+            redisTemplate.opsForValue().set(
+                PLAYER_GAME_PREFIX + opponent,
+                gameId,
+                gameExpirationHours,
+                TimeUnit.HOURS
+            );
+            redisTemplate.opsForValue().set(
+                PLAYER_GAME_PREFIX + username,
+                gameId,
+                gameExpirationHours,
+                TimeUnit.HOURS
+            );
+        } catch (Exception e) {
+            log.error("Failed to create tournament game {}, attempting cleanup", gameId, e);
+            redisTemplate.delete(GAME_STATE_PREFIX + gameId);
+            redisTemplate.delete(PLAYER_GAME_PREFIX + opponent);
+            redisTemplate.delete(PLAYER_GAME_PREFIX + username);
+            throw new BusinessException("Failed to create tournament game");
+        }
 
         log.info("Incrementing tournament game count for opponent: {} and username: {} in tournament: {}", opponent, username, tournamentId);
         incrementTournamentGameCount(tournamentId, opponent);
@@ -698,6 +714,7 @@ public class LiveGameServiceImpl implements LiveGameService {
     private void incrementTournamentGameCount(String tournamentId, String username) {
         String key = TOURNAMENT_GAME_COUNT_PREFIX + tournamentId + ":player:" + username + ":games";
         Long newValue = redisTemplate.opsForValue().increment(key);
+        // Keys are cleaned up by TournamentScheduler when tournament finishes
         log.info("Incremented tournament game count for {} - key: {}, new value: {}", username, key, newValue);
     }
 

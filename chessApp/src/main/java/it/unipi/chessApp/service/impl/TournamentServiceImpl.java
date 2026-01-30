@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import it.unipi.chessApp.utils.Outcomes;
@@ -144,7 +145,6 @@ public class TournamentServiceImpl implements TournamentService {
 
   /**
    * Save tournament data to Redis as JSON string.
-   * Note: Tournament data does not have TTL - it's cleaned up by the TournamentScheduler when the tournament finishes.
    * @param tournamentId The tournament ID
    * @param tournamentData The tournament data to save
    */
@@ -284,21 +284,23 @@ public class TournamentServiceImpl implements TournamentService {
             + minRating + " - " + maxRating + ")");
       }
 
-      // Check if already subscribed
-      Boolean isAlreadySubscribed = redisTemplate.opsForSet().isMember(subscribersKey, username);
-      if (Boolean.TRUE.equals(isAlreadySubscribed)) {
+      // Add first, then check - this avoids a race condition where multiple users
+      // could pass the count check simultaneously and exceed maxParticipants
+      int maxParticipants = tournamentData.getMaxParticipants();
+      Long added = redisTemplate.opsForSet().add(subscribersKey, username);
+
+      if (added == null || added == 0) {
+        // User was already in set (SADD returns 0 if element already exists)
         throw new BusinessException("You are already subscribed to this tournament");
       }
 
-      // Check max participants using Redis set size
-      int maxParticipants = tournamentData.getMaxParticipants();
+      // Now check if we exceeded the limit
       Long currentCount = redisTemplate.opsForSet().size(subscribersKey);
-      if (currentCount != null && currentCount >= maxParticipants) {
+      if (currentCount != null && currentCount > maxParticipants) {
+        // Over limit - remove ourselves and reject
+        redisTemplate.opsForSet().remove(subscribersKey, username);
         throw new BusinessException("Tournament has reached maximum participants");
       }
-
-      // Add to Redis Set
-      redisTemplate.opsForSet().add(subscribersKey, username);
 
       log.info("User {} subscribed to tournament {}", username, tournamentId);
     } catch (BusinessException e) {

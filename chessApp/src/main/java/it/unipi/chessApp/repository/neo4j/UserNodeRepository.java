@@ -123,7 +123,7 @@ public interface UserNodeRepository extends Neo4jRepository<UserNode, String> {
     void deleteFollowsRelationship(String SourceId, String TargetId);
 
     @Query("""
-            MATCH (me:USER {mongo_id: "6970a8eafdb64c9b443d55de"})
+            MATCH (me:USER {mongo_id: $userID})
             
             MATCH (me)-[:FOLLOWS|JOINED|PARTECIPATED*2]-(consigliato:USER)
             

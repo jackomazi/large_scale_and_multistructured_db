@@ -209,18 +209,6 @@ public class UserController {
     );
   }
 
-  // Record tournament participation (Neo4j)
-  @PostMapping("/{userId}/participates/{tournamentId}")
-  public ResponseEntity<ResponseWrapper<Void>> participateTournament(
-    @PathVariable String userId,
-    @PathVariable String tournamentId
-  ) {
-    neo4jService.participateTournament(userId, tournamentId);
-    return ResponseEntity.ok(
-      new ResponseWrapper<>("User participation in tournament recorded successfully in Neo4j", null)
-    );
-  }
-
   // Get friend suggestions (Neo4j)
   @GetMapping("/{userId}/follows/suggestions")
   public ResponseEntity<ResponseWrapper<List<FriendRecommendationDTO>>> suggestFriends(

@@ -142,7 +142,6 @@ public class UserServiceImpl implements UserService {
           new BusinessException("User not found with ID: " + id)
         );
 
-      // Only update fields that are provided (not null)
       user.setName(userUpdateDTO.getName());
       user.setCountry(userUpdateDTO.getCountry());
       user.setStreamer(userUpdateDTO.isStreamer());

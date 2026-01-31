@@ -9,7 +9,7 @@ This project introduces Square64, a digital framework designed to facilitate rea
 
 The system architecture enables users to engage in synchronous matches while navigating a structured ecosystem of clubs and organized tournaments, stratified by skill level to ensure competitive balance. Beyond gameplay, Square64 incorporates a robust social layer, utilizing algorithms to suggest relevant player connections and maintain user engagement within the chess community.
 
-Furthermore, the platform provides a suite of analytical tools designed to support player development. Users can access granular statistics regarding opening repertoires and track longitudinal progress across standard time controls, including bullet, blitz, and rapid formats. Square64 serves as a centralized interface for the practical application, analysis, and mastery of chess strategy.
+Furthermore, the platform provides a suite of analytical tools designed to support player development. Users can access granular statistics regarding opening repertoires and track progress across standard time controls, including bullet, blitz, and rapid formats. Square64 serves as a centralized interface for the practical application, analysis, and mastery of chess strategy.
 
 The source code is available on GitHub at: #show link: set text(fill: blue)
 #link("https://github.com/jackomazi/large_scale_and_multistructured_db")
@@ -34,27 +34,28 @@ Square64 combines the features of a competitive gaming platform with those of a 
 Visitors to Square64 who have not created an account can still explore significant portions of the platform. This open access model encourages new users to discover the community before committing to registration, allowing them to evaluate whether the platform meets their needs.
 
 An unregistered user can:
-- *Browse profiles*: View any registered player's profile, including their username, country, rating statistics across time controls, and recent game history. This transparency helps potential users understand the skill levels present in the community.
+- *Browse profiles*: View any registered player's profile, including their username, country, and recent game history. This transparency helps potential users understand the skill levels present in the community.
 - *View club information*: Explore the various chess clubs on the platform, read their descriptions, see member counts, and view the list of members along with their ratings. This helps users identify clubs they might want to join after registration.
 - *Explore tournament listings*: Access information about past tournament. Users can view tournament parameters (rating requirements, participant limits), see who participated, and review final results and standings.
 - *Access game archives*: Browse the historical game database, search for games by player names, openings, or time controls, and view the moves of completed games. This provides educational value even without an account.
-- *View opening statistics*: Access aggregated data about opening popularity and success rates. This analytical feature helps players understand current trends and make informed decisions about their opening repertoire.
+
 
 === Registered User
-Creating an account unlocks the full potential of Square64, transforming the experience from passive browsing to active participation. Registration requires a unique username, valid email address, and password. Once registered, users gain access to all interactive features of the platform.
+Creating an account unlocks the full potential of Square64, transforming the experience from passive browsing to active participation. Registration requires a unique username, email address, and password. Once registered, users gain access to all interactive features of the platform.
 
 A registered user gains full access to the platform:
 - *Play Games*: The core feature of Square64 is live chess gameplay. Users can join the matchmaking queue, where the system pairs them with other waiting players for a game. The matchmaking system considers factors like time control preferences to create balanced and enjoyable matches.
 - *Social Features*: Users can follow other players to create their personal network within the platform. The follower system works unidirectionally—following another player does not require their approval. Based on the social graph, the platform provides intelligent friend suggestions by analyzing mutual connections (friends of friends), shared club memberships and common tournament participations.
 - *Club Membership*: Users can join any chess club on the platform. Upon joining, their current ratings are recorded as a snapshot, allowing clubs to track member progression over time. Club membership provides a sense of community and enables club-specific statistics and rankings.
-- *Tournament Participation*: Users can subscribe to tournaments within a specific time window. Subscriptions open one week before the tournament's scheduled finish time and close one day before the finish. This window system ensures adequate preparation time while preventing last-minute flooding of participants. Only users whose ratings fall within the tournament's specified range can participate.
+- *Tournament Participation*: Users can subscribe to tournaments within a specific time window. This window system ensures adequate preparation time while preventing last-minute flooding of participants. Only users whose ratings fall within the tournament's specified range can participate.
 - *Profile Management*: Users have a personal dashboard displaying their complete statistics. This includes separate ratings for bullet (1-minute), blitz (3-5 minute), and rapid (10+ minute) time controls, win/loss records, favorite openings.
 - *Game History*: Every game a user plays is permanently recorded and accessible through their profile. Games are classified by opening, allowing users to track which openings they perform best with and identify areas for improvement.
+- *View opening statistics*: Access aggregated data about opening popularity and success rates. This analytical feature helps players understand current trends and make informed decisions about their opening repertoire.
 
 === Key Pages
 The application is organized around several key pages, each serving a specific purpose:
 
-- *Home*: The central dashboard serves as the launching point for all activities. Users can immediately enter the matchmaking queue to find an opponent, view any active games in progress, and see notifications about tournament subscriptions or friend activity.
+- *Home*: The central dashboard serves as the launching point for all activities. Users can immediately enter the matchmaking queue to find an opponent, view any active games in progress.
 
 \
 
@@ -115,35 +116,11 @@ Administrators play a crucial role in maintaining the Square64 ecosystem. Admin 
 
 Administrators have exclusive access to:
 - *User Management*: Admins can promote regular users to admin status through the dedicated `/users/promote` endpoint. This capability should be used judiciously, as admin accounts have significant control over the platform. The promotion system creates a chain of trust starting from the initial platform administrators.
-- *Tournament Control*: While regular users can only participate in tournaments, administrators can create new tournaments with full control over parameters. This includes setting the tournament name, rating requirements (minimum and maximum allowed ratings), participant limits, and schedule. Admins can also modify or cancel tournaments if necessary.
-- *Database Operations*: Administrators can manually trigger certain database operations that normally run on schedules. This includes forcing tournament status updates (moving tournaments from "active" to "finished" status) and initiating data synchronization between the different databases when needed.
-- *Statistics Dashboard*: Admins have access to aggregated analytics beyond what regular users can see. This includes platform-wide statistics on opening popularity, rating distributions across the user base, activity metrics, and other operational data useful for understanding platform health and user behavior.
-
-The platform also includes automated processes that maintain system integrity:
-- *Tournament Status Updates*: A scheduled task periodically checks for tournaments that have passed their finish time and automatically updates their status from "active" to "finished." This ensures the tournament system remains accurate without manual intervention.
-- *Game State Cleanup*: Live game states stored in Redis have a 24-hour time-to-live (TTL). Games that are abandoned or otherwise left incomplete are automatically cleaned up when this TTL expires, preventing resource accumulation from stale data.
+- *Tournament Control*: While regular users can only participate in tournaments, administrators can create new tournaments with full control over parameters. This includes setting the tournament name, rating requirements (minimum and maximum allowed ratings), and schedule. Admins can also modify or cancel tournaments if necessary.
 
 #pagebreak()
 
 = Design Overview
-
-== System Overview
-
-Square64 is built on a modern, layered architecture that separates concerns and enables maintainability, testability, and scalability. The application uses Spring Boot 3.5.7 as its foundation, leveraging the Spring ecosystem's comprehensive support for various database technologies and security implementations.
-
-The layered architecture follows established enterprise application patterns, with each layer having distinct responsibilities and well-defined interfaces with adjacent layers. This separation ensures that changes in one layer (such as switching database implementations or modifying business rules) have minimal impact on other layers.
-
-#table(
-  columns: (1fr, 2fr),
-  [*Layer*], [*Technology*],
-  [API], [RESTful endpoints implemented with Spring Web. These endpoints follow REST conventions, using appropriate HTTP methods (GET, POST, PUT, DELETE) and status codes to provide a consistent and predictable API surface.],
-  [Security], [Spring Security integrated with JWT (JSON Web Token) authentication. This stateless authentication approach eliminates the need for server-side session storage, simplifying horizontal scaling while maintaining secure access control.],
-  [Business Logic], [Service layer containing the core application logic. This includes game validation using the ChessLib library, matchmaking algorithms, tournament management logic, and social feature implementations. Services are defined as interfaces with concrete implementations, enabling testing and flexibility.],
-  [Data Access], [Spring Data repositories provide a consistent abstraction over database operations. Custom repository implementations extend base functionality with complex queries like aggregation pipelines for MongoDB or Cypher queries for Neo4j.],
-  [Persistence], [The polyglot persistence layer comprising three database technologies, each chosen for its specific strengths in handling different data types and access patterns.],
-)
-
-Java 17 was chosen as the runtime environment, providing modern language features like records, sealed classes, and enhanced pattern matching while maintaining long-term support stability. The combination of Java 17 and Spring Boot 3.x represents a mature, well-supported technology stack suitable for production deployment.
 
 == Functional Requirements
 
@@ -151,11 +128,14 @@ Java 17 was chosen as the runtime environment, providing modern language feature
 
 The system recognizes distinct actor types, each with specific capabilities and restrictions. Understanding these actors helps clarify the boundaries of functionality and guides implementation decisions.
 
+*User (Unregistered)*
+
+Unregistered users can explore the platform without creating an account. They have read-only access to browse player profiles, view club information and member lists, explore tournament listings and results, and access the historical game archive. This open access model allows potential users to evaluate the platform before committing to registration.
+
 *User (Registered)*
 
 The registered user represents the primary actor in the system—the chess player who actively uses the platform. After completing registration and authentication, users have access to all standard platform features:
 
-- *Create account and authenticate via JWT*: Users register with a unique username, email, and password. The password is securely hashed using BCrypt before storage. Upon successful login, users receive a JWT token that must be included in subsequent requests. This token contains encoded user information and has a limited validity period for security.
 - *Play live chess games through matchmaking*: Users can queue for games and be matched with other waiting players. The matchmaking system creates games with appropriate time controls and ensures fair pairings.
 - *Follow/unfollow other users*: The social graph is built through unidirectional follow relationships. Users can follow anyone without approval, creating a Twitter-like social model rather than a Facebook-like mutual friendship model.
 - *Join clubs with rating statistics*: When joining a club, the system captures a snapshot of the user's current ratings, this enables tracking of member growth.
@@ -171,66 +151,34 @@ Administrators are trusted users with elevated privileges for platform managemen
 - *Create and manage tournaments*: Admins have full control over tournament lifecycle, from creation with custom parameters to management and conclusion.
 - *Access administrative endpoints*: Certain API endpoints are restricted to admin access, providing operational capabilities not exposed to regular users.
 
-=== Feature Requirements
-
-The following table enumerates specific functional requirements with their associated actors:
-
-#table(
-  columns: (auto, 1fr, auto),
-  [*ID*], [*Requirement*], [*Actor*],
-  [FR1], [User registration with email and password. The system validates email format, ensures username uniqueness, and enforces password complexity requirements.], [User],
-  [FR2], [JWT-based authentication. Users receive tokens upon login that are validated on each request, enabling stateless authentication across distributed application instances.], [User],
-  [FR3], [Join matchmaking queue for live games. Users enter a queue and wait for the system to find a suitable opponent based on availability and preferences.], [User],
-  [FR4], [Make moves in live games with validation. Every move is checked against chess rules using the ChessLib library, preventing illegal moves and ensuring game integrity.], [User],
-  [FR5], [Resign from active games. Users can concede a game at any point, which immediately ends the game and records the result.], [User],
-  [FR6], [Follow and unfollow other users. These social connections build the graph used for friend suggestions and activity feeds.], [User],
-  [FR7], [Join chess clubs with rating snapshot. The join action records current ratings, creating historical data for club statistics.], [User],
-  [FR8], [Subscribe to tournaments within time window. The one-week-before to one-day-before window balances accessibility with organization needs.], [User],
-  [FR9], [View friend suggestions based on graph analysis. The system recommends users based on shared connections and club memberships.], [User],
-  [FR10], [Access monthly opening statistics. Aggregated data shows opening trends filtered by rating range and time period.], [User],
-  [FR11], [Promote users to admin status. This privileged operation extends platform management capabilities to trusted users.], [Admin],
-  [FR12], [Create tournaments with rating restrictions. Admins configure all tournament parameters including eligibility requirements.], [Admin],
-)
-
 == Non-Functional Requirements
 
-Beyond specific features, Square64 must meet several cross-cutting quality requirements that influence architectural decisions and implementation approaches.
-
-=== Scalability
-The application is designed to handle growth in users, games, and data volume without architectural changes:
-
-- *MongoDB horizontal scaling through sharding*: The games collection, which grows continuously as users play, can be distributed across multiple servers using MongoDB's built-in sharding capabilities. A shard key based on user region or game timestamp enables efficient distribution while maintaining query locality for common access patterns.
-- *Redis clustering for distributed matchmaking*: As concurrent player counts grow, the matchmaking system can scale across multiple Redis instances. Redis Cluster provides automatic data distribution and failover, ensuring the matchmaking queue remains responsive under high load.
-- *Neo4j read replicas for social graph queries*: Friend suggestions and social graph traversals can be computationally expensive, using a graph database like neo4j prevents social features from impacting the core database performance.
+Beyond specific features, Square64 must meet several quality requirements that influence architectural decisions and implementation approaches.
 
 === Availability
 The system is designed for continuous operation with minimal planned or unplanned downtime:
 
-- *Redis provides sub-millisecond response times*: Live game operations require immediate responses to maintain user experience. Redis's in-memory architecture delivers consistent sub-millisecond latency even under heavy load, ensuring moves are processed instantly.
-- *24-hour TTL on Redis game states*: Automatic expiration of game states prevents unbounded memory growth from abandoned games. This self-cleaning mechanism eliminates the need for manual intervention while ensuring resources are reclaimed from inactive games.
-- *Stateless JWT authentication*: "[Jarvis is this true?]" Because user sessions are encoded in tokens rather than stored server-side, any application instance can handle any request. This enables horizontal scaling and eliminates single points of failure in the authentication layer.
+- Minimizing single points of failure through database replication
+- *Low response times for live operations*: Live game operations require immediate responses to maintain user experience.
 
 === Security
 User data and system integrity are protected through multiple security layers:
 
-- *BCrypt password hashing*: Passwords are never stored in plain text. BCrypt's adaptive hashing includes automatic salting and configurable cost factors, providing strong protection against both rainbow table attacks and brute force attempts.
-- *JWT tokens for stateless authentication*: Tokens are signed with a secret key, preventing tampering. Token validation occurs on every request, and tokens include expiration times to limit the window of vulnerability if a token is compromised.
-- *Role-based access control*: The system distinguishes between USER and ADMIN roles, with certain endpoints restricted to admin access. Spring Security enforces these restrictions at the controller level, preventing unauthorized access to privileged operations.
+- *Role-based access control*: The system distinguishes between USER and ADMIN roles, with certain endpoints restricted to admin access.
 - *Input validation*: All user inputs are validated before processing, preventing injection attacks and ensuring data integrity. This includes validation of move notation, username formats, and request parameters.
 
 === Performance
 The system is optimized for responsiveness across all operations:
 
-- *Redis caching for real-time game state*: Game states are stored entirely in Redis, providing under 10ms latency for all game operations. This includes reading current position, validating moves, and updating game state.
-- *MongoDB aggregation pipelines for analytics*: Complex statistical queries are implemented as aggregation pipelines that execute entirely within MongoDB. This pushes computation to the data layer, reducing network overhead and enabling efficient processing of large datasets.
-- *Neo4j graph traversal for friend recommendations*: Friend suggestions leverage Neo4j's native graph traversal capabilities, efficiently exploring relationship paths that would be expensive to compute in traditional databases.
+- *Fast response times for real-time game state*: Given the real time games functionality of this application it is important to have fast read/write access for live games data
+- *Server-side aggregation for analytics*: Complex statistical queries are implemented as aggregation pipelines that execute within the database layer. This pushes computation to the data layer, reducing network overhead and enabling efficient processing of large datasets.
+- *Graph traversal for friend recommendations*: Friend suggestions leverage native graph traversal capabilities, efficiently exploring relationship paths that would be expensive to compute with traditional join operations.
 
 == Use Case Diagram
 
 The following diagram illustrates the primary use cases and their association with system actors:
 
-#image("images/usecase.drawio.png")
-
+#image("images/docs/usecase.drawio.png")
 
 
 == UML Diagrams
@@ -241,32 +189,17 @@ The following class diagram depicts the main domain entities and their relations
 
 #image("images/docs/UML.drawio.png")
 
-The *User* entity represents registered players with their credentials, personal information, statistics, and embedded game summaries. The stats field contains separate ratings for different time controls.
+The *Player* entity represents registered players with their credentials, personal information, statistics, and embedded game summaries. The stats field contains separate ratings for different time controls.
 
-The *Game* entity captures completed games with full move notation, player information at the time of the game (ratings), and classification data like opening and time control.
+The *ChessGame* entity captures completed games with full move notation, player information at the time of the game (ratings), and classification data like opening and time control.
 
 The *Club* entity represents chess communities with descriptive information.
 
 The *Tournament* entity manages competitive events with eligibility criteria, participant tracking, and embedded game results.
 
+The *Move* entity represents the chess moves that can be done during a chess game
 
-=== Relationship Diagram - Neo4j
-
-Neo4j stores the social graph as nodes and relationships, enabling efficient traversal queries:
-
-```
-(User)--[:FOLLOWS]-->(User)
-   |
-   +--[:JOINED {country, bullet, blitz, rapid}]-->(Club)
-   |
-   +--[:PARTECIPATED {wins, draws, losses, placement}]-->(Tournament)
-```
-
-The *FOLLOWS* relationship represents the unidirectional social connection between users. Following is one-way—user A following user B does not imply B follows A.
-
-The *JOINED* relationship connects users to clubs and stores the ratings snapshot taken at join time. This enables historical analysis and club leaderboards based on membership statistics.
-
-The *PARTECIPATED* relationship records a user's involvement in a tournament, including their performance metrics and final placement.
+The *Opening* entity represents the possible openings of a chess game
 
 #pagebreak()
 
@@ -279,7 +212,6 @@ Building a realistic chess platform requires substantial initial data to enable 
 The primary data sources were:
 - *Chess.com API*: This comprehensive API provided access to user profiles including ratings, country information, and account statistics. Game archives were retrieved with complete move notation in PGN format. Club data including member lists and club metadata was also sourced from this API.
 - *Lichess API*: Supplementary data came from Lichess, mainly for tournament information and additional game records. The remaining data collected from Lichess is analogous to that obtained from Chess.com, including player information and game data.
-
 - *Kaggle*: Historical chess game data was collected from Kaggle, specifically World Chess Championship matches played between 1980 and 2021.
 
  All data collection respected API rate limits and terms of service.
@@ -293,7 +225,33 @@ The primary data sources were:
 
 - *Tournaments*: For tournaments, we retained the principal information, such as tournament name, type, date, and main structural details.
 
-This preprocessing and selection process was carried out to ensure the highest possible level of data uniformity between datasets collected from the two different sources.
+== Documents standardization
+
+To ensure data uniformity across Chess.com, Lichess, and Kaggle sources, we defined a standardized schema for each entity type and applied transformation rules during collection.
+
+*Users*: User documents follow a unified schema with the following standardizations:
+  - *Username normalization*: Chess.com uses `username`, Lichess uses `name`/`id` — both are mapped to a common `username` field.
+  - *Rating alignment*: Lichess ratings tend to be inflated compared to Chess.com. To normalize, Lichess ratings are scaled by a factor of 0.75 (e.g., a 2000 Lichess rating becomes 1500).
+  - *Date formatting*: Timestamps are converted from Unix epochs (Chess.com) or millisecond epochs (Lichess) to a standard `YYYY-MM-DD HH:MM:SS` string format.
+  - *Country handling*: Chess.com provides country as a URL path; Lichess provides it in the profile. Both are extracted to a simple country code.
+  - *Synthetic data*: Email addresses and SHA-256 hashed passwords are generated using the Faker library to enable authentication functionality.
+
+*Clubs*: Club documents are standardized as follows:
+  - *Country assignment*: For Lichess teams (which lack country data), a random country is assigned from a predefined list.
+  - *Date generation*: Lichess teams lack creation dates, so a random date between 2006-2010 is generated.
+
+*Games*: Game documents are unified with these transformations:
+  - *Rating scaling*: Lichess game ratings are scaled by 0.75 for consistency with Chess.com ratings.
+  - *Result normalization*: Chess.com uses descriptive results (e.g., "checkmated", "timeout"); Lichess uses "white"/"black"/"draw" as winner. Both are converted to `result_white` and `result_black` with values "win", "loss", or "draw".
+  - *Time control*: Chess.com uses `time_class` (bullet/blitz/rapid); Lichess uses `speed`. Both are mapped to `time_class`.
+  - *Opening detection*: Chess.com provides openings via ECO URL; Lichess includes an `opening` object. Kaggle data uses ECO codes mapped to opening names via a lookup table. When missing, an opening detector analyzes the first moves.
+  - *Move extraction*: Chess.com PGN moves are parsed to remove clock annotations and move numbers. Lichess provides moves directly.
+  - *Kaggle historical games*: These are marked with `historical: true` and `time_class: "classical"`.
+
+*Tournaments*: Tournament documents are standardized with:
+  - *Name unification*: Lichess uses `fullName`, Chess.com uses `name` — both mapped to `name`.
+  - *Time fields*: Start and finish times are converted to `YYYY-MM-DD HH:MM:SS` format. For Lichess, finish time is calculated from start time plus duration in minutes.
+  - *Rating bounds*: `min_rating` and `max_rating` define eligibility. Lichess ratings are scaled by 0.75. Chess.com tournaments default `min_rating` to 600 when not specified.
 
 == Scripts for Dataset Creation
 
@@ -307,36 +265,27 @@ A suite of Python scripts, organized in the `data/collectors` directory, automat
 
 == Volume Considerations
 
-The system is designed to handle substantial data volumes typical of a moderately popular online chess platform:
+The system is designed to handle substantial data volumes typical of a moderately popular online chess platform. The following estimates are based on 10,000 daily active users (DAU).
 
 #table(
-  columns: (auto, 1fr, 1fr, 1fr),
-  [*Metric*], [*MongoDB*], [*Neo4j*], [*Redis*],
-  [Estimated DAU], [10,000], [10,000], [5,000],
-  [Reads/day], [500,000], [100,000], [1,000,000],
-  [Writes/day], [50,000], [10,000], [500,000],
-  [Storage], [50 GB], [5 GB], [1 GB],
+  columns: (auto, 1fr),
+  [*Parameter*], [*Value*],
+  [Daily Active Users (DAU)], [10,000],
+  [Games played per user per day], [5],
+  [Average moves per game], [40],
+  [Concurrent live games (peak)], [2,500],
+  [Users browsing profiles per day], [8,000],
+  [Profile views per browsing user], [10],
+  [Users viewing statistics per day], [3,000],
+  [Follow/unfollow actions per day], [5,000],
+  [Club joins per day], [500],
+  [Tournament subscriptions per day], [1,000],
+  [Friend suggestion requests per day], [15,000],
 )
-
-*Justification for Volume Estimates:*
-
-- *MongoDB* handles the highest data volume because it stores both the complete game archive (which grows indefinitely) and user documents with embedded game summaries. With an estimated 10,000 daily active users each playing an average of 5 games, that's 50,000 new game documents daily. Reads are approximately 10x writes as users browse profiles, view game history, and access statistics. The 50 GB storage estimate accounts for several years of accumulated games plus user and tournament data.
-
-- *Neo4j* manages relationship queries which are less frequent but computationally intensive. The 100,000 daily reads primarily consist of friend suggestion queries and club/tournament membership lookups. Writes (10,000/day) occur when users follow/unfollow others or join clubs—less frequent than gameplay but still significant. Storage remains relatively small (5 GB) because Neo4j stores only relationship data, not full document content.
-
-- *Redis* experiences the highest operation count despite lowest storage because it handles all real-time game operations. Every move in every active game requires multiple Redis operations (read state, validate, update state, update player mappings). With 5,000 concurrent users potentially playing games, and each game involving dozens of moves, operation counts easily reach 1,000,000 daily. Storage remains minimal (1 GB) because game states are ephemeral with 24-hour TTL.
 
 == Database Choices
 
-The multi-database architecture represents a deliberate design decision to leverage specialized tools for specific data patterns. This polyglot persistence approach acknowledges that no single database technology optimally handles all data access patterns.
-
-#table(
-  columns: (1fr, 2fr),
-  [*Database*], [*Rationale*],
-  [MongoDB], [Document databases excel at storing semi-structured data with varying schemas. Chess games naturally fit this model—different games have different numbers of moves, optional annotations, and varying metadata. MongoDB's powerful aggregation framework enables complex analytics like opening statistics without requiring data to be exported to a separate analytics system. The embedding of game summaries in user documents optimizes the common access pattern of viewing a player's recent games.],
-  [Neo4j], [Graph databases are purpose-built for relationship-heavy data. The social aspects of Square64—who follows whom, who belongs to which clubs, who competed in which tournaments—form a natural graph. Friend-of-friend queries that would require expensive joins in relational databases are simple traversals in Neo4j. The JOINED relationship with rating properties enables club leaderboards that would otherwise require complex joins across multiple tables.],
-  [Redis], [Real-time gaming demands sub-millisecond latency that disk-based databases cannot consistently provide. Redis's in-memory architecture delivers the performance required for live gameplay while its data structures (lists for queues, sets for subscriptions, strings for game state) map directly to application needs. The built-in TTL mechanism handles cleanup automatically, and Redis's atomic operations prevent race conditions in the matchmaking system.],
-)
+The multi-database architecture represents a deliberate design decision to leverage specialized tools for specific data patterns. This persistence approach acknowledges that no single database technology optimally handles all data access patterns.
 
 == MongoDB
 
@@ -344,7 +293,7 @@ MongoDB serves as the primary data store for persistent application data, includ
 
 === Collections
 
-*users* - Player profiles with embedded game summaries
+*Users* - Player profiles with embedded game summaries
 
 The users collection stores comprehensive player information in denormalized documents:
 
@@ -354,17 +303,34 @@ The users collection stores comprehensive player information in denormalized doc
   "username": "player123",
   "name": "John Doe",
   "country": "US",
+  "last_online": "2026-01-26 16:49:07",
+  "joined": "2012-09-28 15:44:42",
+  "is_streamer": false,
+  "verified": false,
+  "streaming_platforms": [],
   "stats": { "bullet": 1800, "blitz": 1600, "rapid": 1500 },
-  "games": [{ "white": "...", "black": "...", "opening": "...", "winner": "..." }],
+  "games": [
+    {
+    "_id": "...",
+    "white": "...",
+    "black": "...",
+    "opening": "...",
+    "winner": "...",
+    "date": "..."
+    }
+  ],
+  "buffered_games": 50,
   "mail": "user@example.com",
   "password": "<hashed>",
-  "role": "USER"
+  "admin": false
 }
 ```
 
-The embedded `games` array contains abbreviated summaries of recent games, enabling quick profile display without joining to the games collection, the array is realized through partial embedding of the game document, game digests contains an "\_id" field that directly link to the refered game, this allows to access the complite document allowing the user to see the replay. The `stats` object separates ratings by time control, reflecting how chess platforms differentiate skill levels across different game speeds.
+The embedded `games` array contains abbreviated summaries of recent games, enabling quick profile display without joining to the games collection, the array is realized through partial embedding of the game document, game digests contains an "\_id" field that directly link to the refered game, this allows to access the complete document allowing the user to see the replay. The `stats` object separates ratings by time control, reflecting how chess platforms differentiate skill levels across different game speeds. Furthermore the presence of the `games` array enables quick and efficient MongoDB aggregation operating on the last user played games allowing the user page to display their `favorite opening` and `win rate`, again, based on their last performances.
 
-*games* - Complete game records with moves
+At user creation, the `games` array is initialized with a default amount of placeholders, this has the advatage of defining the user document size avoiding document relocation due to size increases, so this way the array only displays the user most recent played games, enough for our statistical analysis.
+
+*Games* - Complete game records with moves
 
 Every completed game receives a permanent record in this collection:
 
@@ -375,16 +341,19 @@ Every completed game receives a permanent record in this collection:
   "black_player": "player2",
   "white_rating": 1500,
   "black_rating": 1480,
+  "result_white": "resigned",
+  "result_black": "win",
   "opening": "Sicilian Defense",
   "moves": "e4 c5 Nf3 d6...",
   "time_class": "blitz",
-  "end_time": "2023-10-03 18:55:39"
+  "end_time": "2023-10-03 18:55:39",
+  "historical": false
 }
 ```
 
-Ratings are captured at game time rather than referenced from user documents, preserving historical accuracy. The `opening` field is populated automatically based on the move sequence, typically identified within the first 10-15 moves. The `end_time` timestamp enables temporal queries for analytics.
+Ratings are captured at game time rather than referenced from user documents, preserving historical accuracy. The `opening` field is populated automatically based on the move sequence, typically identified within the first 5-10 moves. The `end_time` timestamp enables temporal queries for analytics.
 
-*clubs* - Club information
+*Clubs* - Club information
 
 Clubs are stored as lightweight documents with references to related data:
 
@@ -400,7 +369,7 @@ Clubs are stored as lightweight documents with references to related data:
 
 Club membership is managed through Neo4j relationships rather than embedded in the club document, avoiding unbounded array growth and enabling efficient membership queries.
 
-*tournaments* - Tournament configuration and results
+*Tournaments* - Tournament configuration and results
 
 Tournaments contain both configuration and results in a single document:
 
@@ -408,15 +377,29 @@ Tournaments contain both configuration and results in a single document:
 {
   "_id": ObjectId,
   "name": "Weekly Blitz",
+  "description": "<p>This is the 19th Official Chess.com Thematic Tournament. It will begin May 1st, so register now!</p>",
   "status": "active",
+  "creator": "CHESScom"
+  "finish_time": "2015-03-29 20:33:10",
   "min_rating": 1000,
   "max_rating": 2000,
   "max_participants": 32,
-  "games": [{ "white": "...", "black": "...", "winner": "..." }]
+  "games": [
+    {
+    "_id": "...",
+    "white": "...",
+    "black": "...",
+    "opening": "...",
+    "winner": "...",
+    "date": "..."
+    }
+  ],
+  "buffered_games": 150,
+  "time_control": "1/259200",
 }
 ```
 
-The embedded `games` array work well for tournaments because participant counts are bounded by `max_participants`, preventing unbounded document growth. The `status` field transitions through values like "upcoming", "active", and "finished" as the tournament progresses. Participants are stored and managed through Neo4j relationships exploiting the existing social web implemented.
+The embedded `games` array work well for tournaments because participant counts are bounded by `max_participants`, preventing unbounded document growth. The `status` field transitions through values like "active", and "finished" as the tournament progresses.
 
 == Neo4j
 
@@ -459,51 +442,32 @@ The JOINED relationship stores a snapshot of user ratings at join time, and upda
 ```cypher
 (:USER)-[:PARTECIPATED {wins, draws, losses, placement}]->(:TOURNAMENT)
 ```
-Tournament relationships record each player's performance, enabling queries like "find users who placed top 3 in multiple tournaments" without aggregating from game-level data [Jarvis is this true?].
+Tournament relationships record each player's performance, enabling queries like "find users who placed top 3 in multiple tournaments" without aggregating from game-level data.
+
+\
+
+#figure(
+  image("template/images/neo4j_demo_image.png",height: 46%),
+  caption: [Neo4j example]
+)
 
 == Redis
 
 Redis provides the real-time backbone for live gameplay. Its in-memory architecture delivers consistent sub-millisecond latency, while its versatile data structures map naturally to application requirements.
 
-=== Key Namespace Overview
+=== Key Patterns
 
 All Redis keys in Square64 follow a hierarchical namespace convention using `chess:` as the root prefix, with colons as separators to create logical groupings. This naming scheme makes the key space self-documenting and enables pattern-based operations for bulk key management.
 
 The namespace is organized into four primary domains:
 
-- *Matchmaking* (`chess:matchmaking:*`): Contains the queues used to pair players for games. Regular matchmaking uses `chess:matchmaking:queue:{gameType}` where gameType is bullet, blitz, or rapid. Tournament matchmaking uses separate queues at `chess:matchmaking:tournament:{tournamentId}` to ensure players are only matched within their subscribed tournament. Both use Redis Lists to implement FIFO ordering.
+- *Matchmaking* (`chess:matchmaking:*`): Contains the queues used to pair players for games. Regular matchmaking uses `chess:matchmaking:queue:{gameType}` where gameType is bullet, blitz, or rapid. Tournament matchmaking uses separate queues at `chess:matchmaking:tournament:{tournamentId}` to ensure players are only matched within their subscribed tournament.
 
-- *Games* (`chess:game:*` and `chess:player:game:*`): Stores active game state and player-to-game mappings. The key `chess:game:{gameId}` holds the complete game state as a JSON string, while `chess:player:game:{username}` provides a reverse lookup from player to their current game. Both have a 24-hour TTL to automatically clean up abandoned games.
+- *Games* (`chess:game:*` and `chess:player:game:*`): Stores active game state and player-to-game mappings. The key `chess:game:{gameId}` holds the complete game state as a JSON string, while `chess:player:game:{username}` provides a reverse lookup from player to their current game.
 
 - *Tournaments* (`chess:tournament:*`): Groups all tournament-related data under a common prefix. Each tournament has metadata at `chess:tournament:{tournamentId}:data` (JSON string), a subscriber set at `chess:tournament:{tournamentId}:subscribers`, and per-player game counters at `chess:tournament:{tournamentId}:player:{username}:games`. These keys have no TTL and are instead cleaned up by the `TournamentScheduler` when a tournament finishes.
 
 - *Openings* (`chess:opening:*`): Caches chess opening data for real-time detection during games. Keys follow the pattern `chess:opening:{normalizedFen}` where the FEN is normalized to include only board position and side to move. These are static reference data with no expiration.
-
-=== Key Patterns
-
-Redis keys follow a hierarchical naming convention using colons as separators, enabling logical grouping and pattern-based operations. This structure makes the key space predictable and self-documenting.
-
-*Matchmaking Keys*
-
-The matchmaking system relies on Redis lists to implement fair first-in-first-out queuing. Regular matchmaking queues use the pattern `chess:matchmaking:queue:{gameType}`, where `{gameType}` corresponds to the time control (bullet, blitz, or rapid). Players waiting for a casual game are added to the tail of the list and opponents are popped from the head. This ensures players who have been waiting longest are matched first. For tournament play, separate queues are maintained using `chess:matchmaking:tournament:{tournamentId}`, where `{tournamentId}` corresponds to the tournament's MongoDB identifier. This isolation guarantees that tournament games are only created between players subscribed to that specific tournament.
-
-*Game State Keys*
-
-Active game states are stored under `chess:game:{gameId}`, where the value is a JSON-serialized object containing the complete game context: current board position in FEN notation, move history, player usernames, detected opening, and timestamps. This key has a 24-hour time-to-live that refreshes with each move, ensuring abandoned games are eventually cleaned up while active games persist indefinitely. A companion key `chess:player:game:{username}` maintains a reverse mapping from each player to their current game, enabling O(1) lookup to determine whether a player is already in an active game and preventing them from starting multiple simultaneous games.
-
-*Tournament Keys*
-
-Tournament data in Redis consists of several related key patterns:
-
-- *Subscription Set*: `chess:tournament:{tournamentId}:subscribers` - A Redis set storing usernames of subscribed players. Using a set provides O(1) membership testing when validating that a player attempting to join a tournament queue is actually subscribed, and naturally prevents duplicate subscriptions. The set also enables efficient counting of current subscribers to enforce participant limits.
-
-- *Tournament Metadata*: `chess:tournament:{tournamentId}:data` - A JSON-serialized string storing tournament configuration for quick validation during subscription and matchmaking. The JSON object contains fields: `status`, `minRating`, `maxRating`, `maxParticipants`, and `finishTime`. This avoids repeated MongoDB queries for tournament parameters during real-time operations.
-
-- *Per-Player Game Counter*: `chess:tournament:{tournamentId}:player:{username}:games` - An atomic counter tracking the number of games each player has played in a tournament. These counters are incremented atomically when a tournament game begins, ensuring accurate tracking even under concurrent matchmaking requests. The counter value is checked before allowing a player to queue for additional tournament games (limited to 8 games per player per tournament by default). These keys are cleaned up by the `TournamentScheduler` when a tournament finishes.
-
-*Opening Cache Keys*
-
-Chess opening data is cached in Redis for fast lookup during live games. The keys follow the pattern `chess:opening:{normalizedFen}`, where `{normalizedFen}` is a normalized FEN string containing only the board position and side to move (omitting castling rights, en passant, and move counters). The value is a JSON object containing the opening's ECO code and name. This cache enables the application to identify openings in real-time as players make moves, displaying the opening name during the opening phase of each game (configurable via `chess.openings.max-move-check`, default: 30 moves). Since opening positions are immutable reference data, these keys do not require expiration.
 
 === Data Structures
 
@@ -523,7 +487,7 @@ Chess opening data is cached in Redis for fast lookup during live games. The key
 }
 ```
 
-The `fen` field contains the current board position in Forsyth-Edwards Notation, a standard chess position encoding. The `moveHistory` array preserves the complete game for eventual persistence to MongoDB. The `detectedOpening` field is updated as moves are played until the game exits known opening theory (first 10 moves). Timestamps enable timeout detection and analytics on game duration.
+The `fen` field contains the current board position in FEN Notation, a standard chess position encoding. The `moveHistory` array preserves the complete game for eventual persistence to MongoDB. The `detectedOpening` field is updated as moves are played until the game exits known opening theory (first 10 moves). Timestamps enable timeout detection and analytics on game duration.
 
 *LiveTournamentData* (stored as JSON String):
 
@@ -541,8 +505,6 @@ Tournament configuration is stored as JSON strings, consistent with the LiveGame
 
 This structure allows the application to validate tournament eligibility and subscription status without querying MongoDB. The JSON object is serialized when the tournament is created and remains static until the tournament finishes.
 
-*TTL Policy*: Game-related keys (`chess:game:{gameId}` and `chess:player:game:{username}`) have a 24-hour time-to-live. This ensures automatic cleanup of abandoned games while providing ample time for games to conclude naturally. Tournament-related keys (metadata, subscriber sets, and per-player game counters) do not have TTLs set; instead, they are explicitly deleted by the `TournamentScheduler` when a tournament finishes.
-
 #pagebreak()
 
 
@@ -553,34 +515,14 @@ This structure allows the application to validate tournament eligibility and sub
 Square64 is implemented as a Spring Boot application leveraging the mature Spring ecosystem for database connectivity, security, and web services.
 
 *Technology Stack:*
-- *Spring Boot 3.5.7*: The foundation framework providing dependency injection, configuration management, and application structure. Version 3.x brings support for Java 17+ features and improved performance.
-- *Java 17*: The Long-Term Support Java version provides modern language features including records for immutable DTOs, pattern matching for cleaner conditionals, and sealed classes for controlled inheritance hierarchies.
+- *Spring Boot*: The foundation framework providing dependency injection, configuration management, and application structure.
 - *Maven*: The build system manages dependencies and provides a standardized project structure. Maven's dependency management ensures consistent library versions across development and deployment.
 - *Spring Data MongoDB, Neo4j, Redis*: These Spring Data modules provide consistent repository abstractions across all three databases. Developers work with familiar interfaces while Spring handles connection management and query translation.
 - *Spring Security with JWT*: The security framework handles authentication and authorization. JWT integration enables stateless authentication suitable for distributed deployment.
 - *ChessLib 1.3.4*: This specialized library provides chess move validation, position management, and opening detection. It ensures all moves conform to chess rules without requiring custom validation logic.
-- *Lombok*: Annotation processing reduces boilerplate code for getters, setters, constructors, and builders. This keeps domain classes concise while generating all necessary accessor methods.
 - *SpringDoc OpenAPI*: Automatic API documentation generation from controller annotations. Developers can explore and test endpoints through the Swagger UI without maintaining separate documentation.
 
 *Project Structure:*
-
-The codebase follows a standard layered architecture reflected in the package structure:
-
-```
-src/main/java/it/unipi/chessApp/
-├── config/              # Database and security configuration
-├── controller/          # REST API endpoints
-├── dto/                 # Data Transfer Objects
-├── model/               # MongoDB document models
-├── model/neo4j/         # Neo4j node and relationship models
-├── repository/          # MongoDB repositories
-├── repository/neo4j/    # Neo4j repositories
-├── security/            # JWT and authentication
-├── service/             # Business logic interfaces
-├── service/impl/        # Service implementations
-├── scheduler/           # Scheduled tasks
-└── utils/               # Utility classes
-```
 
 The `config` package contains configuration classes for each database connection plus security configuration. Each database has its own configuration bean managing connection parameters, authentication, and connection pooling.
 
@@ -611,87 +553,289 @@ The `findByUsername` method enables user lookup during authentication and profil
 
 ==== User defined anylitics aggregations
 
-Square64 allows users to calculate user specific statistics, in particular their scope begins and ends at the user specific document inside the "users" collection, this is in contraposition to the computational heavy aggregation pipelines in the next session.
+Square64 allows users to calculate user specific statistics, in particular their scope begins and ends at the user specific document inside the "users" collection, this is in contraposition to the computational heavy aggregation pipelines\ in the next session.
 
 These rapresent different endpoint in the effective implementation of Square64, but their execution are fundomental for displaying user profiles.
 
 *User tilt*
+
 ```java
 @Aggregation(pipeline = {
-        "{ '$project': { 'username': 1, 'recentGames': { '$slice':['$games', -3] } } }",
-        "{ '$project': { 'username': 1, 'recentGames': 1, 'winResults': { '$map': { 'input': '$recentGames', 'as': 'game', 'in': { '$eq': ['$$game.winner', '$username'] } } } } }",
-        "{ '$match': { 'winResults': { '$ne': true }, '$expr': { '$eq': [{ '$size': '$winResults' }, 3] } } }",
-        "{ '$project': { '_id': 0, 'username': 1, 'status': { '$literal': 'ON TILT' } } }"
-    })
-    List<TiltPlayerDTO> findTiltPlayers();
+  // Stage 1: Filter out placeholder games (where _id is null)
+  """
+  { '$project': {
+      'username': 1,
+      'realGames': {
+        '$filter': {
+          'input': '$games',
+          'as': 'game',
+          'cond': { '$and': [
+            { '$ne': ['$$game._id', null] },
+            { '$gt': ['$$game._id', null] }
+          ]}
+        }
+      }
+  }}
+  """,
+  // Stage 2: Only consider users with at least 3 real games
+  """
+  { '$match': {
+      '$expr': { '$gte': [{ '$size': '$realGames' }, 3] }
+  }}
+  """,
+  // Stage 3: Get the last 3 real games
+  """
+  { '$project': {
+      'username': 1,
+      'recentGames': { '$slice': ['$realGames', -3] }
+  }}
+  """,
+  // Stage 4: Check if user lost each of the 3 games
+  """
+  { '$project': {
+      'username': 1,
+      'recentGames': 1,
+      'winResults': {
+        '$map': {
+          'input': '$recentGames',
+          'as': 'game',
+          'in': { '$eq': ['$$game.winner', '$username'] }
+        }
+      }
+  }}
+  """,
+  // Stage 5: Match users who lost all 3 games
+  """
+  { '$match': {
+      'winResults': { '$not': { '$elemMatch': { '$eq': true }}}
+  }}
+  """,
+  // Stage 6: Project final result
+  """
+  { '$project': {
+      '_id': 0,
+      'username': 1,
+      'status': { '$literal': 'ON TILT' }
+  }}
+  """
+})
+List<TiltPlayerDTO> findTiltPlayers();
 ```
 
-"Tilting" means that a player is in a lose streak and part of that reason is he's continuing losing.
+"Tilting" means that a player is in a losing streak. This aggregation filters out placeholder games, takes the last 3 real games, and identifies users who lost all of them.
 
 *User most used openings*
+
 ```java
 @Aggregation(pipeline = {
-            "{ '$match': { '_id': ?0 } }",
-            "{ '$unwind': '$games' }",
-            "{ '$match': { 'games.opening': { '$ne': 'name' } } }",
-            "{ '$group': { '_id': '$games.opening', 'count': { '$sum': 1 } } }",
-            "{ '$sort': { 'count': -1 } }",
-            "{ '$limit': 1 }",
-            "{ '$project': { 'opening': '$_id', 'count': 1, '_id': 0 } }"
-    })
-    UserFavoriteOpeningDTO calcFavoriteOpening(String userId);
+  "{ '$match': { '_id': ?0 } }",
+  "{ '$unwind': '$games' }",
+  // Filter out placeholder games (where _id is null)
+  "{ '$match': { 'games._id': { '$ne': null } } }",
+  "{ '$group': { '_id': '$games.opening', 'count': { '$sum': 1 } } }",
+  "{ '$sort': { 'count': -1 } }",
+  "{ '$limit': 1 }",
+  "{ '$project': { 'opening': '$_id', 'count': 1, '_id': 0 } }"
+})
+UserFavoriteOpeningDTO calcFavoriteOpening(String userId);
 ```
 
-Operates on the buffered game digests in the user document, displays the most used opening of the user in his last 50 games.
+Operates on the buffered game digests in the user document, displays the most used opening of the user in their last 50 games. Placeholder games are filtered out before aggregation.
 
 *User win rate*
+
 ```java
 @Aggregation(pipeline = {
-            "{ '$match': { '_id': ?0 } }",
-            "{ '$unwind': '$games' }",
-            "{ '$match': { 'games.winner': { '$ne': 'name' } } }",
-            "{ '$group': { " "'_id': '$_id', "
-            "'totalGames': { '$sum': 1 }, "
-            "'wins': { '$sum': { '$cond': [ { '$eq':
-            "[{ '$toLower': '$games.winner' },"
-            "{ '$toLower': '$username' }] }, 1, 0] } } } },"
-            "{ '$project': { "
-            "'winRate': { '$multiply': [ { '"
-            "$divide': ['$wins','$totalGames'] }, 100 ] } "
-                    "} }"
-    })
-    UserWinRateDTO calcUserWinRate(String userId);
+  "{ '$match': { '_id': ?0 } }",
+  "{ '$unwind': '$games' }",
+  """
+  { '$match': {
+      'games._id': { '$ne': null },
+      'games.winner': { '$ne': null }
+  }}
+  """,
+  """
+  { '$group': {
+      '_id': '$_id',
+      'username': { '$first': '$username' },
+      'totalGames': { '$sum': 1 },
+      'wins': {
+        '$sum': {
+          '$cond': [
+            { '$eq': [
+              { '$toLower': '$games.winner' },
+              { '$toLower': '$username' }
+            ]},
+            1,
+            0
+          ]
+        }
+      }
+  }}
+  """,
+  """
+  { '$project': {
+      'winRate': {
+        '$multiply': [{ '$divide': ['$wins', '$totalGames'] }, 100]
+      }
+  }}
+  """
+})
+UserWinRateDTO calcUserWinRate(String userId);
 ```
 
-Displays user win rate, a value between 0 and 100%, based on the user last 50 played games.
+Displays user win rate, a value between 0 and 100%, based on the user's last 50 played games. Filters out placeholder games (null id) and games without a winner before calculating.
 
 === Game Repository - Aggregation Pipelines
 
-Complex analytics queries use MongoDB's aggregation framework, defined as pipeline annotations:
-
 *Monthly Top Openings by Rating*
+
 ```java
 @Aggregation(pipeline = {
-  "{ $match: { ... date range and rating filters ... } }",
-  "{ $group: { _id: '$opening', count: { $sum: 1 } } }",
-  "{ $sort: { count: -1 } }",
-  "{ $limit: 10 }"
+  // Stage 1: Filter by date range and minimum ratings
+  """
+  { '$match': {
+      '$and': [
+        { 'end_time': { '$gte': ?2, '$lt': ?3 } },
+        { '$or': [
+          { 'white_rating': { '$gte': ?0 } },
+          { 'black_rating': { '$gte': ?1 } }
+        ]}
+      ]
+  }}
+  """,
+  // Stage 2: Parse date string to Date object
+  """
+  { '$addFields': {
+      'parsedDate': {
+        '$dateFromString': {
+          'dateString': '$end_time',
+          'format': '%Y-%m-%d %H:%M:%S'
+        }
+      }
+  }}
+  """,
+  // Stage 3: Group by month, year, and opening
+  """
+  { '$group': {
+      '_id': {
+        'month': { '$month': '$parsedDate' },
+        'year': { '$year': '$parsedDate' },
+        'opening': '$opening'
+      },
+      'count': { '$sum': 1 }
+  }}
+  """,
+  // Stage 4: Sort by date and count
+  "{ '$sort': { '_id.year': 1, '_id.month': 1, 'count': -1 } }",
+  // Stage 5: Get top opening per month/year
+  """
+  { '$group': {
+      '_id': { 'month': '$_id.month', 'year': '$_id.year' },
+      'most_used_opening': { '$first': '$_id.opening' },
+      'usage_count': { '$first': '$count' }
+  }}
+  """,
+  // Stage 6: Project final result
+  """
+  { '$project': {
+      '_id': 0,
+      'year': '$_id.year',
+      'month': '$_id.month',
+      'mostUsedOpening': '$most_used_opening',
+      'usageCount': '$usage_count'
+  }}
+  """
 })
-List<OpeningCount> getMonthlyTopOpenings(int month, int year, int minRating, int maxRating);
+List<MonthlyOpeningStatDTO> getMonthlyTopOpenings(
+    int minWhite, int minBlack, String startDate, String endDate);
 ```
 
-This pipeline filters games by date and rating range, groups by opening name counting occurrences, sorts by popularity, and returns the top 10. The result maps to a projection class containing opening name and count.
+This pipeline filters games by date range and minimum rating thresholds, parses the date strings, groups by month/year and opening to count occurrences, then selects the most used opening per month. Note: only one opening is selected per month/year; in case of ties, a random one is selected. Dates are stored as strings in format "yyyy-MM-dd HH:mm:ss" for lexicographic comparison.
 
 *Average ELO for Opening*
+
 ```java
 @Aggregation(pipeline = {
-  "{ $match: { opening: ?0 } }",
-  "{ $group: { _id: null, avgWhite: { $avg: '$white_rating' }, avgBlack: { $avg: '$black_rating' } } }"
+  // Stage 1: Filter by opening and date range
+  """
+  { '$match': {
+      'opening': ?0,
+      'end_time': { '$gte': ?1, '$lt': ?2 }
+  }}
+  """,
+  // Stage 2: Calculate average rating per game
+  """
+  { '$project': {
+      'avg_game_rating': { '$avg': ['$white_rating', '$black_rating'] }
+  }}
+  """,
+  // Stage 3: Calculate overall average
+  """
+  { '$group': {
+      '_id': null,
+      'finalAverageElo': { '$avg': '$avg_game_rating' }
+  }}
+  """
 })
-AverageElo getAverageEloForOpening(String opening);
+AverageEloResult getAverageEloForOpening(
+    String opening, String startDate, String endDate);
 ```
 
-This pipeline computes average ratings of players using a specific opening. The grouped averages indicate the typical skill level where an opening appears, useful for recommending openings to players at different levels.
+This pipeline computes the average rating of players using a specific opening within a date range. It first calculates the average rating per game (between white and black), then averages across all matching games. This indicates the typical skill level where an opening appears, useful for recommending openings to players at different levels.
+
+*Win Rate by Opening*
+
+```java
+@Aggregation(pipeline = {
+  // Stage 1: Filter by rating range and time class
+  """
+  { '$match': {
+      'white_rating': { '$gte': ?0, '$lte': ?1 },
+      'time_class': ?2
+  }}
+  """,
+  // Stage 2: Project opening and win indicator
+  """
+  { '$project': {
+      'opening': 1,
+      'white_won': {
+        '$cond': [{ '$eq': ['$result_white', 'win'] }, 1, 0]
+      }
+  }}
+  """,
+  // Stage 3: Group by opening with stats
+  """
+  { '$group': {
+      '_id': '$opening',
+      'totalGames': { '$sum': 1 },
+      'whiteWins': { '$sum': '$white_won' }
+  }}
+  """,
+  // Stage 4: Filter by minimum games
+  "{ '$match': { 'totalGames': { '$gte': ?3 } } }",
+  // Stage 5: Calculate win percentage
+  """
+  { '$project': {
+      'opening': '$_id',
+      '_id': 0,
+      'totalGames': 1,
+      'winPercentage': {
+        '$multiply': [
+          { '$divide': ['$whiteWins', '$totalGames'] },
+          100
+        ]
+      }
+  }}
+  """,
+  // Stage 6: Sort by win percentage
+  "{ '$sort': { 'winPercentage': -1 } }"
+})
+List<WinRateByOpeningDTO> getWinRateByOpening(
+    int minRating, int maxRating, String timeClass, int minGames);
+```
+
+This pipeline analyzes white's win rate for each opening within a rating range and time class. It filters games by rating bounds and time class, groups by opening counting total games and white wins, filters out openings with fewer games than the minimum threshold, and returns the win percentage sorted from highest to lowest.
 
 === Tournament Repository
 
@@ -702,6 +846,7 @@ List<Tournament> findActiveTournamentsToFinish(LocalDateTime now);
 ```
 
 This query finds tournaments with status "active" whose finish time has passed, enabling the scheduler to update their status appropriately.
+
 
 == Neo4j Operations
 
@@ -847,8 +992,7 @@ private void incrementTournamentGameCount(String tournamentId, String username) 
 ```
 
 Note: Tournament game counters do not have a TTL set during increment. They are cleaned up by the `TournamentScheduler` when the tournament finishes.
-
-The 24-hour TTL serves a dual purpose: it provides ample time for even the longest games to complete naturally, while ensuring that abandoned games (where players disconnect without resigning) are eventually cleaned up without manual intervention. The player-to-game mapping enables O(1) lookup when a player attempts to join matchmaking, preventing them from starting a new game while one is already in progress.
+The player-to-game mapping enables O(1) lookup when a player attempts to join matchmaking, preventing them from starting a new game while one is already in progress.
 
 Processing a move involves retrieving the current state, applying the validated move, and saving the updated state:
 
@@ -972,7 +1116,7 @@ int maxParticipants = tournamentData.getMaxParticipants();
 Long added = redisTemplate.opsForSet().add(subscribersKey, username);
 
 if (added == null || added == 0) {
-    // User was already in set (SADD returns 0 if element already exists)
+    // User was already in set
     throw new BusinessException("You are already subscribed to this tournament");
 }
 
@@ -1084,6 +1228,13 @@ Square64 exposes a comprehensive REST API that allows clients to interact with a
   [GET], [`/users/{userId}/win_rate`], [Public], [Get user win rate statistics],
   [GET], [`/users/{userId}/most_used_opening`], [Public], [Get user's favorite opening],
   [GET], [`/users/stats/tilt`], [Public], [Get players on tilt (3 consecutive losses)],
+  [POST], [`/users/{userName}/clubs/{clubName}`], [User], [Join a club],
+  [POST], [`/users/{sourceId}/follows/{targetId}`], [User], [Follow another user],
+  [POST], [`/users/{sourceId}/unfollows/{targetId}`], [User], [Unfollow a user],
+  [GET], [`/users/{userId}/follows/suggestions`], [User], [Get friend suggestions],
+  [GET], [`/users/{userId}/follows`], [User], [Get users followed by user],
+  [GET], [`/users/{userId}/followers`], [User], [Get user's followers],
+  [GET], [`/users/{userId}/tournaments`], [User], [Get user's tournament history],
 )
 
 *Example: User Registration*
@@ -1131,22 +1282,6 @@ Response:
 }
 ```
 
-=== Social Endpoints (Neo4j)
-
-#table(
-  columns: (auto, auto, auto, auto),
-  inset: 6pt,
-  align: left,
-  table.header([*Method*], [*Endpoint*], [*Auth*], [*Description*]),
-  [POST], [`/users/{userName}/clubs/{clubName}`], [User], [Join a club],
-  [POST], [`/users/{sourceId}/follows/{targetId}`], [User], [Follow another user],
-  [POST], [`/users/{sourceId}/unfollows/{targetId}`], [User], [Unfollow a user],
-  [GET], [`/users/{userId}/follows/suggestions`], [User], [Get friend suggestions],
-  [GET], [`/users/{userId}/follows`], [User], [Get users followed by user],
-  [GET], [`/users/{userId}/followers`], [User], [Get user's followers],
-  [GET], [`/users/{userId}/tournaments`], [User], [Get user's tournament history],
-)
-
 *Example: Follow User*
 ```bash
 curl -X POST http://localhost:8080/users/magnus_fan/follows/hikaru_fan \
@@ -1182,6 +1317,16 @@ Response:
   [GET], [`/games/user/{username}`], [Public], [Get games by username],
   [POST], [`/games/{id}/edit`], [Admin], [Edit game],
   [DELETE], [`/games/{id}`], [Admin], [Delete game],
+  [GET], [`/games/stats/top-openings`], [User], [Get monthly top openings],
+  [GET], [`/games/stats/average-elo`], [User], [Get average Elo for an opening],
+  [GET], [`/games/stats/win-rate-by-opening`], [User], [Get win rate statistics by opening],
+  [POST], [`/games/live/matchmaking`], [User], [Join matchmaking queue],
+  [POST], [`/games/live/matchmaking/tournament/{id}`], [User], [Join tournament matchmaking],
+  [DELETE], [`/games/live/matchmaking`], [User], [Leave matchmaking queue],
+  [DELETE], [`/games/live/matchmaking/tournament/{id}`], [User], [Leave tournament matchmaking],
+  [GET], [`/games/live/{gameId}/status`], [Public], [Get live game status],
+  [POST], [`/games/live/{gameId}/move`], [User], [Make a move],
+  [POST], [`/games/live/{gameId}/resign`], [User], [Resign from game],
 )
 
 *Example: Get User Games*
@@ -1208,18 +1353,6 @@ Response:
 }
 ```
 
-=== Game Statistics Endpoints
-
-#table(
-  columns: (auto, auto, auto, auto),
-  inset: 6pt,
-  align: left,
-  table.header([*Method*], [*Endpoint*], [*Auth*], [*Description*]),
-  [GET], [`/games/stats/top-openings`], [User], [Get monthly top openings],
-  [GET], [`/games/stats/average-elo`], [User], [Get average Elo for an opening],
-  [GET], [`/games/stats/win-rate-by-opening`], [User], [Get win rate statistics by opening],
-)
-
 *Example: Get Top Openings*
 ```bash
 curl -X GET "http://localhost:8080/games/stats/top-openings?year=2024&month=1" \
@@ -1242,22 +1375,6 @@ Response:
   ]
 }
 ```
-
-=== Live Game Endpoints
-
-#table(
-  columns: (auto, auto, auto, auto),
-  inset: 6pt,
-  align: left,
-  table.header([*Method*], [*Endpoint*], [*Auth*], [*Description*]),
-  [POST], [`/games/live/matchmaking`], [User], [Join matchmaking queue],
-  [POST], [`/games/live/matchmaking/tournament/{id}`], [User], [Join tournament matchmaking],
-  [DELETE], [`/games/live/matchmaking`], [User], [Leave matchmaking queue],
-  [DELETE], [`/games/live/matchmaking/tournament/{id}`], [User], [Leave tournament matchmaking],
-  [GET], [`/games/live/{gameId}/status`], [Public], [Get live game status],
-  [POST], [`/games/live/{gameId}/move`], [User], [Make a move],
-  [POST], [`/games/live/{gameId}/resign`], [User], [Resign from game],
-)
 
 *Example: Join Matchmaking*
 ```bash
@@ -1437,50 +1554,25 @@ Response:
 }
 ```
 
-=== Error Handling
-
-The API returns appropriate HTTP status codes and error messages:
-
-- *200 OK*: Successful operation
-- *201 Created*: Resource created successfully
-- *400 Bad Request*: Invalid request (e.g., illegal move)
-- *401 Unauthorized*: Missing or invalid authentication
-- *403 Forbidden*: Insufficient permissions
-- *404 Not Found*: Resource not found
-- *500 Internal Server Error*: Server-side error
-
-Error response format:
-```json
-{
-  "message": "Error description",
-  "data": null
-}
-```
-
 #pagebreak()
 
 
 
 = Database Deployment
 
-== VM Organization
-
-The production environment consists of three virtual machine servers that host the database infrastructure. This consolidated approach reduces operational complexity while maintaining redundancy for critical components.
+== Infrastructure Overview
 
 #table(
-  columns: (1fr, 2fr),
-  [*Server*], [*Services*],
-  [VM 1 (Primary)], [MongoDB Primary, Redis Master, Neo4j (single instance)],
-  [VM 2], [MongoDB Secondary, Redis Slave],
-  [VM 3], [MongoDB Secondary, Redis Slave],
+  columns: (1fr, 1fr, 1fr, 1fr),
+  [*VM*], [*MongoDB Role*], [*Redis Role*], [*Neo4j*],
+  [Server 1 (10.1.1.48)], [Primary], [Slave], [-],
+  [Server 2 (10.1.1.52)], [Secondary], [Slave], [Single instance],
+  [Server 3 (10.1.1.50)], [Secondary], [Master], [-],
 )
 
-This organization ensures that MongoDB and Redis both have three-way replication for fault tolerance, while Neo4j—serving the less critical social graph queries—operates on a single server. The co-location of MongoDB and Redis on each VM simplifies deployment and reduces network latency between frequently co-accessed services.
-
+This co-location strategy provides redundancy for the most critical components. MongoDB and Redis both benefit from replication across all three nodes, while Neo4j—used primarily for read-heavy social graph queries—operates as a single instance.
 
 == Indexes
-
-#text(fill: red, weight: "bold")[TODO: Indexes have not been implemented yet. The following section describes recommended indexes based on the application's query patterns.]
 
 Proper indexing is critical for query performance at scale. Each database requires indexes tailored to its access patterns. The following recommendations are derived from analyzing the actual queries executed by the application.
 
@@ -1494,7 +1586,7 @@ The users collection requires indexes to support authentication and profile look
 db.users.createIndex({ "username": 1 }, { unique: true })
 ```
 
-The `username` index is essential as it supports the `findByUsername` query used during authentication and profile viewing. The unique constraint ensures no duplicate usernames exist. Similarly, the `mail` index enforces email uniqueness during registration.
+The `username` index is essential as it supports the `findByUsername` query used during authentication and profile viewing. The unique constraint ensures no duplicate usernames exist.
 
 *Games Collection*
 
@@ -1503,12 +1595,21 @@ The games collection benefits from several indexes to support both user-facing q
 ```javascript
 db.games.createIndex({ "white_player": 1 })
 db.games.createIndex({ "black_player": 1 })
-db.games.createIndex({ "end_time": -1 })
 db.games.createIndex({ "opening": 1, "end_time": -1 })
 db.games.createIndex({ "time_class": 1, "white_rating": 1 })
 ```
 
-The player indexes support the `findByPlayer` query that retrieves a user's game history. Since games are queried by either color, separate single-field indexes outperform a compound index here. The `end_time` index (descending) optimizes queries for recent games and the monthly statistics aggregation that filters by date range. The compound `opening` + `end_time` index accelerates the average ELO aggregation for specific openings. The `time_class` + `white_rating` compound index supports the win rate by opening aggregation that filters first the `time_class` property and then filtering for the `white_rating`.
+The player indexes support the `findByPlayer` query that retrieves a user's game history. Since games are queried by either color, separate single-field indexes outperform a compound index here. The compound `opening` + `end_time` index accelerates the average ELO aggregation for specific openings. The `time_class` + `white_rating` compound index supports the win rate by opening aggregation that filters first the `time_class` property and then filtering for the `white_rating`.
+
+A quick comparison demonstretes the `obvious` performance advatages of the implemented indexes:
+
+*Win rate by opening:*
+- *Without index*: 183752 documents examined (all) & 169 ms execution time.
+- *With index*: 38519 documents examined & 115 ms execution time
+
+*Average elo by opening*:
+- *Without index*: 183752 documents examined (all) & 133 ms execution time time.
+- *With index*: 1 documents examined & 3 ms execution time. *Note*: The openings used for testing were very niche.
 
 *Tournaments Collection*
 
@@ -1549,31 +1650,34 @@ The `mongo_id` indexes are critical for cross-database queries where the applica
 
 The production deployment is distributed across three virtual machine servers. This architecture balances fault tolerance, performance, and operational complexity. Each VM hosts both MongoDB and Redis instances, while Neo4j runs on a single dedicated server.
 
-=== Infrastructure Overview
-
-#table(
-  columns: (1fr, 1fr, 1fr, 1fr),
-  [*VM*], [*MongoDB Role*], [*Redis Role*], [*Neo4j*],
-  [Server 1 (10.1.1.48)], [Primary], [Slave], [-],
-  [Server 2 (10.1.1.52)], [Secondary], [Slave], [Single instance],
-  [Server 3 (10.1.1.50)], [Secondary], [Master], [-],
-)
-
-This co-location strategy reduces the number of servers required while still providing redundancy for the most critical components. MongoDB and Redis both benefit from replication across all three nodes, while Neo4j—used primarily for read-heavy social graph queries—operates as a single instance.
-
 === MongoDB Replica Set
 
 MongoDB is deployed as a three-node replica set, providing both high availability and data durability. The replica set operates with one primary and two secondary nodes:
 
-- *Primary node* receives all write operations and maintains the authoritative copy of data. All client writes are directed to the primary, which then replicates changes to secondaries through the oplog (operations log).
+- *Primary node* receives all write operations and maintains the authoritative copy of data. All client writes are directed to the primary, which then replicates changes to all the secondaries.
 - *Secondary nodes* continuously replicate data from the primary, maintaining near-real-time copies. They can serve read operations when configured with appropriate read preferences, distributing load for read-heavy workloads.
 - *Automatic failover* occurs when the primary becomes unavailable. The secondaries detect the failure through heartbeat messages and conduct an election to promote one secondary to primary. This process completes within 10-12 seconds, minimizing downtime.
 
 The three-node configuration ensures a majority quorum is always achievable even if one node fails, preventing split-brain scenarios where multiple nodes might believe they are primary.
 
+*Write Concern and Read Preference Configuration*
+
+The MongoDB connection is configured with specific consistency settings aligned with the CP (Consistency and Partition Tolerance) model:
+
+```
+mongodb://10.1.1.48:27017,10.1.1.50:27017,10.1.1.52:27017/square64?replicaSet=lsmdb&w=3&readPreference=nearest
+```
+
+- *Write Concern (`w=3`)*: Every write operation must be acknowledged by all three nodes (the primary and both secondaries) before returning success to the application. This is the strongest write consistency guarantee, ensuring that data is never lost even if multiple nodes fail immediately after a write. The trade-off is increased write latency, as the application must wait for all replicas to confirm the write.
+
+- *Read Preference (`readPreference=nearest`)*: Read operations are directed to the node with the lowest network latency, regardless of whether it is the primary or a secondary. This optimizes read performance by reducing round-trip time. Since replication in MongoDB is asynchronous, reads from secondaries may return slightly stale data (typically milliseconds behind the primary). This is acceptable for Square64 because:
+  - Critical real-time game state is managed by Redis, not MongoDB
+  - User profile views and game history browsing can tolerate minimal staleness
+
+
 === Redis Master-Replica Replication
 
-Redis is configured in a master-replica topology where one master handles all write operations and two replicas maintain synchronized copies for redundancy. The Spring application uses the Lettuce client with a `RedisStaticMasterReplicaConfiguration` that enables read distribution across replicas.
+Redis is configured in a master-replica topology where one master handles all write operations and two replicas maintain synchronized copies for redundancy. The Spring application is configured to distribute reads across replicas.
 
 *Application Configuration*
 
@@ -1637,70 +1741,36 @@ Neo4j operates as a single instance rather than a cluster. This decision reflect
 
 - *Read-heavy workload*: Social graph queries (friend suggestions, club memberships) are predominantly reads. The single instance can serve these efficiently with proper indexing.
 - *Lower write volume*: Graph modifications (following users, joining clubs) occur less frequently than game operations, reducing the need for write scalability.
-- *Operational simplicity*: Neo4j clustering requires Enterprise Edition licensing and adds operational complexity. For the current scale, a single well-provisioned instance meets performance requirements.
 
 The tradeoff is reduced availability: if the Neo4j server fails, social features become unavailable until recovery. However, core gameplay (managed by Redis) and user data (in MongoDB) remain accessible.
 
 === CAP Theorem Considerations
 
-In line with the application's requirements, the architecture is oriented towards the *AP (Availability and Partition Tolerance)* model, thereby allowing for eventual consistency:
+As a competitive chess platform where game outcomes affect player ratings and tournament standings, Square64 prioritizes the *CP (Consistency and Partition Tolerance)* model, accepting reduced availability to guarantee data correctness:
 
-- *Internal Eventual Consistency*: Within each database, consistency is gradually achieved through replication. MongoDB secondaries and Redis slaves continuously synchronize with their respective primaries, converging to a consistent state.
-- *Eventual Consistency Across Databases*: The polyglot architecture maintains related data in multiple stores (e.g., user ratings in both MongoDB documents and Neo4j relationships). The system tolerates data that is not updated immediately across all stores, favoring higher availability over strict cross-database consistency.
+- *Strong Consistency for Game State*: In competitive play, both players must see identical board positions at all times. Redis operations are atomic, ensuring that move updates are immediately visible to both participants. A move is either fully committed or not applied at all.
+- *Consistent Rating Updates*: ELO rating changes must be applied exactly once per game. The system ensures that game completion triggers a single, atomic update to both players' ratings in MongoDB, preventing scenarios where one player's rating updates but the opponent's does not.
+- *Tournament Integrity*: Tournament standings and game counts must be accurate. When a tournament game concludes, the participant statistics in Neo4j are updated synchronously before the game is marked as complete.
 
-To manage operations that involve multiple databases or in the event of failures, the following strategies apply:
+To maintain consistency across the architecture, the following strategies apply:
 
-- *Graceful Degradation*: If Neo4j becomes unavailable, social features (friend suggestions, club memberships) fail independently while core gameplay continues unaffected. Users experience partial functionality rather than complete outage.
-- *TTL-Based Cleanup*: Live game states in Redis have a 24-hour expiration. Abandoned or orphaned game data is automatically cleaned up, ensuring the system converges to a consistent state without manual intervention.
-- *Tolerance for Stale Data*: For non-critical data such as club leaderboard rankings or opening statistics, slight latency in updates is acceptable. Players may briefly see outdated statistics after a game concludes, but consistency is achieved within seconds as updates propagate.
+- *Synchronous Cross-Database Updates*: Critical operations (game completion, rating updates) write to all relevant databases before returning success.
+- *Fail-Fast Behavior*: If a required database is unavailable during a critical operation (e.g., Neo4j during tournament game completion), the operation fails explicitly rather than proceeding with incomplete data. Users receive clear error messages and can retry when the system recovers.
 
-This approach ensures that the application maintains high availability for real-time gameplay while gradually reaching a consistent state across all data stores.
+This approach ensures that competitive integrity is maintained—players can trust that ratings, standings, and game outcomes are accurate, even if it means occasional unavailability during network partitions or database failures.
 
+=== Sharding considerations
 
-=== Architecture Trade-offs
+*MongoDB*
 
-*Advantages:*
-- *Cost efficiency*: Three VMs handle all database workloads, minimizing infrastructure costs.
-- *Simplified operations*: Co-locating MongoDB and Redis reduces the number of systems to monitor and maintain.
-- *Adequate redundancy*: Critical data (games, users) is replicated across three nodes, protecting against single-node failures.
-- *Performance*: Local Redis access provides sub-millisecond latency for live game operations.
+MongoDB supports horizontal scaling through sharding, which distributes data across multiple servers. However, for Square64's current requirements, sharding introduces complexity that outweighs its benefits:
 
-*Disadvantages:*
-- *Single point of failure for Neo4j*: Social features depend entirely on one server.
-- *No automatic Redis failover*: Manual intervention required if the Redis master fails.
-- *Resource contention*: MongoDB and Redis share server resources, potentially causing interference under heavy load.
-- *Limited horizontal scaling*: Adding capacity requires either larger VMs or architectural changes.
+- With approximately 10,000 daily active users, we expect a single MongoDB replica set to handle the workload.
+- Square64's aggregation pipelines (opening statistics, win rates, monthly trends) operate across the entire games collection. In a sharded environment, these queries must contact all shards and merge results, potentially performing worse than a single-node query that can use indexes efficiently.
 
-For Square64's current scale and requirements, this architecture provides a reasonable balance between reliability, performance, and operational simplicity. Future growth might necessitate dedicated Redis Sentinel deployment for automatic failover and Neo4j clustering for improved availability of social features.
+*Redis*
 
-
-= Future Implementation
-
-== Planned Features
-The platform roadmap includes several enhancements to increase engagement and educational value:
-
-- *Puzzle System*: Daily chess puzzles with difficulty ratings would provide training opportunities between games. Puzzles could be sourced from interesting positions in played games, creating a connection between live play and training.
-- *Analysis Board*: Post-game analysis with computer engine evaluation would help players understand their mistakes. Integration with open-source engines like Stockfish could provide move-by-move assessment.
-- *Leaderboards*: Global and regional ranking systems would add competitive motivation. Leaderboards could segment by rating range to provide meaningful competition at all skill levels.
-- *Spectator Mode*: Watching live games with commentary would create community engagement around top players' games. This feature would require WebSocket implementation for real-time updates.
-- *Chat System*: In-game chat between opponents and club chat rooms would enhance the social experience. Moderation tools would be needed to maintain a positive environment.
-
-== Technical Improvements
-Infrastructure enhancements would improve performance and developer experience:
-
-- *WebSocket Support*: Currently, clients poll for game state updates. WebSocket connections would push updates immediately when opponents move, reducing latency and server load from polling.
-- *Caching Layer*: Redis caching for frequently accessed profiles and statistics would reduce MongoDB load. Cache invalidation would be needed when underlying data changes.
-- *Search Service*: Elasticsearch integration would enable advanced search across games, players, and clubs. Full-text search in game annotations and fuzzy matching on usernames would improve discoverability.
-- *Event Streaming*: Kafka integration would enable event-driven architectures where game events (moves, completions) publish to topics consumed by analytics, notification, and rating systems.
-- *Containerization*: Docker containers and Kubernetes orchestration would simplify deployment and enable cloud-native scaling. Helm charts would package the application for various environments.
-
-== Scalability Roadmap
-As the platform grows, additional scaling measures would be implemented:
-
-- *MongoDB sharding by user region*: Geographic sharding would keep user data close to where it's accessed, reducing latency for geographically distributed users.
-- *Redis Cluster*: Moving from Sentinel to Redis Cluster would distribute matchmaking queues across multiple nodes, handling higher concurrent player counts.
-- *CDN integration*: Static assets (chess piece images, sounds, stylesheets) served from CDN edge locations would reduce load on application servers and improve global performance.
-- *Rate limiting and circuit breakers*: Protecting APIs from abuse and cascading failures would become essential at higher traffic levels. These patterns prevent individual failures from bringing down the entire system.
+Redis supports horizontal scaling through Redis Cluster, which partitions data across multiple nodes using hash slots. For Square64's expected scale, clustering is not implemented because each game state occupies roughly 2 KB, resulting in peak memory usage under 500 MB with approximately 2,500 concurrent live games.
 
 #pagebreak()
 
@@ -1711,6 +1781,10 @@ This section documents how Large Language Model (LLM) tools were utilized during
 == Purpose of AI Usage
 
 AI tools, primarily Gemini and Claude, were employed for secondary and supportive tasks during development, while the core architectural decisions and business logic were developed independently by the team.
+
+=== Images
+
+- *User client images mockups*: Generated html pages that visualizes the information retrieved from the implemented endpoints and organized in the relative web pages.
 
 === Boilerplate Code Generation
 

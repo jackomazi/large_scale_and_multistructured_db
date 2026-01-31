@@ -79,11 +79,12 @@ public class UserServiceImpl implements UserService {
       // Initialize stats with default ELO of 1000
       user.setStats(new Stats(1000, 1000, 1000));
 
-      // Initialize empty games buffer with placeholders (using default date)
+      // Initialize empty games buffer with placeholders (using default fields)
       List<GameSummary> placeholders = new ArrayList<>();
       for (int i = 0; i < Constants.GAMES_BUFFER_NUMBER; i++) {
           GameSummary placeholder = new GameSummary();
           placeholder.setDate(Constants.DEFAULT_PLACEHOLDER_DATE);
+          placeholder.setId(null);
           placeholder.setBlack("name");
           placeholder.setWhite("name");
           placeholder.setWinner("name");
@@ -324,7 +325,8 @@ public class UserServiceImpl implements UserService {
   @Override
     public UserFavoriteOpeningDTO getUserFavOpening(String userId) throws BusinessException{
       try {
-          return userRepository.calcFavoriteOpening(userId);
+          UserFavoriteOpeningDTO openingDTO = userRepository.calcFavoriteOpening(userId);
+          return openingDTO;
       } catch (Exception e) {
           throw new BusinessException("Error calculating user favorite opening", e);
       }

@@ -44,8 +44,7 @@ public interface UserRepository extends MongoRepository<User, String> {
     @Aggregation(pipeline = {
             "{ '$match': { '_id': ?0 } }",
             "{ '$unwind': '$games' }",
-            // Filter out placeholder games (where _id is null)
-            "{ '$match': { 'games._id': { '$ne': null } } }",
+            "{ '$match': { 'games._id': { '$exists': true, '$ne': null }, 'games.winner': { '$ne': 'name' } } }",
             "{ '$group': { '_id': '$games.opening', 'count': { '$sum': 1 } } }",
             "{ '$sort': { 'count': -1 } }",
             "{ '$limit': 1 }",

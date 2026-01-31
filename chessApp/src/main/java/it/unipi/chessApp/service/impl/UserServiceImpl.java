@@ -84,6 +84,10 @@ public class UserServiceImpl implements UserService {
       for (int i = 0; i < Constants.GAMES_BUFFER_NUMBER; i++) {
           GameSummary placeholder = new GameSummary();
           placeholder.setDate(Constants.DEFAULT_PLACEHOLDER_DATE);
+          placeholder.setBlack("name");
+          placeholder.setWhite("name");
+          placeholder.setWinner("name");
+          placeholder.setOpening("name");
           placeholders.add(placeholder);
       }
       user.setGames(placeholders);

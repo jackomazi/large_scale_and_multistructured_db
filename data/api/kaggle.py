@@ -1,10 +1,9 @@
 import os
 import shutil
 import csv
-# --- CONFIGURAZIONE CREDENZIALI ---
-# Incolla qui il token che hai ricevuto (assicurati di non condividerlo pubblicamente!)
-os.environ['KAGGLE_KEY'] = '4f1e3979430dfe8b70c03f0514fd18df'
-os.environ['KAGGLE_USERNAME'] = 'andreagiacomazzi' # Lo trovi dentro il file kaggle.json o nel profilo
+
+os.environ['KAGGLE_KEY'] = 'ask_andrea'
+os.environ['KAGGLE_USERNAME'] = 'andreagiacomazzi' # necessary for kaggle API to work
 import zipfile
 from kaggle.api.kaggle_api_extended import KaggleApi
 from datetime import datetime
@@ -15,7 +14,7 @@ class KaggleInterface:
     @staticmethod
     def _load_eco_codes():
         """
-        Carica eco_codes.csv una sola volta e crea il dizionario.
+        Loads the ECO codes from the CSV file into a dictionary.
         """
         if KaggleInterface._eco_map is not None:
             return
@@ -26,7 +25,7 @@ class KaggleInterface:
         with open(eco_path, newline="", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
-                # supponiamo colonne: eco, name
+                # eco and eco_name columns
                 eco_map[row["eco"].strip()] = row["eco_name"].strip()
 
         KaggleInterface._eco_map = eco_map
@@ -34,7 +33,8 @@ class KaggleInterface:
     @staticmethod
     def eco_to_opening(eco_code: str) -> str | None:
         """
-        Restituisce il nome dell'apertura dato un ECO code.
+        Converts an ECO code to its corresponding opening name.
+        Returns None if the code is not found.
         """
         if not eco_code:
             return None
@@ -47,16 +47,16 @@ class KaggleInterface:
         dataset = "zq1200/world-chess-championships-1866-to-2021"
         download_path = "./kaggle_chess_data"
         
-        # Inizializza e autentica le API di Kaggle
+        # Kaggle API authentication
         api = KaggleApi()
         api.authenticate()
 
-        # Crea la cartella di destinazione se non esiste
+        # Create download directory if it doesn't exist
         if not os.path.exists(download_path):
             os.makedirs(download_path)
 
         print(f"Scarico il dataset {dataset}...")
-        # Scarichiamo l'intero zip (Kaggle non permette il download selettivo di file singoli via API)
+        # Download and unzip the dataset
         api.dataset_download_files(dataset, path=download_path, unzip=True)
 
         
@@ -65,18 +65,18 @@ class KaggleInterface:
         if not os.path.exists(filtered_dir):
             os.makedirs(filtered_dir)
 
-        print("Filtraggio file in corso...")
+        print(f"Filter files from {start_year} to {end_year}...")
         
         count = 0
-        # Usiamo os.walk per cercare in TUTTE le sottocartelle create dall'unzip
+        
         for root, dirs, files in os.walk(download_path):
-            # Evitiamo di scansionare la cartella dove stiamo spostando i file
+            
             if "filtered_pgns" in root:
                 continue
                 
             for filename in files:
                 if filename.endswith(".pgn"):
-                    # Estrazione anno: ultimi 4 caratteri prima di .pgn
+                    # extract year from filename
                     name_without_ext = filename[:-4]
                     year_str = name_without_ext[-4:]
                     
@@ -86,22 +86,19 @@ class KaggleInterface:
                             source_file = os.path.join(root, filename)
                             destination_file = os.path.join(filtered_dir, filename)
                             
-                            # Usiamo copy2 invece di rename per evitare errori tra file system diversi
+                            # copy file to filtered directory
                             shutil.copy2(source_file, destination_file)
                             count += 1
                     except ValueError:
                         continue
-        print(f"--- Operazione Completata ---")
-        print(f"File totali trovati e copiati: {count}")
-        print(f"Percorso: {os.path.abspath(filtered_dir)}")
+        print(f"--- Operation completed! {count} files copied to '{filtered_dir}' ---")
 
 
 
     @staticmethod
     def parse_pgn_to_dict(game):
         """
-        Riceve un oggetto partita dalla libreria chess e lo trasforma in 
-        un dizionario pronto per MongoDB.
+        Parses a chess.pgn.Game object into a dictionary with cleaned data.
         """
         # headers → lowercase
         game_dict = {k.lower(): v for k, v in game.headers.items()}

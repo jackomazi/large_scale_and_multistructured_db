@@ -60,7 +60,7 @@ public class UserServiceImpl implements UserService {
       if (userRepository.existsByUsername(registrationDTO.getUsername())) {
         throw new BusinessException("Username already exists: " + registrationDTO.getUsername());
       }
-      
+
       // Create a new User with only the registration fields
       User user = new User();
       user.setUsername(registrationDTO.getUsername());
@@ -70,15 +70,15 @@ public class UserServiceImpl implements UserService {
       user.setCountry(registrationDTO.getCountry());
       user.setAdmin(false);
       user.setBufferedGames(0);
-      
+
       // Set joined and lastOnline to current datetime
       String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
       user.setJoined(now);
       user.setLastOnline(now);
-      
+
       // Initialize stats with default ELO of 1000
       user.setStats(new Stats(1000, 1000, 1000));
-      
+
       // Initialize empty games buffer with placeholders (using default date)
       List<GameSummary> placeholders = new ArrayList<>();
       for (int i = 0; i < Constants.GAMES_BUFFER_NUMBER; i++) {
@@ -87,7 +87,7 @@ public class UserServiceImpl implements UserService {
           placeholders.add(placeholder);
       }
       user.setGames(placeholders);
-      
+
       User createdUser = userRepository.save(user);
       return convertToDTO(createdUser);
     } catch (Exception e) {
@@ -136,32 +136,22 @@ public class UserServiceImpl implements UserService {
         .orElseThrow(() ->
           new BusinessException("User not found with ID: " + id)
         );
-      
+
       // Only update fields that are provided (not null)
-      if (userUpdateDTO.getName() != null) {
-        user.setName(userUpdateDTO.getName());
-      }
-      if (userUpdateDTO.getCountry() != null) {
-        user.setCountry(userUpdateDTO.getCountry());
-      }
-      if (userUpdateDTO.getIsStreamer() != null) {
-        user.setStreamer(userUpdateDTO.getIsStreamer());
-      }
-      if (userUpdateDTO.getStreamingPlatforms() != null) {
-        user.setStreamingPlatforms(userUpdateDTO.getStreamingPlatforms());
-      }
-      if (userUpdateDTO.getMail() != null) {
-        user.setMail(userUpdateDTO.getMail());
-      }
+      user.setName(userUpdateDTO.getName());
+      user.setCountry(userUpdateDTO.getCountry());
+      user.setStreamer(userUpdateDTO.isStreamer());
+      user.setStreamingPlatforms(userUpdateDTO.getStreamingPlatforms());
+      user.setMail(userUpdateDTO.getMail());
       if (userUpdateDTO.getPassword() != null && !userUpdateDTO.getPassword().isEmpty()) {
         user.setPassword(authenticationService.encodePassword(userUpdateDTO.getPassword()));
       }
-      
+
       // Only admins can change verified status
-      if (userUpdateDTO.getVerified() != null && isAdmin) {
-        user.setVerified(userUpdateDTO.getVerified());
+      if (isAdmin) {
+        user.setVerified(userUpdateDTO.isVerified());
       }
-      
+
       User updatedUser = userRepository.save(user);
       return convertToDTO(updatedUser);
     } catch (BusinessException e) {

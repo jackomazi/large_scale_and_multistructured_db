@@ -12,8 +12,8 @@ import java.util.List;
 public class UserUpdateDTO {
     private String name;
     private String country;
-    private Boolean isStreamer;
-    private Boolean verified;
+    private boolean isStreamer;
+    private boolean verified;
     private List<String> streamingPlatforms;
     private String mail;
     private String password;

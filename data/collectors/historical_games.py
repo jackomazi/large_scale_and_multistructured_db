@@ -28,11 +28,10 @@ if __name__ == "__main__":
     download_path = "./kaggle_chess_data"
     filtered_path = os.path.join(download_path, "filtered_pgns")
 
-    # --- NUOVO CONTROLLO ---
     if not os.path.exists(download_path):
         KaggleInterface.download_chess_pgns()
     else:
-        print(f"La cartella '{download_path}' esiste già.")
+        print(f"Directory '{download_path}' already exists. Skipping download.")
 
     if os.path.exists(filtered_path):
         all_games = []
@@ -40,16 +39,16 @@ if __name__ == "__main__":
         for filename in os.listdir(filtered_path):
             if filename.endswith(".pgn"):
                 file_path = os.path.join(filtered_path, filename)
-                print(f"Elaborazione file: {filename}...")
+                print(f"Parsing file: {file_path}")
                 
                 with open(file_path, encoding="utf-8") as pgn_file:
-                    # Leggiamo tutte le partite nel file una dopo l'altra
+                    # We read all games in the PGN file
                     while True:
                         game = chess.pgn.read_game(pgn_file)
                         if game is None:
-                            break  # Fine del file
+                            break  # No more games in the file
                         
-                        # Trasformiamo la partita in dizionario
+                        # Convert the game to a dictionary
                         game_data = KaggleInterface.parse_pgn_to_dict(game)
                         
                         historical_mongo_id = mongo_db_interface.store_dict_to_MongoDB(game_data, collection_historical)

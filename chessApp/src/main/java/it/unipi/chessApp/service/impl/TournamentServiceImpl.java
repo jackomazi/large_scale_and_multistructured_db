@@ -408,6 +408,14 @@ public class TournamentServiceImpl implements TournamentService {
       }
       TournamentParticipantDTO blackJoinedRelation = TournamentParticipantDTO.convertToDTO(blackJoinedRelationM);
 
+      // Store original stats for potential rollback
+      int origWhiteWins = whiteJoinedRelation.getWins();
+      int origWhiteLosses = whiteJoinedRelation.getLosses();
+      int origWhiteDraws = whiteJoinedRelation.getDraws();
+      int origBlackWins = blackJoinedRelation.getWins();
+      int origBlackLosses = blackJoinedRelation.getLosses();
+      int origBlackDraws = blackJoinedRelation.getDraws();
+
       // Update tournament stats (wins/draws/losses)
       if(game.getResultWhite().equals("stalemate")){
           whiteJoinedRelation.setDraws(whiteJoinedRelation.getDraws() + 1);
@@ -422,22 +430,38 @@ public class TournamentServiceImpl implements TournamentService {
           whiteJoinedRelation.setLosses(whiteJoinedRelation.getLosses() + 1);
       }
 
-      userNodeRepository.updateUserTournamentStats(whiteId,tournamentId,
+      // Update Neo4j stats for white player
+      userNodeRepository.updateUserTournamentStats(whiteId, tournamentId,
               whiteJoinedRelation.getWins(),
               whiteJoinedRelation.getLosses(),
               whiteJoinedRelation.getDraws(),
               whiteJoinedRelation.getPlacement());
 
-      userNodeRepository.updateUserTournamentStats(blackId,tournamentId,
-              blackJoinedRelation.getWins(),
-              blackJoinedRelation.getLosses(),
-              blackJoinedRelation.getDraws(),
-              blackJoinedRelation.getPlacement());
+      // Update Neo4j stats for black player - rollback white if this fails
+      try {
+          userNodeRepository.updateUserTournamentStats(blackId, tournamentId,
+                  blackJoinedRelation.getWins(),
+                  blackJoinedRelation.getLosses(),
+                  blackJoinedRelation.getDraws(),
+                  blackJoinedRelation.getPlacement());
+      } catch (Exception e) {
+          // Rollback white player stats
+          userNodeRepository.updateUserTournamentStats(whiteId, tournamentId,
+                  origWhiteWins, origWhiteLosses, origWhiteDraws, whiteJoinedRelation.getPlacement());
+          throw new RuntimeException("Failed to update black player stats in Neo4j", e);
+      }
 
-      //After we see if the users are actually participants
-      mongoTemplate.updateFirst(query, update, Tournament.class);
-
-      // Note: bullet ELO update is handled by bufferGame in LiveGameServiceImpl
+      // Update MongoDB - rollback Neo4j if this fails
+      try {
+          mongoTemplate.updateFirst(query, update, Tournament.class);
+      } catch (Exception e) {
+          // Rollback both players' Neo4j stats
+          userNodeRepository.updateUserTournamentStats(whiteId, tournamentId,
+                  origWhiteWins, origWhiteLosses, origWhiteDraws, whiteJoinedRelation.getPlacement());
+          userNodeRepository.updateUserTournamentStats(blackId, tournamentId,
+                  origBlackWins, origBlackLosses, origBlackDraws, blackJoinedRelation.getPlacement());
+          throw new RuntimeException("Failed to update tournament in MongoDB, Neo4j rolled back", e);
+      }
 
       return Outcomes.TOURNAMENT_BUFFERING_SUCCESS;
   }

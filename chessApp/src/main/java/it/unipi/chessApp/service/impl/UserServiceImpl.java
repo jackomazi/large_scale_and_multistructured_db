@@ -291,9 +291,18 @@ public class UserServiceImpl implements UserService {
 
       mongoTemplate.updateFirst(query, update, User.class);
 
-      //Neo4j redundancy update
-      userNodeRepository.updateJoinedRelation(userId,eloBullet,eloBlitz,eloRapid);
-
+      // Neo4j redundancy update - rollback MongoDB if it fails
+      try {
+          userNodeRepository.updateJoinedRelation(userId, eloBullet, eloBlitz, eloRapid);
+      } catch (Exception e) {
+          // Rollback MongoDB: restore old game and elo
+          Update rollback = new Update()
+                  .set("games." + insertIndex, user.getGames().get(insertIndex))
+                  .set("buffered_games", user.getBufferedGames())
+                  .set("stats." + timeClass, oldElo);
+          mongoTemplate.updateFirst(query, rollback, User.class);
+          throw new RuntimeException("Failed to update Neo4j, MongoDB rolled back", e);
+      }
   }
 
   private int calculateEloChange(GameSummaryDTO game, String nameUser){

@@ -40,7 +40,7 @@ public interface GameRepository extends MongoRepository<Game, String> {
         "{ '$match': { 'white_rating': { '$gte': ?0, '$lte': ?1 }, 'time_class': ?2 } }",
         "{ '$project': { 'opening': 1, 'white_won': { '$cond': [{ '$eq': ['$result_white', 'win'] }, 1, 0] } } }",
         "{ '$group': { '_id': '$opening', 'totalGames': { '$sum': 1 }, 'whiteWins': { '$sum': '$white_won' } } }",
-        "{ '$match': { 'totalGames': { '$gt': ?3 } } }",
+        "{ '$match': { 'totalGames': { '$gte': ?3 } } }",
         "{ '$project': { 'opening': '$_id', '_id': 0, 'totalGames': 1, 'winPercentage': { '$multiply': [{ '$divide': ['$whiteWins', '$totalGames'] }, 100] } } }",
         "{ '$sort': { 'winPercentage': -1 } }"
     })

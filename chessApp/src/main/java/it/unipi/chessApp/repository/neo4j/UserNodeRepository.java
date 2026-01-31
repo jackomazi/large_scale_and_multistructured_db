@@ -18,7 +18,7 @@ public interface UserNodeRepository extends Neo4jRepository<UserNode, String> {
             MATCH (p)-[r:JOINED]->(c)
             WHERE p.mongo_id = $id
             RETURN
-                c.mongo_id as mongo_id,
+                c.mongo_id AS mongo_id,
                 c.name AS name
             """)
     Optional<ClubNode> findJoinedClub(String id);

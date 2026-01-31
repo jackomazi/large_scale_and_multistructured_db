@@ -33,34 +33,11 @@ public interface UserRepository extends MongoRepository<User, String> {
     List<TiltPlayerDTO> findTiltPlayers();
 
     @Aggregation(pipeline = {
-            // Stadio 1: Match
-            "{ '$match': { '_id': ?0 } }",
-
-            // Stadio 2: Unwind
-            "{ '$unwind': '$games' }",
-
-            // Stadio 3: Match (Filter)
-            "{ '$match': { 'games.winner': { '$ne': 'name' } } }",
-
-            // Stadio 4: Group
-            "{ '$group': { " +
-                    "'_id': '$_id', " +
-                    "'totalGames': { '$sum': 1 }, " +
-                    "'wins': { " +
-                    "'$sum': { " +
-                    "'$cond': [ " +
-                    "{ '$eq': [{ '$toLower': '$games.winner' }, { '$toLower': '$username' }] }, " +
-                    "1, " +
-                    "0 " +
-                    "] " +
-                    "} " +
-                    "} " +
-                    "} }",
-
-            // Stadio 5: Project
-            "{ '$project': { " +
-                    "'winRate': { '$multiply': [ { '$divide': ['$wins', '$totalGames'] }, 100 ] } " +
-                    "} }"
+        "{ '$match': { '_id': ?0 } }",
+        "{ '$unwind': '$games' }",
+        "{ '$match': { 'games._id': { '$ne': null }, 'games.winner': { '$ne': null } } }",
+        "{ '$group': { '_id': '$_id', 'username': { '$first': '$username' }, 'totalGames': { '$sum': 1 }, 'wins': { '$sum': { '$cond': [{ '$eq': [{ '$toLower': '$games.winner' }, { '$toLower': '$username' }] }, 1, 0] } } } }",
+        "{ '$project': { 'winRate': { '$multiply': [{ '$divide': ['$wins', '$totalGames'] }, 100] } } }"
     })
     UserWinRateDTO calcUserWinRate(String userId);
 

@@ -62,8 +62,15 @@ public class TournamentServiceImpl implements TournamentService {
 
       //Adding placeholders to tournament document
       List<GameSummary> placeholders = new ArrayList<>();
-      for(int i = 0; i < Constants.TOURNAMENT_MAX_PARTICIPANTS * Constants.USER_GAMES_IN_TOURNAMENT; i++)
-          placeholders.add(new GameSummary());
+      for(int i = 0; i < Constants.TOURNAMENT_MAX_PARTICIPANTS * Constants.USER_GAMES_IN_TOURNAMENT; i++){
+          GameSummary gameSummary = new GameSummary();
+          gameSummary.setOpening("name");
+          gameSummary.setWhite("name");
+          gameSummary.setBlack("name");
+          gameSummary.setWinner("name");
+          gameSummary.setDate(Constants.DEFAULT_PLACEHOLDER_DATE);
+          placeholders.add(gameSummary);
+      }
 
       Tournament tournament = convertCreateDTOToEntity(tournamentCreateDTO);
       tournament.setGames(placeholders);

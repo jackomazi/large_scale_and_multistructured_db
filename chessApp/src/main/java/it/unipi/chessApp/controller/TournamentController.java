@@ -1,7 +1,6 @@
 package it.unipi.chessApp.controller;
 
 import it.unipi.chessApp.dto.*;
-import it.unipi.chessApp.service.Neo4jService;
 import it.unipi.chessApp.service.TournamentService;
 import it.unipi.chessApp.service.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +21,6 @@ import java.util.List;
 public class TournamentController {
 
   private final TournamentService tournamentService;
-  private final Neo4jService neo4jService;
 
   // List all tournaments (public)
   @GetMapping
@@ -75,17 +73,8 @@ public class TournamentController {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     String creatorUsername = authentication.getName();
     
-    // Step 1: Create tournament in MongoDB (also writes to Redis in the service)
+    // Creates tournament in MongoDB, Redis, and Neo4j with rollback handling
     TournamentDTO createdTournamentDTO = tournamentService.createTournament(tournamentCreateDTO, creatorUsername);
-    
-    // Step 2: Create tournament node in Neo4j - if this fails, rollback MongoDB and Redis
-    try {
-      neo4jService.createTournament(createdTournamentDTO.getId(), createdTournamentDTO.getName());
-    } catch (Exception e) {
-      log.error("Neo4j tournament creation failed, rolling back MongoDB and Redis", e);
-      tournamentService.deleteTournament(createdTournamentDTO.getId());
-      throw new BusinessException("Failed to create tournament: " + e.getMessage());
-    }
     
     return ResponseEntity.status(HttpStatus.CREATED).body(
       new ResponseWrapper<>("Tournament created successfully", createdTournamentDTO)

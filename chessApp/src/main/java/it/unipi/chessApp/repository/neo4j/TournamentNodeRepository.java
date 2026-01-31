@@ -38,4 +38,10 @@ public interface TournamentNodeRepository extends Neo4jRepository<TournamentNode
             """)
     Void createParticipatedRelation(String userID, String tournamentID);
 
+    @Query("""
+            MATCH (t:TOURNAMENT {mongo_id: $tournamentId})
+            DETACH DELETE t
+            """)
+    void deleteByMongoId(String tournamentId);
+
 }

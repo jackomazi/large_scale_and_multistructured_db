@@ -12,6 +12,7 @@ import it.unipi.chessApp.repository.TournamentRepository;
 import it.unipi.chessApp.repository.UserRepository;
 import it.unipi.chessApp.repository.neo4j.TournamentNodeRepository;
 import it.unipi.chessApp.repository.neo4j.UserNodeRepository;
+import it.unipi.chessApp.service.Neo4jService;
 import it.unipi.chessApp.service.TournamentService;
 import it.unipi.chessApp.service.exception.BusinessException;
 import it.unipi.chessApp.utils.Constants;
@@ -44,6 +45,7 @@ public class TournamentServiceImpl implements TournamentService {
   private final UserRepository userRepository;
   private final StringRedisTemplate redisTemplate;
   private final ObjectMapper objectMapper;
+  private final Neo4jService neo4jService;
 
   private static final String TOURNAMENT_PREFIX = "chess:tournament:";
   private static final String TOURNAMENT_SUBSCRIBERS_SUFFIX = ":subscribers";
@@ -56,35 +58,43 @@ public class TournamentServiceImpl implements TournamentService {
   @Override
   public TournamentDTO createTournament(TournamentCreateDTO tournamentCreateDTO, String creatorUsername)
     throws BusinessException {
+    
+    // Validate finish time is at least 1 week from now
+    validateFinishTime(tournamentCreateDTO.getFinishTime());
+
+    // Adding placeholders to tournament document
+    List<GameSummary> placeholders = new ArrayList<>();
+    for (int i = 0; i < Constants.TOURNAMENT_MAX_PARTICIPANTS * Constants.USER_GAMES_IN_TOURNAMENT; i++) {
+      GameSummary gameSummary = new GameSummary();
+      gameSummary.setOpening("name");
+      gameSummary.setWhite("name");
+      gameSummary.setBlack("name");
+      gameSummary.setWinner("name");
+      gameSummary.setDate(Constants.DEFAULT_PLACEHOLDER_DATE);
+      placeholders.add(gameSummary);
+    }
+
+    Tournament tournament = convertCreateDTOToEntity(tournamentCreateDTO);
+    tournament.setGames(placeholders);
+    tournament.setCreator(creatorUsername);
+    tournament.setMaxParticipants(Constants.TOURNAMENT_MAX_PARTICIPANTS);
+    tournament.setTimeControl(Constants.TOURNAMENT_TIME_CONTROL);
+    tournament.setStatus("active");
+
+    // Step 1: Save to MongoDB
+    Tournament createdTournament;
     try {
-      // Validate finish time is at least 1 week from now
-      validateFinishTime(tournamentCreateDTO.getFinishTime());
+      createdTournament = tournamentRepository.save(tournament);
+    } catch (Exception e) {
+      log.error("Failed to save tournament to MongoDB", e);
+      throw new BusinessException("Failed to create tournament in MongoDB", e);
+    }
 
-      //Adding placeholders to tournament document
-      List<GameSummary> placeholders = new ArrayList<>();
-      for(int i = 0; i < Constants.TOURNAMENT_MAX_PARTICIPANTS * Constants.USER_GAMES_IN_TOURNAMENT; i++){
-          GameSummary gameSummary = new GameSummary();
-          gameSummary.setOpening("name");
-          gameSummary.setWhite("name");
-          gameSummary.setBlack("name");
-          gameSummary.setWinner("name");
-          gameSummary.setDate(Constants.DEFAULT_PLACEHOLDER_DATE);
-          placeholders.add(gameSummary);
-      }
+    String tournamentId = createdTournament.getId();
+    String tournamentName = createdTournament.getName();
 
-      Tournament tournament = convertCreateDTOToEntity(tournamentCreateDTO);
-      tournament.setGames(placeholders);
-      // Set creator from authenticated admin
-      tournament.setCreator(creatorUsername);
-      // Set static values
-      tournament.setMaxParticipants(Constants.TOURNAMENT_MAX_PARTICIPANTS);
-      tournament.setTimeControl(Constants.TOURNAMENT_TIME_CONTROL);
-      // Force status to "active"
-      tournament.setStatus("active");
-
-      Tournament createdTournament = tournamentRepository.save(tournament);
-
-      // Store tournament data in Redis as JSON string
+    // Step 2: Save to Redis
+    try {
       LiveTournamentData liveTournamentData = LiveTournamentData.fromTournament(
           createdTournament.getStatus(),
           createdTournament.getMinRating(),
@@ -92,20 +102,41 @@ public class TournamentServiceImpl implements TournamentService {
           createdTournament.getMaxParticipants(),
           createdTournament.getFinishTime()
       );
-      saveLiveTournamentData(createdTournament.getId(), liveTournamentData);
-
-      // Create Redis Set for subscribers (will be populated when users subscribe)
+      saveLiveTournamentData(tournamentId, liveTournamentData);
       log.info("Created tournament {} with Redis data key {} and subscribers key {}",
-          createdTournament.getId(),
-          getDataKey(createdTournament.getId()),
-          getSubscribersKey(createdTournament.getId()));
-
-      return convertToDTO(createdTournament);
-    } catch (BusinessException e) {
-      throw e;
+          tournamentId, getDataKey(tournamentId), getSubscribersKey(tournamentId));
     } catch (Exception e) {
-      throw new BusinessException("Error creating tournament", e);
+      // Rollback MongoDB
+      log.error("Failed to save tournament to Redis, rolling back MongoDB", e);
+      try {
+        tournamentRepository.deleteById(tournamentId);
+      } catch (Exception rollbackEx) {
+        log.error("Failed to rollback MongoDB after Redis failure", rollbackEx);
+      }
+      throw new BusinessException("Failed to create tournament in Redis", e);
     }
+
+    // Step 3: Save to Neo4j
+    try {
+      neo4jService.createTournament(tournamentId, tournamentName);
+    } catch (Exception e) {
+      // Rollback Redis and MongoDB
+      log.error("Failed to save tournament to Neo4j, rolling back Redis and MongoDB", e);
+      try {
+        redisTemplate.delete(getDataKey(tournamentId));
+        redisTemplate.delete(getSubscribersKey(tournamentId));
+      } catch (Exception redisRollbackEx) {
+        log.error("Failed to rollback Redis after Neo4j failure", redisRollbackEx);
+      }
+      try {
+        tournamentRepository.deleteById(tournamentId);
+      } catch (Exception mongoRollbackEx) {
+        log.error("Failed to rollback MongoDB after Neo4j failure", mongoRollbackEx);
+      }
+      throw new BusinessException("Failed to create tournament in Neo4j", e);
+    }
+
+    return convertToDTO(createdTournament);
   }
 
   private void validateFinishTime(String finishTime) throws BusinessException {

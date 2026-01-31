@@ -303,6 +303,66 @@ public class UserServiceImpl implements UserService {
           return -Constants.ELO_CHANGE;
   }
 
+  /**
+   * Compensation method to undo a buffered game.
+   * Used for rollback when a multi-database operation fails.
+   */
+  @Override
+  public void unbufferGame(String userId, String gameId, String timeClass) {
+      User user = userRepository.findById(userId)
+              .orElseThrow(() -> new RuntimeException("User not found"));
+
+      // Find the game in the buffer by its ID
+      int gameIndex = -1;
+      GameSummary gameToRemove = null;
+      if (user.getGames() != null) {
+          for (int i = 0; i < user.getGames().size(); i++) {
+              GameSummary g = user.getGames().get(i);
+              if (g.getId() != null && g.getId().equals(gameId)) {
+                  gameIndex = i;
+                  gameToRemove = g;
+                  break;
+              }
+          }
+      }
+
+      if (gameIndex < 0 || gameToRemove == null) {
+          return; // Game not found in buffer, nothing to undo
+      }
+
+      // Calculate the elo change to reverse
+      int eloDiff = this.calculateEloChange(GameSummaryDTO.convertToDTO(gameToRemove), user.getUsername());
+      
+      // Create a placeholder to replace the game
+      GameSummary placeholder = new GameSummary();
+      placeholder.setDate(Constants.DEFAULT_PLACEHOLDER_DATE);
+      placeholder.setId(null);
+      placeholder.setBlack("name");
+      placeholder.setWhite("name");
+      placeholder.setWinner("name");
+      placeholder.setOpening("name");
+
+      Query query = new Query(Criteria.where("_id").is(userId));
+      Update update = new Update()
+              .set("games." + gameIndex, placeholder)
+              .inc("stats." + timeClass, -eloDiff); // Reverse the ELO change
+
+      mongoTemplate.updateFirst(query, update, User.class);
+
+      // Neo4j redundancy update - reverse the ELO change
+      int eloRapid = user.getStats().getRapid();
+      int eloBlitz = user.getStats().getBlitz();
+      int eloBullet = user.getStats().getBullet();
+      if (timeClass.equals("rapid")) {
+          eloRapid -= eloDiff;
+      } else if (timeClass.equals("blitz")) {
+          eloBlitz -= eloDiff;
+      } else if (timeClass.equals("bullet")) {
+          eloBullet -= eloDiff;
+      }
+      userNodeRepository.updateJoinedRelation(userId, eloBullet, eloBlitz, eloRapid);
+  }
+
   @Override
   public List<TiltPlayerDTO> getTiltPlayers() throws BusinessException {
     try {

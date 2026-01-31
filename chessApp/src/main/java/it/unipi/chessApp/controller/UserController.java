@@ -7,6 +7,7 @@ import it.unipi.chessApp.service.UserService;
 import it.unipi.chessApp.service.exception.AuthenticationException;
 import it.unipi.chessApp.service.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,6 +21,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
+@Slf4j
 public class UserController {
 
   private final UserService userService;
@@ -54,8 +56,18 @@ public class UserController {
   public ResponseEntity<ResponseWrapper<UserDTO>> createUser(
     @RequestBody UserRegistrationDTO registrationDTO
   ) throws BusinessException {
+    // Step 1: Create user in MongoDB
     UserDTO createdUser = userService.registerUser(registrationDTO);
-    neo4jService.createUser(createdUser.getId(), createdUser.getUsername());
+    
+    // Step 2: Create user node in Neo4j - if this fails, rollback MongoDB
+    try {
+      neo4jService.createUser(createdUser.getId(), createdUser.getUsername());
+    } catch (Exception e) {
+      log.error("Neo4j user creation failed, rolling back MongoDB user", e);
+      userService.deleteUser(createdUser.getId());
+      throw new BusinessException("Failed to create user: " + e.getMessage());
+    }
+    
     return ResponseEntity.status(HttpStatus.CREATED).body(
       new ResponseWrapper<>("User created successfully", createdUser)
     );

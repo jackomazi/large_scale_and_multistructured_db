@@ -8,6 +8,7 @@ import it.unipi.chessApp.service.ClubService;
 import it.unipi.chessApp.service.Neo4jService;
 import it.unipi.chessApp.service.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,6 +21,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/clubs")
 @RequiredArgsConstructor
+@Slf4j
 public class ClubController {
 
   private final ClubService clubService;
@@ -67,8 +69,18 @@ public class ClubController {
     String currentUsername = authentication.getName();
     clubDTO.setAdmin(currentUsername);
     
+    // Step 1: Create club in MongoDB
     ClubDTO createdClub = clubService.createClub(clubDTO);
-    neo4jService.createClub(createdClub.getId(), createdClub.getName());
+    
+    // Step 2: Create club node in Neo4j - if this fails, rollback MongoDB
+    try {
+      neo4jService.createClub(createdClub.getId(), createdClub.getName());
+    } catch (Exception e) {
+      log.error("Neo4j club creation failed, rolling back MongoDB club", e);
+      clubService.deleteClub(createdClub.getId());
+      throw new BusinessException("Failed to create club: " + e.getMessage());
+    }
+    
     return ResponseEntity.status(HttpStatus.CREATED).body(
       new ResponseWrapper<>("Club created successfully", createdClub)
     );

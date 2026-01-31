@@ -155,11 +155,12 @@ Administrators are trusted users with elevated privileges for platform managemen
 
 Beyond specific features, Square64 must meet several quality requirements that influence architectural decisions and implementation approaches.
 
-=== Availability
-The system is designed for continuous operation with minimal planned or unplanned downtime:
+=== Consistency
+The system prioritizes data consistency over availability (CP in CAP theorem), ensuring that all nodes see the same data at the same time:
 
-- Minimizing single points of failure through database replication
-- *Low response times for live operations*: Live game operations require immediate responses to maintain user experience.
+- *Strong consistency for game state*: Live game operations ensure that all participants see the same game state, preventing conflicting moves or race conditions.
+- *Write concerns for critical operations*: Database writes for games, tournaments, and user data use appropriate write concerns to guarantee data durability before acknowledging success.
+- *Transactional integrity*: Operations that modify multiple related entities maintain consistency through appropriate transaction handling.
 
 === Security
 User data and system integrity are protected through multiple security layers:
@@ -271,7 +272,7 @@ The system is designed to handle substantial data volumes typical of a moderatel
   columns: (auto, 1fr),
   [*Parameter*], [*Value*],
   [Daily Active Users (DAU)], [10,000],
-  [Games played per user per day], [5],
+  [Games played per user per day], [2],
   [Average moves per game], [40],
   [Concurrent live games (peak)], [2,500],
   [Users browsing profiles per day], [8,000],
@@ -1746,31 +1747,39 @@ The tradeoff is reduced availability: if the Neo4j server fails, social features
 
 === CAP Theorem Considerations
 
-As a competitive chess platform where game outcomes affect player ratings and tournament standings, Square64 prioritizes the *CP (Consistency and Partition Tolerance)* model, accepting reduced availability to guarantee data correctness:
+As a competitive chess platform where game outcomes affect player ratings and tournament standings, Square64 leans toward the *CP (Consistency and Partition Tolerance)* model, prioritizing data correctness over availability where feasible:
 
-- *Strong Consistency for Game State*: In competitive play, both players must see identical board positions at all times. Redis operations are atomic, ensuring that move updates are immediately visible to both participants. A move is either fully committed or not applied at all.
-- *Consistent Rating Updates*: ELO rating changes must be applied exactly once per game. The system ensures that game completion triggers a single, atomic update to both players' ratings in MongoDB, preventing scenarios where one player's rating updates but the opponent's does not.
-- *Tournament Integrity*: Tournament standings and game counts must be accurate. When a tournament game concludes, the participant statistics in Neo4j are updated synchronously before the game is marked as complete.
+- *Consistency for Live Game State*: During active play, both players observe the same board position. Redis atomic operations ensure that move updates are immediately visible to both participants through a single shared key.
+- *Rating Updates*: ELO rating changes are triggered upon game completion. Each player's rating is updated via a single MongoDB update operation per user, reducing (though not eliminating) the risk of partial updates. The current implementation does not use distributed transactions, so edge cases involving failures between updates may result in temporary inconsistencies.
+- *Tournament Statistics*: When a tournament game concludes, participant statistics in Neo4j are updated. These updates occur sequentially rather than within a distributed transaction, meaning that failures during the update process may not be fully propagated to the caller.
 
-To maintain consistency across the architecture, the following strategies apply:
+The following strategies are employed to improve consistency:
 
-- *Synchronous Cross-Database Updates*: Critical operations (game completion, rating updates) write to all relevant databases before returning success.
-- *Fail-Fast Behavior*: If a required database is unavailable during a critical operation (e.g., Neo4j during tournament game completion), the operation fails explicitly rather than proceeding with incomplete data. Users receive clear error messages and can retry when the system recovers.
+- *Sequential Cross-Database Updates*: Critical operations (game completion, rating updates) write to relevant databases in sequence. While this provides ordering guarantees, it does not guarantee atomicity across databases.
+- *Write Concerns*: MongoDB is configured with a write concern of 3 (`w=3`), ensuring writes are acknowledged by multiple replica set members before returning success. This improves durability but does not address cross-database consistency.
+- *Fail-Fast for Live Operations*: Redis operations for live games fail explicitly if the connection is unavailable, preventing games from starting or moves from being made in an inconsistent state. However, failures during post-game processing (MongoDB persistence, Neo4j updates) are currently logged rather than propagated as errors.
 
-This approach ensures that competitive integrity is maintained—players can trust that ratings, standings, and game outcomes are accurate, even if it means occasional unavailability during network partitions or database failures.
+This approach provides reasonable consistency for the expected use case while acknowledging that full distributed transaction guarantees across MongoDB, Neo4j, and Redis are not implemented. For a platform of this scale, the trade-off between implementation complexity and consistency guarantees is acceptable, though operators should be aware that edge-case failures may require manual reconciliation.
 
-=== Sharding considerations
+=== Sharding Considerations
 
-*MongoDB*
+Based on the volume estimates (10,000 DAU, 2 games/user/day), we can evaluate whether sharding is necessary.
 
-MongoDB supports horizontal scaling through sharding, which distributes data across multiple servers. However, for Square64's current requirements, sharding introduces complexity that outweighs its benefits:
+#table(
+  columns: (auto, auto, auto),
+  [*Metric*], [*Calculation*], [*Result*],
+  [Daily new games], [10,000 users × 2 games ÷ 2 players], [10,000 games/day],
+  [Yearly game growth], [10,000 × 365], [~3.65M games/year],
+  [Average game document size], [moves + metadata], [~1.5 KB],
+  [Yearly storage growth], [3.65M × 1.5 KB], [~5.5 GB/year],
+  [Peak concurrent games], [given], [2,500 games],
+  [Redis memory per game], [FEN + moves + metadata], [~2 KB],
+  [Redis peak memory], [2,500 × 2 KB], [~5 MB],
+)
 
-- With approximately 10,000 daily active users, we expect a single MongoDB replica set to handle the workload.
-- Square64's aggregation pipelines (opening statistics, win rates, monthly trends) operate across the entire games collection. In a sharded environment, these queries must contact all shards and merge results, potentially performing worse than a single-node query that can use indexes efficiently.
+*MongoDB*: With ~5.5 GB of new data per year, storage remains far below single-node limits. Sharding typically becomes relevant when data approaches terabytes or when write throughput exceeds tens of thousands of operations per second. At this scale, a single replica set is sufficient. Additionally, aggregation pipelines perform better without the scatter-gather overhead of sharded queries.
 
-*Redis*
-
-Redis supports horizontal scaling through Redis Cluster, which partitions data across multiple nodes using hash slots. For Square64's expected scale, clustering is not implemented because each game state occupies roughly 2 KB, resulting in peak memory usage under 500 MB with approximately 2,500 concurrent live games.
+*Redis*: With peak memory under 10 MB for live game states, a single Redis instance with replication provides sufficient capacity.
 
 #pagebreak()
 

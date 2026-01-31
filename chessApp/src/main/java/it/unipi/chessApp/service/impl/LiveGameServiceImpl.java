@@ -555,47 +555,45 @@ public class LiveGameServiceImpl implements LiveGameService {
     }
 
     /**
-     * Save a completed game to MongoDB.
+     * Save a completed game to MongoDB with rollback on failure.
      */
     private void saveCompletedGameToMongoDB(LiveGameState gameState) {
+        User whiteUser = null;
+        User blackUser = null;
+        GameDTO gameDTO = null;
+        boolean gameSaved = false;
+        boolean whiteBuffered = false;
+        boolean blackBuffered = false;
+        boolean tournamentBuffered = false;
+        
         try {
             // Get users by username first to retrieve their ratings
-            User whiteUser = userRepository.findByUsername(gameState.getWhitePlayer())
-                    .orElse(null);
-            User blackUser = userRepository.findByUsername(gameState.getBlackPlayer())
-                    .orElse(null);
+            whiteUser = userRepository.findByUsername(gameState.getWhitePlayer()).orElse(null);
+            blackUser = userRepository.findByUsername(gameState.getBlackPlayer()).orElse(null);
 
-            GameDTO gameDTO = new GameDTO();
+            gameDTO = new GameDTO();
             gameDTO.setId(gameState.getGameId());
             gameDTO.setWhitePlayer(gameState.getWhitePlayer());
             gameDTO.setBlackPlayer(gameState.getBlackPlayer());
             gameDTO.setOpening(gameState.getDetectedOpening());
-            // Format end time as string date (yyyy-MM-dd HH:mm:ss)
             String endTime = Instant.ofEpochMilli(gameState.getLastMoveAt())
                     .atZone(ZoneId.systemDefault())
                     .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             gameDTO.setEndTime(endTime);
             gameDTO.setTimeClass(gameState.isTournamentGame() ? "tournament" : gameState.getGameType());
-            // Tournament games are not rated (do not affect Elo)
             gameDTO.setRated(!gameState.isTournamentGame());
 
-            // Set player ratings from their user profiles based on game type
             if (whiteUser != null && whiteUser.getStats() != null) {
-                if (gameState.isTournamentGame()) {
-                    gameDTO.setWhiteRating(whiteUser.getStats().getRapid());
-                } else {
-                    gameDTO.setWhiteRating(getRatingForGameType(whiteUser, gameState.getGameType()));
-                }
+                gameDTO.setWhiteRating(gameState.isTournamentGame() 
+                    ? whiteUser.getStats().getRapid() 
+                    : getRatingForGameType(whiteUser, gameState.getGameType()));
             }
             if (blackUser != null && blackUser.getStats() != null) {
-                if (gameState.isTournamentGame()) {
-                    gameDTO.setBlackRating(blackUser.getStats().getRapid());
-                } else {
-                    gameDTO.setBlackRating(getRatingForGameType(blackUser, gameState.getGameType()));
-                }
+                gameDTO.setBlackRating(gameState.isTournamentGame() 
+                    ? blackUser.getStats().getRapid() 
+                    : getRatingForGameType(blackUser, gameState.getGameType()));
             }
 
-            // Set results based on game status
             String resultString;
             switch (gameState.getStatus()) {
                 case LiveGameState.STATUS_WHITE_WINS:
@@ -615,30 +613,30 @@ public class LiveGameServiceImpl implements LiveGameService {
                     break;
             }
 
-            // Format moves as space-separated SAN notation with result at the end
-            String movesFormatted = formatMovesForStorage(gameState, resultString);
-            gameDTO.setMoves(movesFormatted);
+            gameDTO.setMoves(formatMovesForStorage(gameState, resultString));
 
+            // Step 1: Save game to MongoDB
             gameService.createGame(gameDTO);
+            gameSaved = true;
             log.info("Saved completed game {} to MongoDB with opening: {}",
                      gameState.getGameId(), gameState.getDetectedOpening());
 
-            // Create game summary for embedding in user documents
             GameSummaryDTO summary = GameSummaryDTO.summarize(gameDTO);
 
-            // Buffer game to both players (updates ELO and games array)
-            // Only update Elo for regular games, NOT for tournament games
+            // Step 2 & 3: Buffer game to players (only for regular games)
             if (!gameState.isTournamentGame()) {
                 String timeClass = gameState.getGameType();
                 if (whiteUser != null) {
                     userService.bufferGame(whiteUser.getId(), summary, timeClass);
+                    whiteBuffered = true;
                 }
                 if (blackUser != null) {
                     userService.bufferGame(blackUser.getId(), summary, timeClass);
+                    blackBuffered = true;
                 }
             }
 
-            // If tournament game, also buffer to tournament document
+            // Step 4: Buffer to tournament (only for tournament games)
             if (gameState.isTournamentGame()) {
                 log.info("Buffering tournament game {} to tournament {}", gameState.getGameId(), gameState.getTournamentId());
                 String result = tournamentService.bufferTournamentGame(
@@ -647,11 +645,50 @@ public class LiveGameServiceImpl implements LiveGameService {
                         whiteUser != null ? whiteUser.getId() : null,
                         blackUser != null ? blackUser.getId() : null
                 );
+                tournamentBuffered = true;
                 log.info("Tournament buffering result for game {}: {}", gameState.getGameId(), result);
             }
 
         } catch (Exception e) {
-            log.error("Failed to save game {} to MongoDB: {}", gameState.getGameId(), e.getMessage(), e);
+            log.error("Failed to save game {}, rolling back", gameState.getGameId(), e);
+            
+            // Rollback in reverse order
+            String timeClass = gameState.getGameType();
+            
+            if (tournamentBuffered && gameDTO != null) {
+                try {
+                    tournamentService.unbufferTournamentGame(
+                            gameState.getTournamentId(),
+                            gameState.getGameId(),
+                            whiteUser != null ? whiteUser.getId() : null,
+                            blackUser != null ? blackUser.getId() : null,
+                            gameDTO.getResultWhite()
+                    );
+                } catch (Exception ex) {
+                    log.error("Rollback failed: unbufferTournamentGame", ex);
+                }
+            }
+            if (blackBuffered && blackUser != null) {
+                try {
+                    userService.unbufferGame(blackUser.getId(), gameState.getGameId(), timeClass);
+                } catch (Exception ex) {
+                    log.error("Rollback failed: unbufferGame for black", ex);
+                }
+            }
+            if (whiteBuffered && whiteUser != null) {
+                try {
+                    userService.unbufferGame(whiteUser.getId(), gameState.getGameId(), timeClass);
+                } catch (Exception ex) {
+                    log.error("Rollback failed: unbufferGame for white", ex);
+                }
+            }
+            if (gameSaved) {
+                try {
+                    gameService.deleteGame(gameState.getGameId());
+                } catch (Exception ex) {
+                    log.error("Rollback failed: deleteGame", ex);
+                }
+            }
         }
     }
 

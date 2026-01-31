@@ -18,4 +18,5 @@ public interface TournamentService {
   void subscribeTournament(String tournamentId, String username) throws BusinessException;
   void unsubscribeTournament(String tournamentId, String username) throws BusinessException;
   String bufferTournamentGame(String tournamentId, GameDTO summary, String whiteId, String blackId);
+  void unbufferTournamentGame(String tournamentId, String gameId, String whiteId, String blackId, String resultWhite);
 }

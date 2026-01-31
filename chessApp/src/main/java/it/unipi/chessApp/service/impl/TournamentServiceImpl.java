@@ -442,6 +442,82 @@ public class TournamentServiceImpl implements TournamentService {
       return Outcomes.TOURNAMENT_BUFFERING_SUCCESS;
   }
 
+  /**
+   * Compensation method to undo a buffered tournament game.
+   * Used for rollback when a multi-database operation fails.
+   */
+  @Override
+  public void unbufferTournamentGame(String tournamentId, String gameId, String whiteId, String blackId, String resultWhite) {
+      Tournament tournament = tournamentRepository.findById(tournamentId)
+              .orElse(null);
+      if (tournament == null) {
+          return; // Tournament not found, nothing to undo
+      }
+
+      // Find the game in the buffer by its ID
+      int gameIndex = -1;
+      if (tournament.getGames() != null) {
+          for (int i = 0; i < tournament.getGames().size(); i++) {
+              GameSummary g = tournament.getGames().get(i);
+              if (g.getId() != null && g.getId().equals(gameId)) {
+                  gameIndex = i;
+                  break;
+              }
+          }
+      }
+
+      if (gameIndex < 0) {
+          return; // Game not found in buffer, nothing to undo
+      }
+
+      // Create a placeholder to replace the game
+      GameSummary placeholder = new GameSummary();
+      placeholder.setOpening("name");
+      placeholder.setWhite("name");
+      placeholder.setBlack("name");
+      placeholder.setWinner("name");
+      placeholder.setDate(Constants.DEFAULT_PLACEHOLDER_DATE);
+
+      // Decrement buffered games count
+      int newBufferedGames = Math.max(0, tournament.getBufferedGames() - 1);
+
+      Query query = new Query(Criteria.where("_id").is(tournamentId));
+      Update update = new Update()
+              .set("games." + gameIndex, placeholder)
+              .set("buffered_games", newBufferedGames);
+
+      mongoTemplate.updateFirst(query, update, Tournament.class);
+
+      // Reverse the Neo4j stats updates
+      // Get current stats and decrement
+      TournamentParticipant whitePart = userNodeRepository.findUserTournamentStats(tournamentId, whiteId);
+      TournamentParticipant blackPart = userNodeRepository.findUserTournamentStats(tournamentId, blackId);
+
+      if (whitePart != null && blackPart != null) {
+          int whiteWins = whitePart.getWins();
+          int whiteLosses = whitePart.getLosses();
+          int whiteDraws = whitePart.getDraws();
+          int blackWins = blackPart.getWins();
+          int blackLosses = blackPart.getLosses();
+          int blackDraws = blackPart.getDraws();
+
+          // Reverse based on original result
+          if ("stalemate".equals(resultWhite) || "draw".equals(resultWhite)) {
+              whiteDraws = Math.max(0, whiteDraws - 1);
+              blackDraws = Math.max(0, blackDraws - 1);
+          } else if ("win".equals(resultWhite)) {
+              whiteWins = Math.max(0, whiteWins - 1);
+              blackLosses = Math.max(0, blackLosses - 1);
+          } else {
+              blackWins = Math.max(0, blackWins - 1);
+              whiteLosses = Math.max(0, whiteLosses - 1);
+          }
+
+          userNodeRepository.updateUserTournamentStats(whiteId, tournamentId, whiteWins, whiteLosses, whiteDraws, whitePart.getPlacement());
+          userNodeRepository.updateUserTournamentStats(blackId, tournamentId, blackWins, blackLosses, blackDraws, blackPart.getPlacement());
+      }
+  }
+
   private TournamentDTO convertToDTO(Tournament tournament) {
     TournamentDTO dto = new TournamentDTO();
     dto.setId(tournament.getId());

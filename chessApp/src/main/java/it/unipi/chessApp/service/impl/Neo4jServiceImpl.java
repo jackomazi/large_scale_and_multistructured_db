@@ -50,6 +50,12 @@ public class Neo4jServiceImpl implements Neo4jService {
 
     @Override
     @Transactional
+    public void deleteTournament(String mongoId) {
+        tournamentNodeRepository.deleteByMongoId(mongoId);
+    }
+
+    @Override
+    @Transactional
     public void joinClub(String userName, String clubName) {
         try {
             Optional<User> user = userRepository.findByUsername(userName);

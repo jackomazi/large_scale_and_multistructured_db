@@ -12,6 +12,7 @@ import it.unipi.chessApp.repository.TournamentRepository;
 import it.unipi.chessApp.repository.UserRepository;
 import it.unipi.chessApp.repository.neo4j.TournamentNodeRepository;
 import it.unipi.chessApp.repository.neo4j.UserNodeRepository;
+import it.unipi.chessApp.service.Neo4jService;
 import it.unipi.chessApp.service.TournamentService;
 import it.unipi.chessApp.service.exception.BusinessException;
 import it.unipi.chessApp.utils.Constants;
@@ -44,6 +45,7 @@ public class TournamentServiceImpl implements TournamentService {
   private final UserRepository userRepository;
   private final StringRedisTemplate redisTemplate;
   private final ObjectMapper objectMapper;
+  private final Neo4jService neo4jService;
 
   private static final String TOURNAMENT_PREFIX = "chess:tournament:";
   private static final String TOURNAMENT_SUBSCRIBERS_SUFFIX = ":subscribers";
@@ -56,35 +58,43 @@ public class TournamentServiceImpl implements TournamentService {
   @Override
   public TournamentDTO createTournament(TournamentCreateDTO tournamentCreateDTO, String creatorUsername)
     throws BusinessException {
+    
+    // Validate finish time is at least 1 week from now
+    validateFinishTime(tournamentCreateDTO.getFinishTime());
+
+    // Adding placeholders to tournament document
+    List<GameSummary> placeholders = new ArrayList<>();
+    for (int i = 0; i < Constants.TOURNAMENT_MAX_PARTICIPANTS * Constants.USER_GAMES_IN_TOURNAMENT; i++) {
+      GameSummary gameSummary = new GameSummary();
+      gameSummary.setOpening("name");
+      gameSummary.setWhite("name");
+      gameSummary.setBlack("name");
+      gameSummary.setWinner("name");
+      gameSummary.setDate(Constants.DEFAULT_PLACEHOLDER_DATE);
+      placeholders.add(gameSummary);
+    }
+
+    Tournament tournament = convertCreateDTOToEntity(tournamentCreateDTO);
+    tournament.setGames(placeholders);
+    tournament.setCreator(creatorUsername);
+    tournament.setMaxParticipants(Constants.TOURNAMENT_MAX_PARTICIPANTS);
+    tournament.setTimeControl(Constants.TOURNAMENT_TIME_CONTROL);
+    tournament.setStatus("active");
+
+    // Step 1: Save to MongoDB
+    Tournament createdTournament;
     try {
-      // Validate finish time is at least 1 week from now
-      validateFinishTime(tournamentCreateDTO.getFinishTime());
+      createdTournament = tournamentRepository.save(tournament);
+    } catch (Exception e) {
+      log.error("Failed to save tournament to MongoDB", e);
+      throw new BusinessException("Failed to create tournament in MongoDB", e);
+    }
 
-      //Adding placeholders to tournament document
-      List<GameSummary> placeholders = new ArrayList<>();
-      for(int i = 0; i < Constants.TOURNAMENT_MAX_PARTICIPANTS * Constants.USER_GAMES_IN_TOURNAMENT; i++){
-          GameSummary gameSummary = new GameSummary();
-          gameSummary.setOpening("name");
-          gameSummary.setWhite("name");
-          gameSummary.setBlack("name");
-          gameSummary.setWinner("name");
-          gameSummary.setDate(Constants.DEFAULT_PLACEHOLDER_DATE);
-          placeholders.add(gameSummary);
-      }
+    String tournamentId = createdTournament.getId();
+    String tournamentName = createdTournament.getName();
 
-      Tournament tournament = convertCreateDTOToEntity(tournamentCreateDTO);
-      tournament.setGames(placeholders);
-      // Set creator from authenticated admin
-      tournament.setCreator(creatorUsername);
-      // Set static values
-      tournament.setMaxParticipants(Constants.TOURNAMENT_MAX_PARTICIPANTS);
-      tournament.setTimeControl(Constants.TOURNAMENT_TIME_CONTROL);
-      // Force status to "active"
-      tournament.setStatus("active");
-
-      Tournament createdTournament = tournamentRepository.save(tournament);
-
-      // Store tournament data in Redis as JSON string
+    // Step 2: Save to Redis
+    try {
       LiveTournamentData liveTournamentData = LiveTournamentData.fromTournament(
           createdTournament.getStatus(),
           createdTournament.getMinRating(),
@@ -92,20 +102,41 @@ public class TournamentServiceImpl implements TournamentService {
           createdTournament.getMaxParticipants(),
           createdTournament.getFinishTime()
       );
-      saveLiveTournamentData(createdTournament.getId(), liveTournamentData);
-
-      // Create Redis Set for subscribers (will be populated when users subscribe)
+      saveLiveTournamentData(tournamentId, liveTournamentData);
       log.info("Created tournament {} with Redis data key {} and subscribers key {}",
-          createdTournament.getId(),
-          getDataKey(createdTournament.getId()),
-          getSubscribersKey(createdTournament.getId()));
-
-      return convertToDTO(createdTournament);
-    } catch (BusinessException e) {
-      throw e;
+          tournamentId, getDataKey(tournamentId), getSubscribersKey(tournamentId));
     } catch (Exception e) {
-      throw new BusinessException("Error creating tournament", e);
+      // Rollback MongoDB
+      log.error("Failed to save tournament to Redis, rolling back MongoDB", e);
+      try {
+        tournamentRepository.deleteById(tournamentId);
+      } catch (Exception rollbackEx) {
+        log.error("Failed to rollback MongoDB after Redis failure", rollbackEx);
+      }
+      throw new BusinessException("Failed to create tournament in Redis", e);
     }
+
+    // Step 3: Save to Neo4j
+    try {
+      neo4jService.createTournament(tournamentId, tournamentName);
+    } catch (Exception e) {
+      // Rollback Redis and MongoDB
+      log.error("Failed to save tournament to Neo4j, rolling back Redis and MongoDB", e);
+      try {
+        redisTemplate.delete(getDataKey(tournamentId));
+        redisTemplate.delete(getSubscribersKey(tournamentId));
+      } catch (Exception redisRollbackEx) {
+        log.error("Failed to rollback Redis after Neo4j failure", redisRollbackEx);
+      }
+      try {
+        tournamentRepository.deleteById(tournamentId);
+      } catch (Exception mongoRollbackEx) {
+        log.error("Failed to rollback MongoDB after Neo4j failure", mongoRollbackEx);
+      }
+      throw new BusinessException("Failed to create tournament in Neo4j", e);
+    }
+
+    return convertToDTO(createdTournament);
   }
 
   private void validateFinishTime(String finishTime) throws BusinessException {
@@ -408,6 +439,14 @@ public class TournamentServiceImpl implements TournamentService {
       }
       TournamentParticipantDTO blackJoinedRelation = TournamentParticipantDTO.convertToDTO(blackJoinedRelationM);
 
+      // Store original stats for potential rollback
+      int origWhiteWins = whiteJoinedRelation.getWins();
+      int origWhiteLosses = whiteJoinedRelation.getLosses();
+      int origWhiteDraws = whiteJoinedRelation.getDraws();
+      int origBlackWins = blackJoinedRelation.getWins();
+      int origBlackLosses = blackJoinedRelation.getLosses();
+      int origBlackDraws = blackJoinedRelation.getDraws();
+
       // Update tournament stats (wins/draws/losses)
       if(game.getResultWhite().equals("stalemate")){
           whiteJoinedRelation.setDraws(whiteJoinedRelation.getDraws() + 1);
@@ -422,24 +461,116 @@ public class TournamentServiceImpl implements TournamentService {
           whiteJoinedRelation.setLosses(whiteJoinedRelation.getLosses() + 1);
       }
 
-      userNodeRepository.updateUserTournamentStats(whiteId,tournamentId,
+      // Update Neo4j stats for white player
+      userNodeRepository.updateUserTournamentStats(whiteId, tournamentId,
               whiteJoinedRelation.getWins(),
               whiteJoinedRelation.getLosses(),
               whiteJoinedRelation.getDraws(),
               whiteJoinedRelation.getPlacement());
 
-      userNodeRepository.updateUserTournamentStats(blackId,tournamentId,
-              blackJoinedRelation.getWins(),
-              blackJoinedRelation.getLosses(),
-              blackJoinedRelation.getDraws(),
-              blackJoinedRelation.getPlacement());
+      // Update Neo4j stats for black player - rollback white if this fails
+      try {
+          userNodeRepository.updateUserTournamentStats(blackId, tournamentId,
+                  blackJoinedRelation.getWins(),
+                  blackJoinedRelation.getLosses(),
+                  blackJoinedRelation.getDraws(),
+                  blackJoinedRelation.getPlacement());
+      } catch (Exception e) {
+          // Rollback white player stats
+          userNodeRepository.updateUserTournamentStats(whiteId, tournamentId,
+                  origWhiteWins, origWhiteLosses, origWhiteDraws, whiteJoinedRelation.getPlacement());
+          throw new RuntimeException("Failed to update black player stats in Neo4j", e);
+      }
 
-      //After we see if the users are actually participants
-      mongoTemplate.updateFirst(query, update, Tournament.class);
-
-      // Note: bullet ELO update is handled by bufferGame in LiveGameServiceImpl
+      // Update MongoDB - rollback Neo4j if this fails
+      try {
+          mongoTemplate.updateFirst(query, update, Tournament.class);
+      } catch (Exception e) {
+          // Rollback both players' Neo4j stats
+          userNodeRepository.updateUserTournamentStats(whiteId, tournamentId,
+                  origWhiteWins, origWhiteLosses, origWhiteDraws, whiteJoinedRelation.getPlacement());
+          userNodeRepository.updateUserTournamentStats(blackId, tournamentId,
+                  origBlackWins, origBlackLosses, origBlackDraws, blackJoinedRelation.getPlacement());
+          throw new RuntimeException("Failed to update tournament in MongoDB, Neo4j rolled back", e);
+      }
 
       return Outcomes.TOURNAMENT_BUFFERING_SUCCESS;
+  }
+
+  /**
+   * Compensation method to undo a buffered tournament game.
+   * Used for rollback when a multi-database operation fails.
+   */
+  @Override
+  public void unbufferTournamentGame(String tournamentId, String gameId, String whiteId, String blackId, String resultWhite) {
+      Tournament tournament = tournamentRepository.findById(tournamentId)
+              .orElse(null);
+      if (tournament == null) {
+          return; // Tournament not found, nothing to undo
+      }
+
+      // Find the game in the buffer by its ID
+      int gameIndex = -1;
+      if (tournament.getGames() != null) {
+          for (int i = 0; i < tournament.getGames().size(); i++) {
+              GameSummary g = tournament.getGames().get(i);
+              if (g.getId() != null && g.getId().equals(gameId)) {
+                  gameIndex = i;
+                  break;
+              }
+          }
+      }
+
+      if (gameIndex < 0) {
+          return; // Game not found in buffer, nothing to undo
+      }
+
+      // Create a placeholder to replace the game
+      GameSummary placeholder = new GameSummary();
+      placeholder.setOpening("name");
+      placeholder.setWhite("name");
+      placeholder.setBlack("name");
+      placeholder.setWinner("name");
+      placeholder.setDate(Constants.DEFAULT_PLACEHOLDER_DATE);
+
+      // Decrement buffered games count
+      int newBufferedGames = Math.max(0, tournament.getBufferedGames() - 1);
+
+      Query query = new Query(Criteria.where("_id").is(tournamentId));
+      Update update = new Update()
+              .set("games." + gameIndex, placeholder)
+              .set("buffered_games", newBufferedGames);
+
+      mongoTemplate.updateFirst(query, update, Tournament.class);
+
+      // Reverse the Neo4j stats updates
+      // Get current stats and decrement
+      TournamentParticipant whitePart = userNodeRepository.findUserTournamentStats(tournamentId, whiteId);
+      TournamentParticipant blackPart = userNodeRepository.findUserTournamentStats(tournamentId, blackId);
+
+      if (whitePart != null && blackPart != null) {
+          int whiteWins = whitePart.getWins();
+          int whiteLosses = whitePart.getLosses();
+          int whiteDraws = whitePart.getDraws();
+          int blackWins = blackPart.getWins();
+          int blackLosses = blackPart.getLosses();
+          int blackDraws = blackPart.getDraws();
+
+          // Reverse based on original result
+          if ("stalemate".equals(resultWhite) || "draw".equals(resultWhite)) {
+              whiteDraws = Math.max(0, whiteDraws - 1);
+              blackDraws = Math.max(0, blackDraws - 1);
+          } else if ("win".equals(resultWhite)) {
+              whiteWins = Math.max(0, whiteWins - 1);
+              blackLosses = Math.max(0, blackLosses - 1);
+          } else {
+              blackWins = Math.max(0, blackWins - 1);
+              whiteLosses = Math.max(0, whiteLosses - 1);
+          }
+
+          userNodeRepository.updateUserTournamentStats(whiteId, tournamentId, whiteWins, whiteLosses, whiteDraws, whitePart.getPlacement());
+          userNodeRepository.updateUserTournamentStats(blackId, tournamentId, blackWins, blackLosses, blackDraws, blackPart.getPlacement());
+      }
   }
 
   private TournamentDTO convertToDTO(Tournament tournament) {

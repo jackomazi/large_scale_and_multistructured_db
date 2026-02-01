@@ -1,10 +1,10 @@
 package it.unipi.chessApp.controller;
 
 import it.unipi.chessApp.dto.*;
-import it.unipi.chessApp.service.Neo4jService;
 import it.unipi.chessApp.service.TournamentService;
 import it.unipi.chessApp.service.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,10 +17,10 @@ import java.util.List;
 @RestController
 @RequestMapping("/tournaments")
 @RequiredArgsConstructor
+@Slf4j
 public class TournamentController {
 
   private final TournamentService tournamentService;
-  private final Neo4jService neo4jService;
 
   // List all tournaments (public)
   @GetMapping
@@ -72,8 +72,10 @@ public class TournamentController {
   ) throws BusinessException {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     String creatorUsername = authentication.getName();
+    
+    // Creates tournament in MongoDB, Redis, and Neo4j with rollback handling
     TournamentDTO createdTournamentDTO = tournamentService.createTournament(tournamentCreateDTO, creatorUsername);
-    neo4jService.createTournament(createdTournamentDTO.getId(), createdTournamentDTO.getName());
+    
     return ResponseEntity.status(HttpStatus.CREATED).body(
       new ResponseWrapper<>("Tournament created successfully", createdTournamentDTO)
     );
